@@ -1,113 +1,136 @@
 /**
  * TavernHelper Remastered Core Types
+ * v6.0 Refactor: Split Categories & Item Definitions
  */
 
-// 1. 状态栏分类键值
-export type StatusBarCategoryKey = 
-  | 'ST' // 场景与时间
-  | 'CP' // 角色档案
-  | 'CR' // 资源与装备
-  | 'CV' // 状态值
-  | 'CS' // 特定状态描述
-  | 'RP' // 角色关系参数
-  | 'AE' // 行为与事件计数
-  | 'WP' // 世界与剧情动态
-  | 'MI' // 元信息
-  | 'Other';
+// 1. 分类定义 (容器)
+export interface CategoryDefinition {
+  key: string;      // "CP", "CV"
+  name: string;     // "角色档案"
+  icon: string;     // Lucide icon name
+  order: number;    // 排序权重
+  layout_mode?: 'list' | 'grid' | 'tags'; // v6.1 布局模式
+  grid_columns?: number; // v6.1 网格列数 (1-4)
+}
 
-// 2. 状态栏单个数据条目 (解析后)
+// 2. 条目定义 (具体数据的规则)
+export interface ItemDefinition {
+  key: string;          // "HP", "Name"
+  type: 'text' | 'numeric' | 'array';
+  description?: string; // 给 AI 看的描述
+  defaultCategory?: string; // 默认归属分类 (UI辅助用)
+}
+
+// 3. 状态栏单个数据条目
 export interface StatusBarItem {
   key: string;
-  values: string[]; // 可能是 ["100"], ["100", "+10"], ["Item1", "Item2"] 等
-  source_id: number; // 来源消息ID
-  user_modified: boolean; // 是否被用户锁定
-  originalLine?: string; // 原始文本行，用于调试或回写
-  category: StatusBarCategoryKey;
+  values: string[];
+  source_id: number;
+  user_modified: boolean;
+  originalLine?: string;
+  category: string; 
 }
 
-// 3. 角色数据容器
+// 4. 角色数据容器
 export interface CharacterData {
-  [category: string]: StatusBarItem[]; // 动态键，通常是 CategoryKey
+  [category: string]: StatusBarItem[];
 }
 
-// 4. 全局状态栏数据结构 (权威数据源 SST)
+// 5. 角色 ID 映射表
+export interface CharacterMap {
+  [id: string]: string; // char_id -> character_name
+}
+
+// 6. 全局状态栏数据结构 (权威数据源 SST)
 export interface StatusBarData {
+  // v6.0: 分类注册表
+  categories: {
+    [key: string]: CategoryDefinition;
+  };
+  
+  // v6.0: 条目定义注册表 (Key -> Definition)
+  item_definitions: {
+    [key: string]: ItemDefinition;
+  };
+  
+  id_map: CharacterMap;
+
   shared: {
     [category: string]: StatusBarItem[];
   };
+  
   characters: {
-    [characterName: string]: CharacterData;
+    [charId: string]: CharacterData;
   };
+  
   _meta?: {
     message_count?: number;
     last_updated?: string;
+    version?: number;
   };
 }
 
-// 5. 世界书条目 (SillyTavern Lorebook Entry 模拟)
+// 7. 解析器返回的临时结构
+export interface ParsedUpdate {
+  shared: { [category: string]: StatusBarItem[] };
+  characters: { 
+    [charName: string]: { 
+       [category: string]: StatusBarItem[] 
+    } 
+  };
+}
+
+// 8. 世界书条目
 export interface LorebookEntry {
   uid: number;
   key: string[];
   keysecondary: string[];
-  comment: string; // 显示名称
+  comment: string;
   content: string;
   enabled: boolean;
-  position: number; // Order/DisplayIndex
-  
-  // 策略相关 (简化)
+  position: number;
   constant?: boolean;
   selective?: boolean;
   probability?: number;
 }
 
-// 6. UI 配置选项
-export interface AppOptions {
-  darkMode: boolean;
-  defaultExpanded: boolean;
-  worldSnapshotEnabled: boolean;
-}
-
-// 7. 合并结果 (v4.3 新增)
+// 9. 合并结果
 export interface MergeResult {
   data: StatusBarData;
   warnings: string[];
   logs: string[];
 }
 
-// 8. 快照事件 (v4.3 Narrative Engine)
+// 10. 快照事件
 export interface SnapshotEvent {
   source: 'user' | 'ai';
-  character: string | null; // null for shared
+  character: string | null;
   category: string;
   key: string;
-  change_type: string; // e.g. 'numeric_dramatic_decrease', 'item_added'
+  change_type: string;
   data_type: 'numeric' | 'text' | 'array';
   previous: any;
   current: any;
-  details?: {
-    from?: number | string;
-    to?: number | string;
-    change?: number;
-    ratio?: number;
-    reason?: string;
-    added?: string[];
-    removed?: string[];
-    value?: any;
-    message?: string;
-  };
+  details?: any;
 }
 
-// 9. 快照元数据 (v4.3.2)
+// 11. 快照元数据
 export interface SnapshotMeta {
   timestamp: string;
   message_count: number;
   description_summary?: string;
 }
 
-// 10. 配置预设 (v4.4 Preset Manager)
+// 12. 配置预设
 export interface Preset {
   name: string;
   timestamp: number;
-  enabledIds: number[]; // 记录被启用的世界书条目UID
-  count: number; // 包含的条目数量快照
+  enabledIds: number[];
+  count: number;
+}
+
+export interface AppOptions {
+  darkMode: boolean;
+  defaultExpanded: boolean;
+  worldSnapshotEnabled: boolean;
 }

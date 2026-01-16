@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { tavernService } from './services/mockTavernService';
 import { StatusBarData, SnapshotMeta, LorebookEntry } from './types';
-import { Moon, Sun, LayoutDashboard, Wrench, MessageSquare, FastForward, Menu, X, Layers, Paintbrush } from 'lucide-react';
+import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './services/definitionRegistry';
+import { Moon, Sun, LayoutDashboard, Wrench, FastForward, Menu, X } from 'lucide-react';
 import LogicTester from './components/DevTools/LogicTester';
 import StatusBar from './components/StatusBar/StatusBar';
 import StatusBarManager from './components/Manager/StatusBarManager';
@@ -10,7 +10,7 @@ import Skeleton from './components/Shared/Skeleton';
 import { detectChanges, generateNarrative } from './utils/snapshotGenerator';
 import { ToastProvider, useToast } from './components/Toast/ToastContext';
 
-// Mobile Action Sheet Component
+// Mobile Action Sheet (保持不变)
 const MobileActionSheet = ({ isOpen, onClose, actions }: { isOpen: boolean, onClose: () => void, actions: any[] }) => {
   if (!isOpen) return null;
   return (
@@ -47,16 +47,14 @@ const MobileActionSheet = ({ isOpen, onClose, actions }: { isOpen: boolean, onCl
   );
 };
 
-// Wrap the main content to use the hook
 const AppContent = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<StatusBarData | null>(null);
   const [darkMode, setDarkMode] = useState(false); 
   const [showDevTools, setShowDevTools] = useState(false);
   const [showManager, setShowManager] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false); // Mobile Menu State
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
-  // 叙事引擎状态
   const [snapshotEnabled, setSnapshotEnabled] = useState(true);
   const [snapshotMeta, setSnapshotMeta] = useState<SnapshotMeta | null>(null);
   
@@ -66,25 +64,32 @@ const AppContent = () => {
 
   const toast = useToast();
 
-  // CSS 注入引擎
   const injectStyles = (entries: LorebookEntry[]) => {
-    // 查找启用的样式条目
     const activeStyleEntry = entries.find(e => e.enabled && e.comment.startsWith('样式-'));
-    
-    // 获取或创建注入点
     let styleTag = document.getElementById('theme-injector');
     if (!styleTag) {
         styleTag = document.createElement('style');
         styleTag.id = 'theme-injector';
         document.head.appendChild(styleTag);
     }
+    styleTag.textContent = activeStyleEntry ? activeStyleEntry.content : '';
+  };
 
-    if (activeStyleEntry) {
-        console.log(`[App] Injecting Theme: ${activeStyleEntry.comment}`);
-        styleTag.textContent = activeStyleEntry.content;
-    } else {
-        styleTag.textContent = ''; // 清空样式，恢复默认
+  // 数据初始化与迁移逻辑
+  const initializeData = (rawData: any): StatusBarData => {
+    // Check if it's new structure (has categories AND item_definitions)
+    if (!rawData || !rawData.categories || !rawData.item_definitions) {
+        console.log('[App] Initializing v6.0 Data Structure...');
+        return {
+            categories: getDefaultCategoriesMap(),
+            item_definitions: getDefaultItemDefinitionsMap(),
+            id_map: { 'char_user': 'User' },
+            shared: {},
+            characters: { 'char_user': {} }, 
+            _meta: { message_count: 0, version: 6 }
+        };
     }
+    return rawData;
   };
 
   useEffect(() => {
@@ -92,27 +97,29 @@ const AppContent = () => {
       setLoading(true);
       try {
         const vars = tavernService.getVariables();
-        if (vars.statusBarCharacterData) {
-          const loadedData = vars.statusBarCharacterData;
-          setData(loadedData);
-          prevDataRef.current = JSON.parse(JSON.stringify(loadedData));
+        const processedData = initializeData(vars.statusBarCharacterData);
+        
+        setData(processedData);
+        prevDataRef.current = JSON.parse(JSON.stringify(processedData));
+        
+        // Save back initialized data if needed
+        if (vars.statusBarCharacterData !== processedData) {
+            tavernService.saveVariables({ statusBarCharacterData: processedData });
         }
         
-        // 订阅世界书变更 (包括样式)
         const unsubscribe = tavernService.subscribe((entries) => {
             injectStyles(entries);
         });
 
-        // 初始加载一次
         const entries = await tavernService.getLorebookEntries();
-        injectStyles(entries); // 确保初始样式被应用
+        injectStyles(entries);
 
-        return () => unsubscribe(); // Cleanup subscription
+        return () => unsubscribe();
       } catch (e) {
         console.error(e);
-        toast.error("初始化数据加载失败");
+        toast.error("初始化失败");
       } finally {
-        setTimeout(() => setLoading(false), 800); // 稍微延长一点 Loading 时间以展示骨架屏效果
+        setTimeout(() => setLoading(false), 800);
       }
     };
     init();
@@ -128,47 +135,33 @@ const AppContent = () => {
 
   const toggleTheme = () => setDarkMode(!darkMode);
 
-  // 模拟下一回合 (Next Turn Simulation)
   const handleSimulateNextTurn = () => {
       if (!data) return;
       const newData = JSON.parse(JSON.stringify(data)) as StatusBarData;
       
-      // 1. Increment message count
       if (!newData._meta) newData._meta = {};
       const currentCount = newData._meta.message_count || 0;
       newData._meta.message_count = currentCount + 1;
 
-      // 2. Unlock all user-modified items (Priority Downgrade)
-      // 在真实脚本中，这是通过监听 message_sent 事件触发的
       let unlockedCount = 0;
-      
-      // Helper to unlock items in a list
       const unlockItems = (items: any[]) => {
           items.forEach(item => {
               if (item.user_modified) {
                   item.user_modified = false;
-                  // 重要修复: 将 source_id 重置为 0
-                  // 这样确保下一条 AI 消息（ID > 0）能够覆盖这个值，而不是被判定为旧数据而被忽略
                   item.source_id = 0; 
                   unlockedCount++;
               }
           });
       };
 
-      // Check Shared
-      if (newData.shared) {
-          Object.values(newData.shared).forEach(items => unlockItems(items));
-      }
-      // Check Characters
-      if (newData.characters) {
-          Object.values(newData.characters).forEach(charData => {
-              Object.values(charData).forEach(items => unlockItems(items));
-          });
-      }
+      if (newData.shared) Object.values(newData.shared).forEach(items => unlockItems(items));
+      if (newData.characters) Object.values(newData.characters).forEach(charData => {
+          Object.values(charData).forEach(items => unlockItems(items));
+      });
 
       handleDataUpdate(newData);
-      toast.info(`回合已推进 (ID: ${newData._meta.message_count})`, { 
-          description: unlockedCount > 0 ? `已解锁 ${unlockedCount} 个手动修改项` : '无锁定条目需解锁'
+      toast.info(`回合推进 (ID: ${newData._meta.message_count})`, { 
+          description: unlockedCount > 0 ? `解锁 ${unlockedCount} 项` : undefined
       });
   };
 
@@ -177,43 +170,26 @@ const AppContent = () => {
         if (!batchStartDataRef.current) {
             batchStartDataRef.current = JSON.parse(JSON.stringify(prevDataRef.current || newData));
         }
-
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
         debounceTimerRef.current = setTimeout(() => {
             const startData = batchStartDataRef.current;
             if (startData) {
                  try {
                     const events = detectChanges(startData, newData);
-                    
                     if (events.length > 0) {
                         const narrative = generateNarrative(events);
                         if (narrative) {
-                            tavernService.updateWorldbookEntry(
-                                '[通用状态栏世界书]', 
-                                '[动态世界快照]', 
-                                narrative
-                            );
-                            
-                            const newMeta: SnapshotMeta = {
+                            tavernService.updateWorldbookEntry('[通用状态栏]', '[动态快照]', narrative);
+                            setSnapshotMeta({
                                 timestamp: new Date().toISOString(),
                                 message_count: newData._meta?.message_count || 0,
-                                description_summary: narrative.slice(0, 50) + (narrative.length > 50 ? '...' : '')
-                            };
-                            setSnapshotMeta(newMeta);
-                            
-                            // 使用 Toast 通知
-                            toast.success("自动快照已生成", {
-                                description: `检测到 ${events.length} 处变动，已写入世界书。`
+                                description_summary: narrative.slice(0, 50) + '...'
                             });
+                            toast.success("快照已生成");
                         }
                     }
-                } catch (err) {
-                    console.error("[App] Snapshot generation failed:", err);
-                    toast.error("快照生成失败", { description: "请检查控制台日志" });
-                }
+                } catch (err) { console.error(err); }
             }
             batchStartDataRef.current = null;
             debounceTimerRef.current = null;
@@ -225,7 +201,6 @@ const AppContent = () => {
     tavernService.saveVariables({ statusBarCharacterData: newData });
   };
 
-  // Mobile Menu Actions
   const mobileActions = [
     { label: 'Next Turn', icon: <FastForward size={24} />, onClick: handleSimulateNextTurn, primary: true, fullWidth: true },
     { label: '状态管理器', icon: <LayoutDashboard size={24} />, onClick: () => setShowManager(true) },
@@ -236,27 +211,9 @@ const AppContent = () => {
   if (loading) {
     return (
       <div className="app-layout">
-        <header className="app-header container">
-            <Skeleton width="200px" height="24px" />
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <Skeleton width="40px" height="36px" />
-                <Skeleton width="40px" height="36px" />
-                <Skeleton width="40px" height="36px" />
-            </div>
-        </header>
-        <main className="app-layout__content container" style={{ marginTop: '20px' }}>
-            <div className="glass-panel" style={{ padding: '20px' }}>
-                <Skeleton width="40%" height="24px" style={{ marginBottom: '20px' }} />
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                    <Skeleton width="80px" height="32px" />
-                    <Skeleton width="80px" height="32px" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <Skeleton height="60px" />
-                    <Skeleton height="60px" />
-                    <Skeleton height="60px" />
-                </div>
-            </div>
+        <header className="app-header container"><Skeleton height="40px" /></header>
+        <main className="container" style={{ marginTop: '20px' }}>
+            <Skeleton height="200px" />
         </main>
       </div>
     );
@@ -265,61 +222,20 @@ const AppContent = () => {
   return (
     <div className="app-layout">
       <header className="app-header container">
-        <div className="app-title">
-          TavernHelper Remastered
-        </div>
-        
-        {/* Desktop Buttons */}
+        <div className="app-title">TavernHelper Remastered</div>
         <div className="desktop-only" style={{ gap: '10px', alignItems: 'center' }}>
-           <button
-              className="btn btn--ghost"
-              onClick={handleSimulateNextTurn}
-              title="模拟下一回合"
-              style={{ color: 'var(--color-info)' }}
-           >
-              <FastForward size={18} />
-              <span>Next Turn</span>
-           </button>
-           <div style={{ width: '1px', background: 'var(--chip-border)', height: '20px', margin: '0 4px' }}></div>
-           <button 
-              className={`btn ${showDevTools ? 'btn--primary' : 'btn--ghost'}`} 
-              onClick={() => setShowDevTools(!showDevTools)}
-              title="开发工具"
-            >
-            <Wrench size={18} />
-            <span>Dev</span>
-          </button>
-           <button 
-              className={`btn ${showManager ? 'btn--primary' : 'btn--ghost'}`} 
-              onClick={() => setShowManager(true)}
-              title="状态栏管理器"
-            >
-            <LayoutDashboard size={18} />
-            <span>管理器</span>
-          </button>
-          <button className="btn btn--ghost" onClick={toggleTheme} title="切换主题">
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+           <button className="btn btn--ghost" onClick={handleSimulateNextTurn}><FastForward size={18} /> Next Turn</button>
+           <div style={{ width: '1px', background: 'var(--chip-border)', height: '20px' }}></div>
+           <button className={`btn ${showDevTools ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setShowDevTools(!showDevTools)}><Wrench size={18} /> Dev</button>
+           <button className={`btn ${showManager ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setShowManager(true)}><LayoutDashboard size={18} /> 管理器</button>
+           <button className="btn btn--ghost" onClick={toggleTheme}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
         </div>
-
-        {/* Mobile Menu Trigger */}
         <div className="mobile-only">
-           <button 
-              className="btn btn--ghost" 
-              onClick={() => setShowMobileMenu(true)}
-              style={{ padding: '8px' }}
-           >
-              <Menu size={24} />
-           </button>
+           <button className="btn btn--ghost" onClick={() => setShowMobileMenu(true)} style={{ padding: '8px' }}><Menu size={24} /></button>
         </div>
       </header>
 
-      {/* Mobile Action Sheet */}
-      <MobileActionSheet 
-         isOpen={showMobileMenu} 
-         onClose={() => setShowMobileMenu(false)} 
-         actions={mobileActions} 
-      />
+      <MobileActionSheet isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} actions={mobileActions} />
 
       <main className="app-layout__content container">
         {showDevTools && data && (
@@ -328,11 +244,7 @@ const AppContent = () => {
           </section>
         )}
 
-        {data ? (
-           <StatusBar data={data} />
-        ) : (
-           <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>暂无状态数据</div>
-        )}
+        {data ? <StatusBar data={data} /> : <div>无数据</div>}
       </main>
 
       {data && (

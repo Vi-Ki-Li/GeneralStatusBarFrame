@@ -187,7 +187,7 @@ body.dark-mode .status-section:hover {
 }
 
 .status-section-content {
-  padding: 0 16px 16px 16px;
+  /* Layout specific properties injected by component */
 }
 
 /* --- Renderers --- */
@@ -201,6 +201,48 @@ body.dark-mode .status-section:hover {
 
 .status-item-row:last-child {
   border-bottom: none;
+}
+
+/* 布局模式: GRID 覆盖 */
+.layout-grid .status-item-row {
+  border-bottom: none !important;
+  background: rgba(0,0,0,0.02);
+  padding: 10px;
+  border-radius: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.layout-grid .status-item-row:hover {
+  background: rgba(0,0,0,0.04);
+  border-color: var(--chip-border);
+}
+
+.layout-grid .status-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* 布局模式: TAGS 覆盖 */
+.layout-tags .status-item-row {
+  display: inline-flex;
+  border-bottom: none !important;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  padding: 4px 10px;
+  border-radius: 8px;
+  width: auto;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.layout-tags .status-label {
+  min-width: 0;
+  font-size: 0.8rem;
+  margin-bottom: 0 !important;
 }
 
 .status-label {
@@ -219,6 +261,12 @@ body.dark-mode .status-section:hover {
   border-radius: 999px;
   overflow: hidden;
   position: relative;
+}
+
+/* 在 GRID 模式下，进度条宽度调整 */
+.layout-grid .progress-container {
+  width: 100%;
+  margin: 4px 0;
 }
 
 .progress-fill {

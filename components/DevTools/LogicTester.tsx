@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
 import { StatusBarData } from '../../types';
+import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
 import { Play, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface LogicTesterProps {
@@ -13,7 +13,14 @@ interface LogicTesterProps {
 const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
   // 模拟当前状态 (SST)
   const [currentData, setCurrentData] = useState<StatusBarData>(
-    initialData || { shared: {}, characters: {}, _meta: { message_count: 10 } }
+    initialData || { 
+      categories: getDefaultCategoriesMap(),
+      item_definitions: getDefaultItemDefinitionsMap(),
+      id_map: {},
+      shared: {}, 
+      characters: {}, 
+      _meta: { message_count: 10 } 
+    }
   );
 
   // 当外部数据变化时（例如从其他地方更新了），同步内部状态
@@ -60,7 +67,15 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
   };
 
   const handleReset = () => {
-    const emptyData = { shared: {}, characters: {}, _meta: { message_count: 10 } };
+    const emptyData: StatusBarData = { 
+      categories: getDefaultCategoriesMap(),
+      item_definitions: getDefaultItemDefinitionsMap(),
+      id_map: {},
+      shared: {}, 
+      characters: {}, 
+      _meta: { message_count: 10 } 
+    };
+
     if (initialData) {
         setCurrentData(initialData);
         if (onUpdate) onUpdate(initialData);
@@ -185,7 +200,7 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
             flex: 1,
             background: 'rgba(0,0,0,0.2)', 
             padding: '10px', 
-            borderRadius: '8px',
+            borderRadius: '8px', 
             border: '1px solid var(--chip-border)',
             fontFamily: 'monospace',
             fontSize: '12px',

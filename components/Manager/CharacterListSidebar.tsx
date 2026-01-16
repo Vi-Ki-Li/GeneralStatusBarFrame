@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Globe, Plus, Sparkles, Camera, Check, X, Trash2, Layers, ListFilter, Paintbrush, CircleHelp } from 'lucide-react';
+import { User, Globe, Plus, Sparkles, Camera, Check, X, Trash2, Layers, ListFilter, Paintbrush, CircleHelp, Box } from 'lucide-react';
 
 interface CharacterListSidebarProps {
   characters: string[];
-  selectedChar: string | 'SHARED' | 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'STYLES' | 'HELP'; // Updated
-  onSelect: (id: string | 'SHARED' | 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'STYLES' | 'HELP') => void; // Updated
+  selectedChar: string | 'SHARED' | 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'STYLES' | 'HELP' | 'DEFINITIONS'; // Updated
+  onSelect: (id: string | 'SHARED' | 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'STYLES' | 'HELP' | 'DEFINITIONS') => void; // Updated
   onAddCharacter: (name: string) => void;
   onResetData?: () => void;
 }
@@ -97,9 +97,10 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
       </div>
       
       {renderNavButton('SHARED', <Globe size={18} />, '共享/世界')}
+      {renderNavButton('DEFINITIONS', <Box size={18} />, '定义工作室')}
+      {renderNavButton('STYLES', <Paintbrush size={18} />, '样式管理')}
       {renderNavButton('ENTRIES', <ListFilter size={18} />, '条目管理')}
       {renderNavButton('PRESETS', <Layers size={18} />, '配置预设')}
-      {renderNavButton('STYLES', <Paintbrush size={18} />, '样式管理')}
 
       <div style={{ 
         marginBottom: '8px', 

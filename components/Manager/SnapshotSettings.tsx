@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../../types';
 import { detectChanges, generateNarrative } from '../../../utils/snapshotGenerator';
+import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../../services/definitionRegistry';
 import { Camera, Zap, FileText, Info, History } from 'lucide-react';
 
 interface SnapshotSettingsProps {
@@ -18,7 +19,13 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
     setIsGenerating(true);
     // 模拟生成：对比空状态和当前状态，生成“全量描述”
     setTimeout(() => {
-        const emptyData: StatusBarData = { shared: {}, characters: {} };
+        const emptyData: StatusBarData = { 
+            categories: getDefaultCategoriesMap(),
+            item_definitions: getDefaultItemDefinitionsMap(),
+            id_map: {},
+            shared: {}, 
+            characters: {} 
+        };
         const events = detectChanges(emptyData, data);
         const narrative = generateNarrative(events);
         
