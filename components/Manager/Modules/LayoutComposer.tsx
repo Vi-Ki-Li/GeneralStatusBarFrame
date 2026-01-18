@@ -2,18 +2,16 @@ import React from 'react';
 import { StatusBarData } from '../../../types';
 import { LayoutGrid, GripVertical } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-
-// DnD Kit
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import './LayoutComposer.css';
 
 interface LayoutComposerProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
 }
 
-// Inner Sortable Component for Category
 const SortableCategoryRow = ({ category, index }: { category: any, index: number }) => {
     const {
         attributes,
@@ -29,40 +27,27 @@ const SortableCategoryRow = ({ category, index }: { category: any, index: number
         transition,
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 1000 : 'auto',
-        position: 'relative' as const,
     };
 
     const Icon = (LucideIcons as any)[category.icon] || LucideIcons.CircleHelp;
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes}>
-             <div className="glass-panel" style={{ 
-                padding: '16px', 
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                border: '1px solid var(--chip-border)',
-                background: 'var(--glass-bg)',
-                marginBottom: '12px'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                     {/* Drag Handle */}
-                    <div {...listeners} style={{ cursor: 'grab', color: 'var(--text-tertiary)', touchAction: 'none' }}>
+        <div ref={setNodeRef} style={style} {...attributes} className="layout-composer__row-wrapper">
+             <div className="layout-composer__row glass-panel">
+                <div className="layout-composer__row-main">
+                    <div {...listeners} className="layout-composer__drag-handle">
                         <GripVertical size={20} />
                     </div>
 
-                    <div style={{ color: 'var(--text-tertiary)', fontWeight: 600, width: '20px' }}>
+                    <div className="layout-composer__order-index">
                         {index + 1}
                     </div>
-                    <div style={{ 
-                        width: '36px', height: '36px', borderRadius: '8px', 
-                        background: 'var(--bg-app)', border: '1px solid var(--chip-border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'var(--text-secondary)'
-                    }}>
+                    <div className="layout-composer__icon-container">
                         <Icon size={18} />
                     </div>
                     <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{category.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{category.key}</div>
+                        <div className="layout-composer__name">{category.name}</div>
+                        <div className="layout-composer__key">{category.key}</div>
                     </div>
                 </div>
             </div>
@@ -87,7 +72,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         if (oldIndex !== -1 && newIndex !== -1) {
             const newCats = arrayMove(categories, oldIndex, newIndex);
             
-            // Update orders
             newCats.forEach((cat, idx) => {
                 cat.order = idx;
             });
@@ -104,18 +88,18 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
   };
 
   return (
-    <div style={{ padding: '24px', height: '100%', overflowY: 'auto' }}>
-        <div style={{ marginBottom: '24px' }}>
-             <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <LayoutGrid size={22} style={{ color: 'var(--color-primary)' }} />
+    <div className="layout-composer">
+        <div className="layout-composer__header">
+             <h3 className="layout-composer__title">
+                <LayoutGrid size={22} />
                 布局编排器
              </h3>
-             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+             <p className="layout-composer__subtitle">
                 拖拽调整分类模块的显示顺序。
              </p>
         </div>
 
-        <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
+        <div className="layout-composer__list-container">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={categories.map(c => c.key)} strategy={verticalListSortingStrategy}>
                     {categories.map((cat, idx) => (

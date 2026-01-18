@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../types';
 import ManagerModal from './ManagerModal';
 import ModuleNavigation, { ManagerModule } from './Navigation/ModuleNavigation';
-
-// Modules
 import DataCenter from './Modules/DataCenter';
-import DefinitionList from './Definitions/DefinitionList'; // Reusing existing component as DefinitionStudio
-import StyleManager from './Styles/StyleManager'; // Reusing as StyleAtelier
+import DefinitionList from './Definitions/DefinitionList';
+import StyleManager from './Styles/StyleManager';
 import LayoutComposer from './Modules/LayoutComposer';
 import SystemConfig from './Modules/SystemConfig';
-
 import { X } from 'lucide-react';
+import './StatusBarManager.css';
 
 interface StatusBarManagerProps {
   isOpen: boolean;
@@ -58,35 +56,25 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
 
   return (
     <ManagerModal isOpen={isOpen} onClose={onClose}>
-      <div style={{ display: 'flex', height: '100%', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+      <div className={`manager__layout ${isMobile ? 'manager__layout--mobile' : ''}`}>
         
-        {/* Navigation Bar */}
         <ModuleNavigation 
           activeModule={activeModule} 
           onSelect={setActiveModule} 
           isMobile={isMobile} 
         />
 
-        {/* Module Content Container */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden', background: 'var(--bg-app)' }}>
-            
-            {/* Top Bar for Close (Mobile/Desktop) */}
-            <div style={{ 
-                 padding: isMobile ? '12px 16px' : '16px 24px', 
-                 borderBottom: '1px solid var(--chip-border)',
-                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                 background: 'var(--glass-bg)', flexShrink: 0 
-            }}>
-                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className="manager__main-content">
+            <div className="manager__header">
+                 <h3 className="manager__title">
                     TavernHelper Manager
                  </h3>
-                 <button onClick={onClose} style={{ border: 'none', background: 'transparent', padding: '4px', cursor: 'pointer' }}>
-                    <X size={24} color="var(--text-secondary)" />
+                 <button onClick={onClose} className="manager__close-btn">
+                    <X size={24} />
                  </button>
             </div>
 
-            {/* Content Area */}
-            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <div className="manager__module-container">
                 {renderModuleContent()}
             </div>
         </div>

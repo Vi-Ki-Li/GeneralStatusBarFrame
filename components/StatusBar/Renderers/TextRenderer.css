@@ -1,0 +1,55 @@
+/* --- Shared Item Row Styles --- */
+@import url('./NumericRenderer.css');
+
+/* --- Text Renderer Specific --- */
+.status-item-row--text-inline {
+  align-items: center;
+  flex-direction: row;
+}
+
+.status-item-row--text-block {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.status-item-row--text-block .status-item-row__label {
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.text-renderer__value {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.text-renderer__value:hover {
+  color: var(--color-primary) !important;
+  text-decoration: underline;
+}
+
+.status-item-row--text-inline .text-renderer__value {
+  text-align: right;
+  width: auto;
+}
+
+.status-item-row--text-block .text-renderer__value {
+  text-align: left;
+  width: 100%;
+  background: var(--chip-bg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--chip-border);
+}
+
+/* --- Grid Layout Overrides --- */
+.layout--grid .status-item-row--text-inline,
+.layout--grid .status-item-row--text-block {
+  /* Inherits most grid styles */
+}
+
+.layout--grid .text-renderer__value {
+  text-align: left;
+}

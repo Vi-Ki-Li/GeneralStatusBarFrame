@@ -1,0 +1,143 @@
+.help-guide {
+  padding: var(--spacing-xl);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.help-guide__container {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.help-guide__banner {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.help-guide__banner-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.help-guide__banner-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-sm);
+}
+
+.help-guide__section {
+  
+}
+
+.help-guide__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: 1.3rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+.help-guide__section-title svg {
+  color: var(--color-primary);
+}
+
+.help-guide__card {
+  padding: var(--spacing-xl);
+}
+
+.help-guide__step {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--chip-border);
+}
+.help-guide__card > .help-guide__step:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.help-guide__step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.help-guide__step-icon.lock-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.help-guide__step-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 4px;
+}
+.help-guide__step-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.help-guide__step-hint {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+.help-guide__step-description code {
+  font-family: monospace;
+  background: var(--bar-bg);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.help-guide__card-paragraph {
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.help-guide__example-output {
+  margin: var(--spacing-lg) 0;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+}
+.help-guide__example-output h5 {
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.help-guide__example-output p {
+  font-style: italic;
+  color: var(--color-success);
+}
+
+.help-guide__card-footnote {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.help-guide__code-title {
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.help-guide__code-block {
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+
+.help-guide__footer-spacer {
+  height: 40px;
+}

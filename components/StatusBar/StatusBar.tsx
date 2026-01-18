@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
@@ -9,6 +8,7 @@ import NumericRenderer from './Renderers/NumericRenderer';
 import ArrayRenderer from './Renderers/ArrayRenderer';
 import TextRenderer from './Renderers/TextRenderer';
 import { useToast } from '../Toast/ToastContext';
+import './StatusBar.css';
 
 interface StatusBarProps {
   data: StatusBarData;
@@ -25,18 +25,13 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     });
   };
 
-  // 1. Get all IDs
   const allCharIds = Object.keys(data.characters || {});
   
-  // 2. Filter by Presence (unless it's 'char_user' which is always present, or manually forced)
   const presentCharIds = allCharIds.filter(id => {
-      // User always present? Maybe configurable. For now, respect meta.
       const meta = data.character_meta?.[id];
-      // Default to true if meta is missing
       return meta?.isPresent !== false;
   });
 
-  // 3. Sort (User first)
   if (presentCharIds.includes('char_user')) {
     presentCharIds.splice(presentCharIds.indexOf('char_user'), 1);
     presentCharIds.unshift('char_user');
@@ -44,7 +39,6 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
 
   const [activeCharId, setActiveCharId] = useState<string>(presentCharIds[0] || '');
 
-  // Effect to ensure activeCharId is valid
   useEffect(() => {
     if (presentCharIds.length > 0 && !presentCharIds.includes(activeCharId)) {
       setActiveCharId(presentCharIds[0]);
@@ -54,16 +48,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
   }, [presentCharIds, activeCharId]);
 
   const renderItem = (item: StatusBarItem) => {
-    // 关键修正: 根据 Item Key 查找 Definition
     const def = getItemDefinition(data.item_definitions, item.key);
-    // 优先显示定义的名称，否则显示Key
     const label = def.name || item.key;
     
     const commonProps = {
         key: item.key,
         item: item,
-        label: label, // 传递显示名
-        icon: def.icon, // 传递图标
+        label: label,
+        icon: def.icon,
         onInteract: (item: StatusBarItem, val?: string) => {
             const text = val || item.values.join(', ');
             console.log(`[Interaction] ${item.key}: ${text}`);
@@ -88,7 +80,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
           title={catDef.name} 
           iconName={catDef.icon}
           defaultExpanded={defaultExpanded}
-          className="mb-3"
+          className="status-bar__section-wrapper"
           layoutMode={catDef.layout_mode}
           gridColumns={catDef.grid_columns}
       >
@@ -104,20 +96,17 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
   const activeCharData = data.characters?.[activeCharId];
   const charCategories = activeCharData ? getSortedCategories(Object.keys(activeCharData)) : [];
 
-  // 使用新的解析逻辑获取显示名称
   const charMapForTabs = presentCharIds.map(id => ({
       id,
       name: resolveDisplayName(data, id)
   }));
 
   return (
-    <div className="status-bar-container glass-panel" style={{ 
-      padding: '20px', maxWidth: '800px', margin: '0 auto' 
-    }}>
+    <div className="status-bar glass-panel">
       {topSharedCats.map(cat => renderSection(data.shared[cat], cat, true))}
 
       {presentCharIds.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
+        <div className="status-bar__character-block">
             <CharacterTabs 
                 characters={charMapForTabs.map(c => c.name)} 
                 activeChar={resolveDisplayName(data, activeCharId)}
@@ -128,14 +117,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
             />
             
             {activeCharData && (
-                <div className="status-character-content active animate-fade-in">
+                <div className="status-bar__character-content animate-fade-in">
                     {charCategories.map(cat => renderSection(activeCharData[cat], cat))}
                 </div>
             )}
         </div>
       )}
       
-      <div style={{ marginTop: '20px' }}>
+      <div className="status-bar__shared-block--bottom">
           {bottomSharedCats.map(cat => renderSection(data.shared[cat], cat))}
       </div>
     </div>

@@ -9,36 +9,30 @@ import StatusBarManager from './components/Manager/StatusBarManager';
 import Skeleton from './components/Shared/Skeleton';
 import { detectChanges, generateNarrative } from './utils/snapshotGenerator';
 import { ToastProvider, useToast } from './components/Toast/ToastContext';
+import './App.css';
 
-// Mobile Action Sheet (保持不变)
+// Mobile Action Sheet
 const MobileActionSheet = ({ isOpen, onClose, actions }: { isOpen: boolean, onClose: () => void, actions: any[] }) => {
   if (!isOpen) return null;
   return (
     <>
-      <div className={`mobile-sheet-backdrop ${isOpen ? 'open' : ''}`} onClick={onClose} />
+      <div className={`mobile-action-sheet__backdrop ${isOpen ? 'open' : ''}`} onClick={onClose} />
       <div className={`mobile-action-sheet ${isOpen ? 'open' : ''}`}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>菜单</span>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', padding: '8px' }}>
-            <X size={24} style={{ color: 'var(--text-secondary)' }} />
+        <div className="mobile-action-sheet__header">
+          <span className="mobile-action-sheet__title">菜单</span>
+          <button onClick={onClose} className="mobile-action-sheet__close-btn">
+            <X size={24} />
           </button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="mobile-action-sheet__grid">
           {actions.map((action, idx) => (
             <button
               key={idx}
               onClick={() => { action.onClick(); onClose(); }}
-              className="glass-panel"
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: '20px', gap: '8px', border: '1px solid var(--chip-border)',
-                background: action.primary ? 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' : 'var(--glass-bg)',
-                color: action.primary ? 'white' : 'var(--text-primary)',
-                gridColumn: action.fullWidth ? '1 / -1' : 'auto'
-              }}
+              className={`mobile-action-sheet__action-item glass-panel ${action.primary ? 'primary' : ''} ${action.fullWidth ? 'full-width' : ''}`}
             >
               {action.icon}
-              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{action.label}</span>
+              <span className="mobile-action-sheet__action-label">{action.label}</span>
             </button>
           ))}
         </div>
@@ -210,36 +204,36 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="app-layout">
-        <header className="app-header container"><Skeleton height="40px" /></header>
-        <main className="container" style={{ marginTop: '20px' }}>
-            <Skeleton height="200px" />
+      <div className="app">
+        <header className="app__header container"><Skeleton height="40px" /></header>
+        <main className="container">
+            <Skeleton height="200px" borderRadius="var(--radius-xl)" />
         </main>
       </div>
     );
   }
 
   return (
-    <div className="app-layout">
-      <header className="app-header container">
-        <div className="app-title">TavernHelper Remastered</div>
-        <div className="desktop-only" style={{ gap: '10px', alignItems: 'center' }}>
+    <div className="app">
+      <header className="app__header container">
+        <div className="app__title">TavernHelper Remastered</div>
+        <div className="app__actions desktop-only">
            <button className="btn btn--ghost" onClick={handleSimulateNextTurn}><FastForward size={18} /> Next Turn</button>
-           <div style={{ width: '1px', background: 'var(--chip-border)', height: '20px' }}></div>
+           <div className="app__actions-divider"></div>
            <button className={`btn ${showDevTools ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setShowDevTools(!showDevTools)}><Wrench size={18} /> Dev</button>
            <button className={`btn ${showManager ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setShowManager(true)}><LayoutDashboard size={18} /> 管理器</button>
            <button className="btn btn--ghost" onClick={toggleTheme}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
         </div>
         <div className="mobile-only">
-           <button className="btn btn--ghost" onClick={() => setShowMobileMenu(true)} style={{ padding: '8px' }}><Menu size={24} /></button>
+           <button className="btn btn--ghost" onClick={() => setShowMobileMenu(true)}><Menu size={24} /></button>
         </div>
       </header>
 
       <MobileActionSheet isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} actions={mobileActions} />
 
-      <main className="app-layout__content container">
+      <main className="app__content container">
         {showDevTools && data && (
-          <section style={{ marginBottom: '40px' }} className="animate-fade-in">
+          <section className="app__devtools-section animate-fade-in">
             <LogicTester initialData={data} onUpdate={handleDataUpdate} />
           </section>
         )}

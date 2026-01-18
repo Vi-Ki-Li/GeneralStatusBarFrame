@@ -1,0 +1,103 @@
+.entry-list {
+  padding: var(--spacing-xl);
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-list__header {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.entry-list__search-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.entry-list__search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+}
+
+.entry-list__search-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 34px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--chip-border);
+  background: var(--bg-app);
+  outline: none;
+}
+
+.entry-list__actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  border-left: 1px solid var(--chip-border);
+  border-right: 1px solid var(--chip-border);
+  padding: 0 var(--spacing-sm);
+  margin: 0 var(--spacing-sm);
+}
+
+.entry-list__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.entry-list__category-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.entry-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.entry-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--chip-border);
+  transition: all 0.2s ease;
+}
+
+.entry-list__item--enabled {
+  color: var(--text-primary);
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.entry-list__checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.entry-list__item--enabled .entry-list__checkbox {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}

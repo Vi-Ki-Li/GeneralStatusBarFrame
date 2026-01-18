@@ -1,5 +1,6 @@
 import React from 'react';
 import { Database, Paintbrush, LayoutTemplate, Settings, Box } from 'lucide-react';
+import './ModuleNavigation.css';
 
 export type ManagerModule = 'DATA' | 'DEFINITIONS' | 'STYLES' | 'LAYOUT' | 'SYSTEM';
 
@@ -20,33 +21,17 @@ const ModuleNavigation: React.FC<ModuleNavigationProps> = ({ activeModule, onSel
 
   if (isMobile) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        background: 'var(--glass-bg)',
-        borderTop: '1px solid var(--chip-border)',
-        padding: '8px 4px',
-        flexShrink: 0
-      }}>
+      <div className="module-nav module-nav--mobile">
         {navItems.map(item => {
           const isActive = activeModule === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onSelect(item.id)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px',
-                color: isActive ? 'var(--color-primary)' : 'var(--text-tertiary)',
-                flex: 1
-              }}
+              className={`module-nav__item--mobile ${isActive ? 'active' : ''}`}
             >
               <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              <span style={{ fontSize: '0.65rem', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+              <span className="module-nav__label--mobile">{item.label}</span>
             </button>
           );
         })}
@@ -54,19 +39,8 @@ const ModuleNavigation: React.FC<ModuleNavigationProps> = ({ activeModule, onSel
     );
   }
 
-  // Desktop Sidebar
   return (
-    <div style={{
-      width: '80px',
-      background: 'rgba(0,0,0,0.02)',
-      borderRight: '1px solid var(--chip-border)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '24px 0',
-      gap: '24px',
-      flexShrink: 0
-    }}>
+    <div className="module-nav module-nav--desktop">
       {navItems.map(item => {
         const isActive = activeModule === item.id;
         return (
@@ -74,21 +48,7 @@ const ModuleNavigation: React.FC<ModuleNavigationProps> = ({ activeModule, onSel
             key={item.id}
             onClick={() => onSelect(item.id)}
             title={item.label}
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              border: 'none',
-              background: isActive ? 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' : 'transparent',
-              color: isActive ? 'white' : 'var(--text-tertiary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              boxShadow: isActive ? '0 4px 12px rgba(99, 102, 241, 0.3)' : 'none',
-              transform: isActive ? 'scale(1.05)' : 'scale(1)'
-            }}
+            className={`module-nav__item--desktop ${isActive ? 'active' : ''}`}
           >
             <item.icon size={24} />
           </button>

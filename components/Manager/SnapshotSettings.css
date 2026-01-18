@@ -1,0 +1,188 @@
+
+.snapshot-settings {
+  padding: var(--spacing-xl);
+  color: var(--text-primary);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.snapshot-settings__container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.snapshot-settings__card {
+  padding: var(--spacing-xl);
+}
+
+.snapshot-settings__card--control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.snapshot-settings__card-main {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.snapshot-settings__icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.snapshot-settings__icon-wrapper--primary {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+}
+
+.snapshot-settings__card-title {
+  font-size: var(--font-size-base);
+  margin-bottom: 4px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.snapshot-settings__card-title.icon-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.95rem;
+}
+
+.snapshot-settings__icon--warning { color: var(--color-warning); }
+.snapshot-settings__icon--info { color: var(--color-info); }
+.snapshot-settings__icon--tertiary { color: var(--text-tertiary); }
+
+.snapshot-settings__card-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-lg);
+}
+.snapshot-settings__card--control .snapshot-settings__card-description {
+  margin-bottom: 0;
+}
+
+
+/* Toggle Switch */
+.snapshot-settings__toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.snapshot-settings__toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.snapshot-settings__toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bar-bg);
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.snapshot-settings__toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.snapshot-settings__toggle-switch input:checked + .snapshot-settings__toggle-slider {
+  background-color: var(--color-primary);
+}
+
+.snapshot-settings__toggle-switch input:checked + .snapshot-settings__toggle-slider:before {
+  transform: translateX(22px);
+}
+
+/* Status Card */
+.snapshot-settings__card--status {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.snapshot-settings__card--status.synced .snapshot-settings__status-icon {
+  color: var(--color-success);
+}
+.snapshot-settings__card--status:not(.synced) .snapshot-settings__status-icon {
+  color: var(--text-tertiary);
+}
+.snapshot-settings__status-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.snapshot-settings__status-details {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.snapshot-settings__status-details span {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.snapshot-settings__status-summary {
+  margin-top: var(--spacing-sm);
+  font-style: italic;
+  color: var(--color-success);
+}
+body.dark-mode .snapshot-settings__status-summary {
+  color: #6ee7b7;
+}
+
+
+/* Grid layout */
+.snapshot-settings__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.snapshot-settings__preview-area {
+  width: 100%;
+  min-height: 120px;
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .snapshot-settings {
+    padding: var(--spacing-lg);
+  }
+  .snapshot-settings__grid {
+    grid-template-columns: 1fr;
+  }
+}

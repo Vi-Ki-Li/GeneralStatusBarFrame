@@ -5,6 +5,7 @@ import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
 import HelpGuide from '../Help/HelpGuide';
 import { Camera, Layers, ListFilter, CircleHelp } from 'lucide-react';
+import './SystemConfig.css';
 
 interface SystemConfigProps {
   data: StatusBarData;
@@ -28,33 +29,15 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Tab Navigation */}
-      <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
-          padding: '16px 24px 0', 
-          borderBottom: '1px solid var(--chip-border)',
-          background: 'var(--glass-bg)'
-      }}>
+    <div className="system-config">
+      <div className="system-config__tabs-container">
         {tabs.map(tab => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '10px 16px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-                color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)',
-                fontWeight: isActive ? 600 : 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                marginBottom: '-1px'
-              }}
+              className={`system-config__tab ${isActive ? 'active' : ''}`}
             >
               <tab.icon size={16} />
               {tab.label}
@@ -63,8 +46,7 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
         })}
       </div>
 
-      {/* Content Area */}
-      <div style={{ flex: 1, overflow: 'hidden', background: 'var(--bg-app)' }}>
+      <div className="system-config__content-area">
         {activeTab === 'SNAPSHOT' && (
           <SnapshotSettings 
             data={data} 

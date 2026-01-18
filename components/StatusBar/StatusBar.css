@@ -1,0 +1,19 @@
+.status-bar {
+  padding: var(--spacing-xl);
+}
+
+.status-bar__section-wrapper {
+  margin-bottom: var(--spacing-md);
+}
+
+.status-bar__character-block {
+  margin-top: var(--spacing-xl);
+}
+
+.status-bar__character-content {
+  /* Animation handled by inline class */
+}
+
+.status-bar__shared-block--bottom {
+  margin-top: var(--spacing-xl);
+}

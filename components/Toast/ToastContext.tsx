@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import './ToastContext.css';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -36,7 +37,6 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const id = Math.random().toString(36).substr(2, 9);
     setToasts((prev) => [...prev, { id, message, type, description: options?.description }]);
 
-    // Auto dismiss
     setTimeout(() => {
       removeToast(id);
     }, 5000);
@@ -59,17 +59,17 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <div className="toast-container">
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast--${t.type} animate-slide-in`}>
-            <div className="toast-icon">
+            <div className="toast__icon">
               {t.type === 'success' && <CheckCircle size={20} />}
               {t.type === 'error' && <AlertCircle size={20} />}
               {t.type === 'warning' && <AlertTriangle size={20} />}
               {t.type === 'info' && <Info size={20} />}
             </div>
-            <div className="toast-content">
-              <div className="toast-message">{t.message}</div>
-              {t.description && <div className="toast-description">{t.description}</div>}
+            <div className="toast__content">
+              <div className="toast__message">{t.message}</div>
+              {t.description && <div className="toast__description">{t.description}</div>}
             </div>
-            <button className="toast-close" onClick={() => removeToast(t.id)}>
+            <button className="toast__close" onClick={() => removeToast(t.id)}>
               <X size={16} />
             </button>
           </div>

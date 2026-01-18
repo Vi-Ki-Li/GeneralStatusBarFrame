@@ -1,0 +1,73 @@
+.status-section {
+  background: rgba(255, 255, 255, 0.03); /* Subtle inner layer */
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+
+body.dark-mode .status-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.status-section__header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+.status-section__toggle-icon {
+  margin-right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
+}
+
+.status-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.status-section__title-icon {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+
+.status-section__content {
+  /* Base styles applied, layout specific below */
+}
+
+/* --- Layout Modes --- */
+.status-section__content.layout--list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+}
+
+.status-section__content.layout--grid {
+  display: grid;
+  /* --grid-columns is set via inline style in the component */
+  grid-template-columns: repeat(var(--grid-columns, 2), 1fr);
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+}
+
+.status-section__content.layout--tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+}
+
+/* Responsive grid for mobile */
+@media (max-width: 600px) {
+  .status-section__content.layout--grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

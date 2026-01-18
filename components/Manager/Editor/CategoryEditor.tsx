@@ -1,16 +1,14 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
 import * as LucideIcons from 'lucide-react';
 import { PlusCircle, CircleHelp } from 'lucide-react';
 import { getItemDefinition } from '../../../services/definitionRegistry';
 
-// DnD Kit Imports
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableItem } from './SortableItem';
-import { v4 as uuidv4 } from 'uuid';
+import './CategoryEditor.css';
 
 interface CategoryEditorProps {
   categoryKey: string;
@@ -27,15 +25,10 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
     ? (LucideIcons as any)[categoryDef.icon] 
     : CircleHelp;
 
-  // We need stable IDs for dnd-kit. Using index as ID is risky if list changes size, 
-  // but for simple reordering it might work if we are careful. 
-  // A better approach is to wrap items with a temporary ID if they don't have one.
-  // Since StatusBarItem doesn't have a UID, we'll map them to objects with IDs locally or just use Key+Index.
-  // For simplicity, let's use Key + Index string as unique ID.
   const getItemId = (item: StatusBarItem, index: number) => `${item.key}-${index}`;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // Prevent accidental drags
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor)
   );
 
@@ -76,21 +69,17 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
   };
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', 
-        color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' 
-      }}>
-        <IconComponent size={18} style={{ color: 'var(--color-primary)' }} />
-        <span>{categoryDef.name}</span>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>({categoryKey})</span>
+    <div className="category-editor">
+      <div className="category-editor__header">
+        <IconComponent size={18} className="category-editor__header-icon" />
+        <span className="category-editor__header-name">{categoryDef.name}</span>
+        <span className="category-editor__header-key">({categoryKey})</span>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((item, idx) => getItemId(item, idx))} strategy={verticalListSortingStrategy}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="category-editor__item-list">
                 {items.map((item, idx) => {
-                    // 获取完整的 Definition
                     const def = getItemDefinition(itemDefinitions, item.key);
                     const uniqueId = getItemId(item, idx);
                     
@@ -101,7 +90,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
                                     index={idx}
                                     item={item} 
                                     uiType={def.type}
-                                    definition={def} // 传递 Definition
+                                    definition={def}
                                     isFirst={idx === 0}
                                     isLast={idx === items.length - 1}
                                     onChange={(newItem) => handleItemChange(idx, newItem)}
@@ -118,24 +107,11 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
 
       <button 
         onClick={handleAddItem}
-        style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-        padding: '10px', background: 'rgba(0,0,0,0.02)', border: '1px dashed var(--chip-border)',
-        borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem',
-        transition: 'all 0.2s', width: '100%', marginTop: '8px'
-        }}
-        className="hover-bg-accent"
+        className="category-editor__add-btn"
     >
         <PlusCircle size={16} />
         添加新条目
     </button>
-      <style>{`
-        .hover-bg-accent:hover {
-          background: rgba(var(--color-primary), 0.05) !important;
-          border-color: var(--color-primary) !important;
-          color: var(--color-primary) !important;
-        }
-      `}</style>
     </div>
   );
 };

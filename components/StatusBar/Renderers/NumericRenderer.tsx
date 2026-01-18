@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { StatusBarItem } from '../../../types';
 import { Lock } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import './NumericRenderer.css';
 
 interface NumericRendererProps {
   item: StatusBarItem;
@@ -16,7 +16,6 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
   const changeValue = item.values[1];
   const displayLabel = label || item.key;
   
-  // 动态加载图标
   const IconComponent = icon && (LucideIcons as any)[icon] ? (LucideIcons as any)[icon] : null;
   
   let current = 0;
@@ -32,10 +31,8 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
     current = parseFloat(rawValue);
   }
 
-  // 计算百分比
   const percentage = hasMax && max > 0 ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
 
-  // 动态颜色逻辑
   let barColor = 'var(--color-primary)';
   if (hasMax) {
     if (percentage <= 20) barColor = 'var(--color-danger)';
@@ -45,27 +42,28 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
 
   const isPositive = changeValue && changeValue.startsWith('+');
   const changeColor = isPositive ? 'var(--color-success)' : 'var(--color-danger)';
+  const changeBg = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
 
   return (
     <div 
-        className="status-item-row interactive-row" 
+        className="status-item-row status-item-row--numeric"
         onClick={() => onInteract && onInteract(item)}
         title={`Key: ${item.key}`}
     >
-      <div className="status-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        {IconComponent && <IconComponent size={14} style={{ opacity: 0.7 }} />}
+      <div className="status-item-row__label">
+        {IconComponent && <IconComponent size={14} className="status-item-row__icon" />}
         {displayLabel}
         {item.user_modified && (
-          <span title="用户已锁定，AI无法修改" style={{ display: 'flex' }}>
-            <Lock size={10} className="text-warning" style={{ opacity: 0.7 }} />
+          <span title="用户已锁定，AI无法修改" className="status-item-row__lock-icon">
+            <Lock size={10} />
           </span>
         )}
       </div>
       
       {hasMax ? (
-        <div className="progress-container">
+        <div className="numeric-renderer__progress-container">
           <div 
-            className="progress-fill" 
+            className="numeric-renderer__progress-fill"
             style={{ 
               width: `${percentage}%`,
               backgroundColor: barColor
@@ -73,45 +71,24 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
           />
         </div>
       ) : (
-        <div style={{ flex: 1 }}></div> 
+        <div className="status-item-row__spacer"></div> 
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '60px', justifyContent: 'flex-end' }}>
-        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+      <div className="numeric-renderer__value-group">
+        <span className="numeric-renderer__value">
           {current}
-          {hasMax && <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8em' }}>/{max}</span>}
+          {hasMax && <span className="numeric-renderer__value-max">/{max}</span>}
         </span>
         
         {changeValue && changeValue !== '±0' && (
-          <span style={{ 
-            fontSize: '0.75rem', 
-            color: changeColor,
-            background: `rgba(${isPositive ? '16, 185, 129' : '239, 68, 68'}, 0.1)`,
-            padding: '1px 4px',
-            borderRadius: '4px',
-            fontWeight: 500
-          }}>
+          <span 
+            className="numeric-renderer__change-indicator"
+            style={{ color: changeColor, background: changeBg }}
+          >
             {changeValue}
           </span>
         )}
       </div>
-      <style>{`
-        .interactive-row {
-            cursor: pointer;
-            transition: background 0.2s;
-            border-radius: 4px;
-            padding-right: 4px;
-            padding-left: 4px;
-            margin-left: -4px;
-            margin-right: -4px;
-        }
-        .interactive-row:hover {
-            background: rgba(0,0,0,0.03);
-        }
-        body.dark-mode .interactive-row:hover {
-            background: rgba(255,255,255,0.05);
-        }
-      `}</style>
     </div>
   );
 };

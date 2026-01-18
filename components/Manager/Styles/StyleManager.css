@@ -1,0 +1,108 @@
+.style-manager {
+  padding: var(--spacing-xl);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.style-manager__header {
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.style-manager__title {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.style-manager__title svg {
+  color: var(--color-primary);
+}
+.style-manager__subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.style-manager__list-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.style-manager__message {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-tertiary);
+}
+
+.style-manager__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.style-item {
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--chip-border);
+}
+.style-item--enabled {
+  border-color: var(--color-primary);
+}
+
+.style-item__main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.style-item__toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+}
+.style-item--enabled .style-item__toggle {
+  color: var(--color-primary);
+}
+
+.style-item__name {
+  font-weight: var(--font-weight-semibold);
+}
+.style-item__uid {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-family: monospace;
+}
+
+.style-item__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.style-item__confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.style-item__confirm-delete span {
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+.style-item__confirm-delete button {
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.style-manager__editor-view {
+  height: 100%;
+  overflow: hidden;
+}

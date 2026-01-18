@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { StatusBarItem } from '../../../types';
 import { Lock } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import './TextRenderer.css';
 
 interface TextRendererProps {
   item: StatusBarItem;
@@ -16,51 +16,29 @@ const TextRenderer: React.FC<TextRendererProps> = ({ item, label, icon, onIntera
   const isLongText = text.length > 20;
   const displayLabel = label || item.key;
   
-  // 动态加载图标
   const IconComponent = icon && (LucideIcons as any)[icon] ? (LucideIcons as any)[icon] : null;
 
+  const layoutClass = isLongText ? 'status-item-row--text-block' : 'status-item-row--text-inline';
+
   return (
-    <div className="status-item-row" style={{ alignItems: isLongText ? 'flex-start' : 'center', flexDirection: isLongText ? 'column' : 'row' }} title={`Key: ${item.key}`}>
-      <div className="status-label" style={{ 
-          marginBottom: isLongText ? '4px' : '0', 
-          width: isLongText ? '100%' : 'auto',
-          display: 'flex', alignItems: 'center', gap: '4px' 
-      }}>
-        {IconComponent && <IconComponent size={14} style={{ opacity: 0.7 }} />}
+    <div className={`status-item-row ${layoutClass}`} title={`Key: ${item.key}`}>
+      <div className="status-item-row__label">
+        {IconComponent && <IconComponent size={14} className="status-item-row__icon" />}
         {displayLabel}
         {item.user_modified && (
-          <span title="用户已锁定，AI无法修改" style={{ display: 'flex' }}>
-            <Lock size={10} className="text-warning" style={{ opacity: 0.7 }} />
+          <span title="用户已锁定，AI无法修改" className="status-item-row__lock-icon">
+            <Lock size={10} />
           </span>
         )}
       </div>
       
       <div 
         onClick={() => onInteract && onInteract(item)}
-        className="interactive-value"
-        style={{ 
-          color: 'var(--text-primary)', 
-          fontSize: '0.9rem', 
-          lineHeight: 1.5,
-          textAlign: isLongText ? 'left' : 'right',
-          width: isLongText ? '100%' : 'auto',
-          background: isLongText ? 'var(--chip-bg)' : 'transparent',
-          padding: isLongText ? '8px 10px' : '0',
-          borderRadius: isLongText ? '8px' : '0',
-          border: isLongText ? '1px solid var(--chip-border)' : 'none',
-          cursor: 'pointer',
-          transition: 'color 0.2s'
-        }}
+        className="text-renderer__value"
         title="点击引用"
       >
         {text || '-'}
       </div>
-      <style>{`
-        .interactive-value:hover {
-            color: var(--color-primary) !important;
-            text-decoration: underline;
-        }
-      `}</style>
     </div>
   );
 };

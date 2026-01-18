@@ -1,0 +1,189 @@
+.definition-list {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.definition-list__header {
+  padding: var(--spacing-xl) var(--spacing-xl) 0 var(--spacing-xl);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--chip-border);
+  z-index: 10;
+}
+
+.definition-list__header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.definition-list__title {
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.definition-list__title svg {
+  color: var(--color-primary);
+}
+
+.definition-list__subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.definition-list__tabs {
+  display: flex;
+  gap: 20px;
+}
+
+.definition-list__tab {
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+}
+.definition-list__tab.active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.definition-list__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+}
+
+.definition-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.def-card {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--chip-border);
+}
+
+.def-card--category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.def-card__main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+.def-card__icon-wrapper {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-lg);
+  background: rgba(99, 102, 241, 0.1);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-primary);
+}
+.def-card__name {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+.def-card__meta {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-family: monospace;
+}
+.def-card__actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.btn--delete:hover {
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.def-card--item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.def-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.def-card__name-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.def-card__name-group .def-card__name {
+  font-size: var(--font-size-lg);
+}
+.def-card__category-tag {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  background: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.def-card__meta-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+.def-card__meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-app);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chip-border);
+}
+
+.inline-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+}
+.inline-confirm__text {
+  font-size: 0.8rem;
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.inline-confirm__btn {
+  padding: 4px; height: 24px; width: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.inline-confirm__btn--yes { color: var(--color-danger); }
+.inline-confirm__btn--no { color: var(--text-secondary); }
+
+.definition-list__empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: var(--text-tertiary);
+}

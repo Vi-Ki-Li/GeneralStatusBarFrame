@@ -1,0 +1,70 @@
+.save-preset-modal__overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+}
+
+.save-preset-modal__panel {
+  width: 90%;
+  max-width: 450px;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.save-preset-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.save-preset-modal__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.save-preset-modal__close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+
+.save-preset-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.save-preset-modal__info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.save-preset-modal__input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--chip-border);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+}
+.save-preset-modal__input:focus {
+  border-color: var(--color-primary);
+}
+
+.save-preset-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
