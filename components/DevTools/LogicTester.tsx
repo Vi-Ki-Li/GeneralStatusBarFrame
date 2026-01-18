@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
@@ -17,6 +18,7 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
       categories: getDefaultCategoriesMap(),
       item_definitions: getDefaultItemDefinitionsMap(),
       id_map: {},
+      character_meta: {},
       shared: {}, 
       characters: {}, 
       _meta: { message_count: 10 } 
@@ -42,8 +44,9 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
 // (请确保在"定义工坊"中将 'Inventory' 的分隔符设为 ',')
 [Eria^CR|Inventory::长剑, 铁盾, 治疗药水]
 
-// 4. 隐藏/删除指令 (nil)
-[Luna^CV|HP::nil]`
+// 4. 元数据控制 (角色退场)
+[Eria^Meta|Present::false]
+[Luna^Meta|Visible::true]`
   );
   
   const [sourceId, setSourceId] = useState<number>(11);
@@ -85,6 +88,7 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
       categories: getDefaultCategoriesMap(),
       item_definitions: getDefaultItemDefinitionsMap(),
       id_map: {},
+      character_meta: {},
       shared: {}, 
       characters: {}, 
       _meta: { message_count: 10 } 

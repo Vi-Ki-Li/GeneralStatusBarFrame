@@ -1,3 +1,4 @@
+
 import { ParsedUpdate, ItemDefinition } from '../types';
 
 // 正则表达式定义 (支持 [角色^分类|键::值])
@@ -11,14 +12,24 @@ const REGEX_OLD_FORMAT = /\[([a-zA-Z0-9_-]+)\|(.*?)::(.*)\]/;
  */
 function parseValues(valueString: string, separator: string = '|'): string[] {
   if (!separator) separator = '|';
-  // 如果分隔符是特殊正则字符，需要转义。为了简单起见，我们假设用户输入的是普通字符
-  // 或者我们简单地使用 split
   return valueString.split(separator).map(v => v.trim());
+}
+
+/**
+ * 解析布尔值
+ */
+function parseBoolean(val: string): boolean | undefined {
+  const lower = val.toLowerCase().trim();
+  if (['true', 'on', 'yes', '1'].includes(lower)) return true;
+  if (['false', 'off', 'no', '0'].includes(lower)) return false;
+  return undefined;
 }
 
 /**
  * 解析状态栏文本
  * v6.2: 需要传入 definitions 以支持自定义分隔符
+ * v6.3: 支持 Meta 指令解析
+ * v6.4: Meta 指令现在同时作为数据条目穿透
  */
 export function parseStatusBarText(
   text: string, 
@@ -28,6 +39,7 @@ export function parseStatusBarText(
   const result: ParsedUpdate = {
     shared: {},
     characters: {},
+    meta: {}
   };
 
   if (!text) return result;
@@ -43,6 +55,21 @@ export function parseStatusBarText(
       const category = match[2].trim();
       const key = match[3].trim();
       const valueString = match[4].trim();
+
+      // --- Meta指令拦截 (v6.4: 不再 Return，而是继续执行) ---
+      if (category.toLowerCase() === 'meta' || category.toLowerCase() === 'system') {
+        const boolVal = parseBoolean(valueString);
+        if (boolVal !== undefined) {
+          if (!result.meta) result.meta = {};
+          if (!result.meta[charName]) result.meta[charName] = {};
+          
+          if (key.toLowerCase() === 'present' || key.toLowerCase() === 'visible') {
+             result.meta[charName].isPresent = boolVal;
+          }
+        }
+        // 注意：此处不再 return，允许 Meta 数据作为普通条目进入 result.characters
+      }
+      // ------------------
 
       // 查找定义以获取分隔符
       const def = definitions[key];

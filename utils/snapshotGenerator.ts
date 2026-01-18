@@ -1,3 +1,4 @@
+
 import { StatusBarData, StatusBarItem, SnapshotEvent, CharacterData } from '../types';
 import _ from 'lodash';
 
@@ -262,19 +263,25 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
     });
   });
 
-  // 2. 处理角色数据
-  const allCharNames = new Set([...Object.keys(oldData.characters || {}), ...Object.keys(newData.characters || {})]);
-  allCharNames.forEach(charName => {
-    const oldChar = oldData.characters?.[charName];
-    const newChar = newData.characters?.[charName];
+  // 2. 处理角色数据 (v6.3 重构: 基于 Meta 判定进退场)
+  const allCharIds = new Set([
+      ...Object.keys(oldData.id_map || {}), 
+      ...Object.keys(newData.id_map || {})
+  ]);
 
-    // 简单判定角色进场/退场 (基于是否有数据)
-    // 实际应用中可能需要更复杂的逻辑 (e.g. isPresent flag)
-    // 这里如果一个角色从无到有，视为进场
-    const hasOld = oldChar && Object.keys(oldChar).length > 0;
-    const hasNew = newChar && Object.keys(newChar).length > 0;
+  allCharIds.forEach(charId => {
+    const oldMeta = oldData.character_meta?.[charId];
+    const newMeta = newData.character_meta?.[charId];
+    
+    // Default isPresent is TRUE unless explicitly false
+    const oldPresent = oldMeta?.isPresent !== false;
+    const newPresent = newMeta?.isPresent !== false;
 
-    if (hasNew && !hasOld) {
+    // 简单获取显示名 (ID fallback)
+    const charName = newData.id_map[charId] || oldData.id_map[charId] || charId;
+
+    // 进场检测
+    if (!oldPresent && newPresent) {
       detectedEvents.push({
         source: 'ai',
         character: charName,
@@ -282,11 +289,13 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
         key: 'presence',
         change_type: 'character_enters',
         data_type: 'text',
-        previous: null,
+        previous: false,
         current: true,
         details: { message: `${charName} enters.` }
       });
-    } else if (!hasNew && hasOld) {
+    } 
+    // 退场检测
+    else if (oldPresent && !newPresent) {
       detectedEvents.push({
         source: 'ai',
         character: charName,
@@ -300,20 +309,22 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
       });
     }
 
-    if (hasNew) {
-      const allCats = new Set([...Object.keys(oldChar || {}), ...Object.keys(newChar || {})]);
-      allCats.forEach(cat => {
-        const oldItems = oldChar?.[cat] || [];
-        const newItems = newChar?.[cat] || [];
-        const allKeys = new Set([...oldItems.map(i => i.key), ...newItems.map(i => i.key)]);
-        
-        allKeys.forEach(key => {
-          const oldItem = oldItems.find(i => i.key === key);
-          const newItem = newItems.find(i => i.key === key);
-          processItemChange(oldItem, newItem, charName, cat, key, detectedEvents);
-        });
+    // 处理数据变更 (只在角色存在或刚离开时处理? 或者总是处理? 总是处理比较安全)
+    const oldChar = oldData.characters?.[charId];
+    const newChar = newData.characters?.[charId];
+    const allCats = new Set([...Object.keys(oldChar || {}), ...Object.keys(newChar || {})]);
+    
+    allCats.forEach(cat => {
+      const oldItems = oldChar?.[cat] || [];
+      const newItems = newChar?.[cat] || [];
+      const allKeys = new Set([...oldItems.map(i => i.key), ...newItems.map(i => i.key)]);
+      
+      allKeys.forEach(key => {
+        const oldItem = oldItems.find(i => i.key === key);
+        const newItem = newItems.find(i => i.key === key);
+        processItemChange(oldItem, newItem, charName, cat, key, detectedEvents);
       });
-    }
+    });
   });
 
   return detectedEvents;

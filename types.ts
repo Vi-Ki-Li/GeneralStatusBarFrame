@@ -1,3 +1,4 @@
+
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
@@ -85,6 +86,12 @@ export interface ParsedUpdate {
     [charName: string]: { 
        [category: string]: StatusBarItem[] 
     } 
+  };
+  // v6.3: 元数据更新指令
+  meta?: {
+    [charName: string]: {
+      isPresent?: boolean;
+    }
   };
 }
 

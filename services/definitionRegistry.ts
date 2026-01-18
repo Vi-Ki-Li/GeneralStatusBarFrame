@@ -1,3 +1,4 @@
+
 import { CategoryDefinition, ItemDefinition, StatusBarData } from '../types';
 
 /**
@@ -13,6 +14,7 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
   { key: 'AE', name: '行为事件', icon: 'ListTodo', order: 6 },
   { key: 'WP', name: '世界剧情', icon: 'Globe', order: 7 },
   { key: 'MI', name: '元信息', icon: 'BrainCircuit', order: 8 },
+  { key: 'Meta', name: '系统控制', icon: 'Cpu', order: 90 }, // New Meta Category
   { key: 'Other', name: '其他', icon: 'MoreHorizontal', order: 99 },
 ];
 
@@ -24,6 +26,20 @@ export const DEFAULT_ITEM_DEFINITIONS: ItemDefinition[] = [
   { key: 'MP', type: 'numeric', defaultCategory: 'CV', description: '角色的魔法值' },
   { key: 'Name', type: 'text', defaultCategory: 'CP', description: '角色全名' },
   { key: 'Inventory', type: 'array', defaultCategory: 'CR', description: '背包物品列表' },
+  
+  // Meta Definitions
+  { 
+      key: 'Present', 
+      type: 'text', 
+      defaultCategory: 'Meta', 
+      description: '[系统核心] 控制角色显隐。填写 true/on 显示，false/off 隐藏。' 
+  },
+  { 
+      key: 'Visible', 
+      type: 'text', 
+      defaultCategory: 'Meta', 
+      description: '[别名] 同 Present。控制角色可见性。' 
+  }
 ];
 
 export function getDefaultCategoriesMap(): { [key: string]: CategoryDefinition } {

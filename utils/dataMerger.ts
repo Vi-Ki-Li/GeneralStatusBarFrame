@@ -1,6 +1,50 @@
+
 import { StatusBarData, StatusBarItem, MergeResult, ParsedUpdate } from '../types';
 import { resolveCharacterId } from './idManager';
 import _ from 'lodash';
+
+/**
+ * 辅助函数：解析布尔值
+ */
+function parseBoolean(val: string): boolean | undefined {
+  const lower = val.toLowerCase().trim();
+  if (['true', 'on', 'yes', '1'].includes(lower)) return true;
+  if (['false', 'off', 'no', '0'].includes(lower)) return false;
+  return undefined;
+}
+
+/**
+ * 同步函数：扫描 Character Data 中的 Meta 条目，并同步到 character_meta 
+ * 用于确保 UI 编辑（DataCenter）或 AI 数据更新能正确反映到逻辑层。
+ */
+export function syncMetaFromData(data: StatusBarData): string[] {
+    const logs: string[] = [];
+    if (!data.characters) return logs;
+    if (!data.character_meta) data.character_meta = {};
+
+    Object.keys(data.characters).forEach(charId => {
+        const charData = data.characters[charId];
+        // 查找 Meta 或 System 分类
+        const metaItems = [...(charData['Meta'] || []), ...(charData['System'] || [])];
+        
+        // 查找 Present 或 Visible 条目
+        const presentItem = metaItems.find(i => ['present', 'visible'].includes(i.key.toLowerCase()));
+        
+        if (presentItem && presentItem.values[0]) {
+            const boolVal = parseBoolean(presentItem.values[0]);
+            if (boolVal !== undefined) {
+                if (!data.character_meta![charId]) data.character_meta![charId] = { isPresent: true };
+                
+                // 仅当发生变化时更新 (避免不必要的重渲染或副作用)
+                if (data.character_meta![charId].isPresent !== boolVal) {
+                    data.character_meta![charId].isPresent = boolVal;
+                    logs.push(`[SyncMeta] ${charId} 同步状态: ${boolVal} (From: ${presentItem.key})`);
+                }
+            }
+        }
+    });
+    return logs;
+}
 
 /**
  * 合并状态栏数据 (集成 ID 管理)
@@ -18,6 +62,7 @@ export function mergeStatusBarData(
   if (!resultData.id_map) resultData.id_map = {};
   if (!resultData.categories) resultData.categories = {};
   if (!resultData.item_definitions) resultData.item_definitions = {};
+  if (!resultData.character_meta) resultData.character_meta = {};
 
   // 1. 时间线收缩检测
   const storedMessageCount = resultData._meta?.message_count ?? 0;
@@ -102,6 +147,35 @@ export function mergeStatusBarData(
       mergeItemList(charTarget[cat], charSource[cat], `Char:${charName}`);
     });
   });
+
+  // 6. 合并 Meta 数据 (v6.4: 主要依赖数据同步，但也保留 Meta 指令的优先权)
+  if (parsedUpdate.meta) {
+    Object.keys(parsedUpdate.meta).forEach(charName => {
+        const { id, isNew, updatedMap } = resolveCharacterId(resultData.id_map, charName);
+        if (isNew) resultData.id_map = updatedMap;
+
+        // 初始化 meta
+        if (!resultData.character_meta) resultData.character_meta = {};
+        if (!resultData.character_meta[id]) resultData.character_meta[id] = { isPresent: true };
+
+        const updates = parsedUpdate.meta![charName];
+        
+        // 处理 isPresent
+        if (updates.isPresent !== undefined) {
+            const oldState = resultData.character_meta[id].isPresent;
+            if (oldState !== updates.isPresent) {
+                resultData.character_meta[id].isPresent = updates.isPresent;
+                logs.push(`[MetaDirect] ${charName} (${id}) 在场状态变更: ${updates.isPresent}`);
+            }
+        }
+    });
+  }
+
+  // 7. 最后一步：执行全量元数据同步 (v6.4 新增)
+  // 这确保了如果数据条目 ([Meta|Present::false]) 进入了 characters 列表，
+  // character_meta 也会被相应更新。
+  const syncLogs = syncMetaFromData(resultData);
+  logs.push(...syncLogs);
 
   return { data: resultData, warnings, logs };
 }
