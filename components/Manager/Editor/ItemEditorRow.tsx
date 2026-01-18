@@ -11,18 +11,13 @@ interface ItemEditorRowProps {
   isLast: boolean;
   onChange: (newItem: StatusBarItem) => void;
   onDelete: () => void;
-  onMove: (direction: -1 | 1) => void;
-  // DnD Props
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
-  onDragEnter: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
-  onDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
-  isDragging?: boolean;
+  // dnd-kit listeners
+  dragListeners?: any;
 }
 
 const ItemEditorRow: React.FC<ItemEditorRowProps> = ({ 
   item, uiType, index, isFirst, isLast, 
-  onChange, onDelete, onMove,
-  onDragStart, onDragEnter, onDragEnd, isDragging
+  onChange, onDelete, dragListeners
 }) => {
   // Mobile Edit State (Expand/Collapse)
   const [isEditing, setIsEditing] = useState(false);
@@ -207,19 +202,32 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   if (!isEditing && isMobile) {
       const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' ') || '(空)';
       return (
-        <div 
-            className="editor-row-collapsed"
-            onClick={() => setIsEditing(true)}
-        >
-            <div className="editor-row-summary">
-                <span className="editor-row-summary-key">{item.key}</span>
-                <span style={{ fontSize: '0.95rem', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
-                    {summaryValue}
-                </span>
+        <div className="editor-row-collapsed">
+            {/* 拖拽手柄区域 */}
+            <div 
+               {...dragListeners}
+               style={{ 
+                   display: 'flex', alignItems: 'center', padding: '0 8px', cursor: 'grab', touchAction: 'none',
+                   color: 'var(--text-tertiary)'
+               }}
+            >
+               <GripVertical size={20} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {item.user_modified && <Lock size={14} className="text-warning" />}
-                <Edit2 size={16} style={{ color: 'var(--color-primary)' }} />
+            
+            <div 
+                style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}
+                onClick={() => setIsEditing(true)}
+            >
+                <div className="editor-row-summary">
+                    <span className="editor-row-summary-key">{item.key}</span>
+                    <span style={{ fontSize: '0.95rem', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                        {summaryValue}
+                    </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {item.user_modified && <Lock size={14} className="text-warning" />}
+                    <Edit2 size={16} style={{ color: 'var(--color-primary)' }} />
+                </div>
             </div>
         </div>
       );
@@ -228,10 +236,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   // --- Full Editor Render ---
   return (
     <div 
-      draggable={!isAddingTag && !isInputActive && !isMobile}
-      onDragStart={(e) => !isAddingTag && !isInputActive && onDragStart(e, index)}
-      onDragEnter={(e) => onDragEnter(e, index)}
-      onDragEnd={onDragEnd}
       className={`item-editor-row ${isMobile ? 'editor-row-expanded' : ''}`}
       style={!isMobile ? {
         display: 'grid',
@@ -243,7 +247,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         borderRadius: '8px',
         marginBottom: '8px',
         border: item.user_modified ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--chip-border)',
-        opacity: isDragging ? 0.4 : 1,
       } : {}}
     >
       {/* Mobile Header in Expanded Mode */}
@@ -261,11 +264,15 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
           </div>
       )}
 
-      {/* 1. Drag Controls (Desktop Only) */}
+      {/* 1. Drag Handle */}
       {!isMobile && (
         <div className="row-drag-controls">
-            <div className="drag-handle" style={{ cursor: 'grab', color: 'var(--text-tertiary)', padding: '2px' }}>
-            <GripVertical size={18} />
+            <div 
+                {...dragListeners}
+                className="drag-handle" 
+                style={{ cursor: 'grab', color: 'var(--text-tertiary)', padding: '2px', touchAction: 'none' }}
+            >
+                <GripVertical size={18} />
             </div>
         </div>
       )}

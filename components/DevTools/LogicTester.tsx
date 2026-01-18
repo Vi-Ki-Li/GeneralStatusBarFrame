@@ -30,8 +30,22 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     }
   }, [initialData]);
 
-  // 输入
-  const [inputText, setInputText] = useState<string>('[Eria^CV|体力::20@100|+5|中毒]\n[User^CP|状态::兴奋]');
+  // 输入: 更新了默认文本以展示新功能
+  const [inputText, setInputText] = useState<string>(
+`// 1. 标准数值更新 (Diff 模式)
+[Eria^CV|HP::80@100|-5|中毒]
+
+// 2. 状态更新
+[User^CP|状态::兴奋]
+
+// 3. 自定义分隔符测试 
+// (请确保在"定义工坊"中将 'Inventory' 的分隔符设为 ',')
+[Eria^CR|Inventory::长剑, 铁盾, 治疗药水]
+
+// 4. 隐藏/删除指令 (nil)
+[Luna^CV|HP::nil]`
+  );
+  
   const [sourceId, setSourceId] = useState<number>(11);
   
   // 输出
@@ -40,8 +54,8 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
   const [lastParsed, setLastParsed] = useState<any>(null);
 
   const handleRun = () => {
-    // 1. 解析
-    const parsed = parseStatusBarText(inputText, sourceId);
+    // 1. 解析 (传入 definitions)
+    const parsed = parseStatusBarText(inputText, sourceId, currentData.item_definitions);
     setLastParsed(parsed);
 
     // 2. 合并
@@ -111,14 +125,15 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
               onChange={e => setInputText(e.target.value)}
               style={{
                 width: '100%',
-                height: '120px',
+                height: '180px', // 稍微调高一点
                 padding: '10px',
                 borderRadius: '8px',
                 border: '1px solid var(--chip-border)',
                 fontFamily: 'monospace',
                 background: 'rgba(0,0,0,0.2)',
                 color: 'var(--text-primary)',
-                resize: 'vertical'
+                resize: 'vertical',
+                lineHeight: '1.4'
               }}
             />
           </div>

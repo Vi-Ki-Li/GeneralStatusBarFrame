@@ -1,9 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
 import * as LucideIcons from 'lucide-react';
 import { PlusCircle, CircleHelp } from 'lucide-react';
 import { getItemDefinition } from '../../../services/definitionRegistry';
+
+// DnD Kit Imports
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableItem } from './SortableItem';
+import { v4 as uuidv4 } from 'uuid';
 
 interface CategoryEditorProps {
   categoryKey: string;
@@ -20,9 +26,30 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
     ? (LucideIcons as any)[categoryDef.icon] 
     : CircleHelp;
 
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  // We need stable IDs for dnd-kit. Using index as ID is risky if list changes size, 
+  // but for simple reordering it might work if we are careful. 
+  // A better approach is to wrap items with a temporary ID if they don't have one.
+  // Since StatusBarItem doesn't have a UID, we'll map them to objects with IDs locally or just use Key+Index.
+  // For simplicity, let's use Key + Index string as unique ID.
+  const getItemId = (item: StatusBarItem, index: number) => `${item.key}-${index}`;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // Prevent accidental drags
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (active.id !== over?.id) {
+      const oldIndex = items.findIndex((item, idx) => getItemId(item, idx) === active.id);
+      const newIndex = items.findIndex((item, idx) => getItemId(item, idx) === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+          onUpdateItems(arrayMove(items, oldIndex, newIndex));
+      }
+    }
+  };
 
   const handleItemChange = (index: number, newItem: StatusBarItem) => {
     const newItems = [...items];
@@ -47,39 +74,6 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
     onUpdateItems([...items, newItem]);
   };
 
-  const handleMove = (index: number, direction: -1 | 1) => {
-      if (index + direction < 0 || index + direction >= items.length) return;
-      const newItems = [...items];
-      const temp = newItems[index];
-      newItems[index] = newItems[index + direction];
-      newItems[index + direction] = temp;
-      onUpdateItems(newItems);
-  };
-
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      dragItem.current = index;
-      setIsDragging(true);
-      e.dataTransfer.effectAllowed = "move";
-  };
-
-  const onDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      dragOverItem.current = index;
-      if (dragItem.current !== null && dragItem.current !== index) {
-          const newItems = [...items];
-          const draggedItemContent = newItems[dragItem.current];
-          newItems.splice(dragItem.current, 1);
-          newItems.splice(index, 0, draggedItemContent);
-          dragItem.current = index;
-          onUpdateItems(newItems);
-      }
-  };
-
-  const onDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-      dragItem.current = null;
-      dragOverItem.current = null;
-      setIsDragging(false);
-  };
-
   return (
     <div style={{ marginBottom: '24px' }}>
       <div style={{ 
@@ -91,44 +85,47 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
         <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>({categoryKey})</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {items.map((item, idx) => {
-            // 关键修正: 对每个 Item 单独查找定义
-            const def = getItemDefinition(itemDefinitions, item.key);
-            
-            return (
-              <ItemEditorRow 
-                key={idx} 
-                index={idx}
-                item={item} 
-                uiType={def.type} // Pass specific type
-                isFirst={idx === 0}
-                isLast={idx === items.length - 1}
-                onChange={(newItem) => handleItemChange(idx, newItem)}
-                onDelete={() => handleDeleteItem(idx)}
-                onMove={(dir) => handleMove(idx, dir)}
-                onDragStart={onDragStart}
-                onDragEnter={onDragEnter}
-                onDragEnd={onDragEnd}
-                isDragging={isDragging && dragItem.current === idx}
-              />
-            );
-        })}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map((item, idx) => getItemId(item, idx))} strategy={verticalListSortingStrategy}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {items.map((item, idx) => {
+                    const def = getItemDefinition(itemDefinitions, item.key);
+                    const uniqueId = getItemId(item, idx);
+                    
+                    return (
+                        <SortableItem key={uniqueId} id={uniqueId}>
+                            {(dragListeners, isDragging) => (
+                                <ItemEditorRow 
+                                    index={idx}
+                                    item={item} 
+                                    uiType={def.type}
+                                    isFirst={idx === 0}
+                                    isLast={idx === items.length - 1}
+                                    onChange={(newItem) => handleItemChange(idx, newItem)}
+                                    onDelete={() => handleDeleteItem(idx)}
+                                    dragListeners={dragListeners}
+                                />
+                            )}
+                        </SortableItem>
+                    );
+                })}
+            </div>
+        </SortableContext>
+      </DndContext>
 
-        <button 
-          onClick={handleAddItem}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            padding: '10px', background: 'rgba(0,0,0,0.02)', border: '1px dashed var(--chip-border)',
-            borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem',
-            transition: 'all 0.2s'
-          }}
-          className="hover-bg-accent"
-        >
-          <PlusCircle size={16} />
-          添加新条目
-        </button>
-      </div>
+      <button 
+        onClick={handleAddItem}
+        style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        padding: '10px', background: 'rgba(0,0,0,0.02)', border: '1px dashed var(--chip-border)',
+        borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem',
+        transition: 'all 0.2s', width: '100%', marginTop: '8px'
+        }}
+        className="hover-bg-accent"
+    >
+        <PlusCircle size={16} />
+        添加新条目
+    </button>
       <style>{`
         .hover-bg-accent:hover {
           background: rgba(var(--color-primary), 0.05) !important;

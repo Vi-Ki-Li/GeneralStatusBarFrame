@@ -19,17 +19,17 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   const toast = useToast();
   
   const [formData, setFormData] = useState<ItemDefinition>({
-    key: '', type: 'text', defaultCategory: 'Other', description: ''
+    key: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
   });
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
     if (definition) {
-      setFormData({ ...definition });
+      setFormData({ ...definition, separator: definition.separator || '|' });
       setIsNew(false);
     } else {
       setFormData({ 
-        key: '', type: 'text', defaultCategory: 'Other', description: '' 
+        key: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' 
       });
       setIsNew(true);
     }
@@ -54,36 +54,41 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   };
 
   const handleInjectWorldbook = async () => {
-    const { key, type, defaultCategory, description } = formData;
+    const { key, type, defaultCategory, description, separator } = formData;
     const catName = categories[defaultCategory]?.name || defaultCategory;
     
     // 生成格式示例
     let formatExample = '';
+    const sep = separator || '|';
     switch (type) {
         case 'numeric': formatExample = `[角色^${catName}|${key}::当前值@最大值]`; break;
-        case 'array': formatExample = `[角色^${catName}|${key}::物品A|物品B]`; break;
+        case 'array': formatExample = `[角色^${catName}|${key}::物品A${sep}物品B]`; break;
         default: formatExample = `[角色^${catName}|${key}::内容文本]`;
     }
 
-    const content = `条目: ${key}\n分类: ${catName}\n描述: ${description || '（暂无）'}\n\n格式参考：\n${formatExample}`;
+    const content = `条目: ${key}\n分类: ${catName}\n类型: ${type}\n分隔符: "${sep}"\n描述: ${description || '（暂无）'}\n\n格式参考：\n${formatExample}`;
 
     try {
         const entries = await tavernService.getLorebookEntries();
-        // 查找逻辑
-        let targetEntry = entries.find(e => e.comment === key);
+        // 查找逻辑: 模糊匹配 (key 完全匹配 或 key(xxx) 形式)
+        // 使用正则：^Key$ 或 ^Key\(.*\)$
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const fuzzyRegex = new RegExp(`^${escapedKey}(\\(.*\\))?$`);
+
+        let targetEntry = entries.find(e => fuzzyRegex.test(e.comment));
         
         if (targetEntry) {
             const updatedEntry = { ...targetEntry, content, enabled: true };
             const updatedList = entries.map(e => e.uid === targetEntry!.uid ? updatedEntry : e);
             await tavernService.setLorebookEntries(updatedList);
-            toast.success(`世界书条目 "${key}" 已更新`);
+            toast.success(`世界书条目 "${targetEntry.comment}" 已更新`);
         } else {
             const maxUid = Math.max(...entries.map(e => e.uid), 0);
             const newEntry: LorebookEntry = {
                 uid: maxUid + 1,
                 key: [key],
                 keysecondary: [],
-                comment: key,
+                comment: key, // 新建时使用纯 Key
                 content: content,
                 enabled: true,
                 position: maxUid + 1,
@@ -159,9 +164,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                         <option key={cat.key} value={cat.key}>{cat.name} ({cat.key})</option>
                     ))}
                 </select>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                    这决定了新建该条目时的默认位置，以及注入世界书时的分类说明。
-                </span>
             </div>
 
             <div className="form-group">
@@ -185,6 +187,20 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                         </button>
                     ))}
                 </div>
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">分隔符 (Separator)</label>
+                <input 
+                    className="form-input" 
+                    value={formData.separator || '|'} 
+                    onChange={e => handleChange('separator', e.target.value)}
+                    placeholder="默认: |"
+                    style={{ fontFamily: 'monospace' }}
+                />
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                   AI 输出数组时的分隔符号。例如使用 "," 则 AI 输出 "A,B,C"。
+                </span>
             </div>
 
             <div className="form-group">

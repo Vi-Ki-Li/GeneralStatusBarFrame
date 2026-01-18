@@ -24,21 +24,33 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     });
   };
 
-  const charIds = Object.keys(data.characters || {});
-  if (charIds.includes('char_user')) {
-    charIds.splice(charIds.indexOf('char_user'), 1);
-    charIds.unshift('char_user');
+  // 1. Get all IDs
+  const allCharIds = Object.keys(data.characters || {});
+  
+  // 2. Filter by Presence (unless it's 'char_user' which is always present, or manually forced)
+  const presentCharIds = allCharIds.filter(id => {
+      // User always present? Maybe configurable. For now, respect meta.
+      const meta = data.character_meta?.[id];
+      // Default to true if meta is missing
+      return meta?.isPresent !== false;
+  });
+
+  // 3. Sort (User first)
+  if (presentCharIds.includes('char_user')) {
+    presentCharIds.splice(presentCharIds.indexOf('char_user'), 1);
+    presentCharIds.unshift('char_user');
   }
 
-  const [activeCharId, setActiveCharId] = useState<string>(charIds[0] || '');
+  const [activeCharId, setActiveCharId] = useState<string>(presentCharIds[0] || '');
 
+  // Effect to ensure activeCharId is valid
   useEffect(() => {
-    if (!charIds.includes(activeCharId) && charIds.length > 0) {
-      setActiveCharId(charIds[0]);
-    } else if (charIds.length > 0 && !activeCharId) {
-      setActiveCharId(charIds[0]);
+    if (presentCharIds.length > 0 && !presentCharIds.includes(activeCharId)) {
+      setActiveCharId(presentCharIds[0]);
+    } else if (presentCharIds.length === 0) {
+      setActiveCharId('');
     }
-  }, [charIds, activeCharId]);
+  }, [presentCharIds, activeCharId]);
 
   const renderItem = (item: StatusBarItem) => {
     // 关键修正: 根据 Item Key 查找 Definition
@@ -88,7 +100,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
   const charCategories = activeCharData ? getSortedCategories(Object.keys(activeCharData)) : [];
 
   // 使用新的解析逻辑获取显示名称
-  const charMapForTabs = charIds.map(id => ({
+  const charMapForTabs = presentCharIds.map(id => ({
       id,
       name: resolveDisplayName(data, id)
   }));
@@ -99,7 +111,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     }}>
       {topSharedCats.map(cat => renderSection(data.shared[cat], cat, true))}
 
-      {charIds.length > 0 && (
+      {presentCharIds.length > 0 && (
         <div style={{ marginTop: '20px' }}>
             <CharacterTabs 
                 characters={charMapForTabs.map(c => c.name)} 

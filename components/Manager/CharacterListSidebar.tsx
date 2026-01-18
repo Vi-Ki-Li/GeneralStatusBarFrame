@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Globe, Plus, Sparkles, Check, X, Trash2 } from 'lucide-react';
+import { User, Globe, Plus, Sparkles, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
 
 interface CharacterOption {
   id: string;
   name: string;
+  isPresent: boolean;
 }
 
 interface CharacterListSidebarProps {
@@ -12,6 +13,7 @@ interface CharacterListSidebarProps {
   onSelect: (id: string) => void;
   onAddCharacter: (id: string, name: string) => void;
   onResetData?: () => void;
+  onTogglePresence: (id: string) => void;
 }
 
 const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({ 
@@ -19,7 +21,8 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
   selectedId, 
   onSelect, 
   onAddCharacter,
-  onResetData
+  onResetData,
+  onTogglePresence
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newId, setNewId] = useState('');
@@ -191,27 +194,49 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
           const isUser = char.id === 'char_user';
           
           return (
-            <button
+            <div
               key={char.id}
               onClick={() => onSelect(char.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '10px 12px', width: '100%', border: 'none',
                 background: isSelected ? 'var(--chip-bg)' : 'transparent',
                 borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent',
-                color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
                 borderRadius: '0 8px 8px 0', cursor: 'pointer',
-                fontWeight: isSelected ? 600 : 400, transition: 'all 0.2s ease', textAlign: 'left'
+                transition: 'all 0.2s ease', 
               }}
             >
-              {isUser ? <User size={16} /> : <Sparkles size={16} />}
-              <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{char.name}</span>
-                 {char.id !== 'char_user' && (
-                     <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{char.id}</span>
-                 )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                  <div style={{ color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    {isUser ? <User size={16} /> : <Sparkles size={16} />}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <span style={{ 
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontWeight: isSelected ? 600 : 400 
+                    }}>
+                        {char.name}
+                    </span>
+                    {char.id !== 'char_user' && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{char.id}</span>
+                    )}
+                  </div>
               </div>
-            </button>
+
+              {/* Presence Toggle */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); onTogglePresence(char.id); }}
+                style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: char.isPresent ? 'var(--color-success)' : 'var(--text-tertiary)',
+                    padding: '4px', display: 'flex', alignItems: 'center'
+                }}
+                title={char.isPresent ? '角色在场 (Visible)' : '角色退场 (Hidden)'}
+              >
+                  {char.isPresent ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            </div>
           );
         })}
       </div>

@@ -19,6 +19,7 @@ export interface ItemDefinition {
   type: 'text' | 'numeric' | 'array';
   description?: string; // 给 AI 看的描述
   defaultCategory?: string; // 默认归属分类 (UI辅助用)
+  separator?: string;   // v6.2 自定义分隔符 (例如 "," 或 ";")，默认为 "|"
 }
 
 // 3. 状态栏单个数据条目
@@ -54,6 +55,13 @@ export interface StatusBarData {
   };
   
   id_map: CharacterMap;
+
+  // v6.2: 角色元数据 (IsPresent 等)
+  character_meta?: {
+    [charId: string]: {
+      isPresent: boolean;
+    };
+  };
 
   shared: {
     [category: string]: StatusBarItem[];

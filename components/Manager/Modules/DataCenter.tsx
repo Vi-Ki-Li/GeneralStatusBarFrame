@@ -20,11 +20,12 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const toast = useToast();
 
-  // Prepare Character List
+  // Prepare Character List (with IsPresent)
   const charIds = Object.keys(data.characters || {});
   const charList = charIds.map(id => ({
       id, 
-      name: resolveDisplayName(data, id)
+      name: resolveDisplayName(data, id),
+      isPresent: data.character_meta?.[id]?.isPresent !== false // Default to true if undefined
   })).sort((a, b) => {
       if (a.id === 'char_user') return -1;
       if (b.id === 'char_user') return 1;
@@ -41,24 +42,37 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
       const newData = JSON.parse(JSON.stringify(data));
       
       // 2. 注册 ID 映射 (ID -> Name)
-      // 注意：这里的 Name 仅作为 id_map 的回退值
       newData.id_map[id] = name;
       
       // 3. 初始化角色数据结构
       newData.characters[id] = {};
       
-      // 4. 自动添加 [CP|名字] 条目 (数据驱动的显示名)
+      // 4. 自动添加 [CP|名字] 条目
       newData.characters[id]['CP'] = [{
           key: '名字',
           values: [name],
           source_id: 9999,
-          user_modified: true, // 标记为用户修改，防止被 AI 轻易覆盖（除非 AI 也是更新这个 Key）
+          user_modified: true, 
           category: 'CP'
       }];
+
+      // 5. 初始化元数据
+      if (!newData.character_meta) newData.character_meta = {};
+      newData.character_meta[id] = { isPresent: true };
 
       onUpdate(newData);
       setSelectedId(id);
       toast.success(`角色 "${name}" (${id}) 已创建`);
+  };
+
+  const handleTogglePresence = (id: string) => {
+      const newData = JSON.parse(JSON.stringify(data));
+      if (!newData.character_meta) newData.character_meta = {};
+      
+      const current = newData.character_meta[id]?.isPresent !== false;
+      newData.character_meta[id] = { isPresent: !current };
+      
+      onUpdate(newData);
   };
 
   const handleResetData = () => setShowResetConfirm(true);
@@ -68,6 +82,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
          categories: data.categories,
          item_definitions: data.item_definitions,
          id_map: { 'char_user': 'User' },
+         character_meta: { 'char_user': { isPresent: true } },
          shared: {}, 
          characters: { 'char_user': {} }, 
          _meta: { ...data._meta } 
@@ -114,6 +129,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
             onSelect={setSelectedId}
             onAddCharacter={handleAddCharacter}
             onResetData={handleResetData}
+            onTogglePresence={handleTogglePresence}
           />
         </div>
       ) : (

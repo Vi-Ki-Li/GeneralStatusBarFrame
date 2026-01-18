@@ -1,23 +1,30 @@
-import { ParsedUpdate } from '../types';
+import { ParsedUpdate, ItemDefinition } from '../types';
 
 // 正则表达式定义 (支持 [角色^分类|键::值])
-// 分类现在可以是任意字符串，不再限制枚举
 const REGEX_NEW_FORMAT = /\[([^^|::\[\]]+)\^([a-zA-Z0-9_-]+)\|([^^|::\[\]]+)::([^\]^::\[\]]*)\]/;
 const REGEX_OLD_FORMAT = /\[([a-zA-Z0-9_-]+)\|(.*?)::(.*)\]/;
 
 /**
  * 解析值字符串
+ * @param valueString 原始值字符串
+ * @param separator 自定义分隔符 (默认为 |)
  */
-function parseValues(valueString: string): string[] {
-  // 目前简单的按 | 分割，后续可根据 Definitions 里的分隔符配置进行优化
-  return valueString.split('|').map(v => v.trim());
+function parseValues(valueString: string, separator: string = '|'): string[] {
+  if (!separator) separator = '|';
+  // 如果分隔符是特殊正则字符，需要转义。为了简单起见，我们假设用户输入的是普通字符
+  // 或者我们简单地使用 split
+  return valueString.split(separator).map(v => v.trim());
 }
 
 /**
  * 解析状态栏文本
- * 注意：此时返回的结构中，characters 的键仍然是 Name，需要 Merger 阶段转换为 ID
+ * v6.2: 需要传入 definitions 以支持自定义分隔符
  */
-export function parseStatusBarText(text: string, sourceMessageId: number): ParsedUpdate {
+export function parseStatusBarText(
+  text: string, 
+  sourceMessageId: number,
+  definitions: { [key: string]: ItemDefinition } = {}
+): ParsedUpdate {
   const result: ParsedUpdate = {
     shared: {},
     characters: {},
@@ -36,7 +43,11 @@ export function parseStatusBarText(text: string, sourceMessageId: number): Parse
       const category = match[2].trim();
       const key = match[3].trim();
       const valueString = match[4].trim();
-      const values = parseValues(valueString);
+
+      // 查找定义以获取分隔符
+      const def = definitions[key];
+      const separator = def?.separator || '|';
+      const values = parseValues(valueString, separator);
 
       if (!result.characters[charName]) {
         result.characters[charName] = {};
@@ -62,10 +73,11 @@ export function parseStatusBarText(text: string, sourceMessageId: number): Parse
       const category = match[1].trim();
       const key = match[2].trim();
       const valueString = match[3].trim();
-      const values = parseValues(valueString);
 
-      // 所有的旧格式都归入 Shared，不再过滤是否是 ST/WP/MI
-      // 定义驱动意味着我们接受任何分类
+      const def = definitions[key];
+      const separator = def?.separator || '|';
+      const values = parseValues(valueString, separator);
+
       if (!result.shared[category]) {
         result.shared[category] = [];
       }
