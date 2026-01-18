@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { StatusBarItem } from '../../../types';
+import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
 
 interface ItemEditorRowProps {
   item: StatusBarItem;
   uiType: 'text' | 'numeric' | 'array';
+  definition?: ItemDefinition; // New prop for metadata
   index: number;
   isFirst: boolean;
   isLast: boolean;
@@ -16,7 +17,7 @@ interface ItemEditorRowProps {
 }
 
 const ItemEditorRow: React.FC<ItemEditorRowProps> = ({ 
-  item, uiType, index, isFirst, isLast, 
+  item, uiType, definition, index, isFirst, isLast, 
   onChange, onDelete, dragListeners
 }) => {
   // Mobile Edit State (Expand/Collapse)
@@ -201,6 +202,9 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   // --- Render for Summary (Read Mode) ---
   if (!isEditing && isMobile) {
       const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' ') || '(空)';
+      const displayName = definition?.name || item.key;
+      const isNamed = !!definition?.name;
+
       return (
         <div className="editor-row-collapsed">
             {/* 拖拽手柄区域 */}
@@ -219,8 +223,13 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
                 onClick={() => setIsEditing(true)}
             >
                 <div className="editor-row-summary">
-                    <span className="editor-row-summary-key">{item.key}</span>
-                    <span style={{ fontSize: '0.95rem', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                    <span className="editor-row-summary-key" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {displayName}
+                    </span>
+                    {isNamed && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.key}</span>
+                    )}
+                    <span style={{ fontSize: '0.9rem', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px', color: 'var(--text-secondary)' }}>
                         {summaryValue}
                     </span>
                 </div>
@@ -239,7 +248,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       className={`item-editor-row ${isMobile ? 'editor-row-expanded' : ''}`}
       style={!isMobile ? {
         display: 'grid',
-        gridTemplateColumns: '32px 120px 1fr 40px',
+        gridTemplateColumns: '32px 140px 1fr 40px',
         gap: '12px',
         alignItems: 'start',
         padding: '12px', 
@@ -277,20 +286,25 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         </div>
       )}
 
-      {/* 2. Key Input */}
-      <div className="row-key-input" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {/* 2. Key Input & Name Display */}
+      <div className="row-key-input" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {definition?.name && (
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 600 }}>
+                {definition.name}
+            </span>
+        )}
         <input 
           className="editor-input"
           value={item.key}
           onChange={e => handleKeyChange(e.target.value)}
           placeholder="键名"
-          style={{ fontWeight: 600 }}
+          style={{ fontWeight: definition?.name ? 400 : 600, fontSize: definition?.name ? '0.85rem' : '0.9rem' }}
           {...commonInputProps}
         />
         {!isMobile && (
-            <button onClick={toggleLock} style={{ display: 'flex', gap: '4px', border: 'none', background: 'transparent', fontSize: '0.75rem', cursor: 'pointer', color: item.user_modified ? 'var(--color-warning)' : 'var(--text-tertiary)' }}>
+            <button onClick={toggleLock} style={{ display: 'flex', gap: '4px', border: 'none', background: 'transparent', fontSize: '0.75rem', cursor: 'pointer', color: item.user_modified ? 'var(--color-warning)' : 'var(--text-tertiary)', paddingLeft: 0, marginTop: '2px' }}>
             {item.user_modified ? <Lock size={12} /> : <LockOpen size={12} />}
-            <span>{item.user_modified ? '锁定' : '自动'}</span>
+            <span>{item.user_modified ? '已锁定' : '自动更新'}</span>
             </button>
         )}
       </div>

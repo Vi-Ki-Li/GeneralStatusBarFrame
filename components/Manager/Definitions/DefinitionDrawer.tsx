@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { ItemDefinition, LorebookEntry, CategoryDefinition } from '../../../types';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, BookOpen } from 'lucide-react';
+import IconPicker from '../../Shared/IconPicker';
+import { X, Save, BookOpen, ChevronRight, Eye } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 interface DefinitionDrawerProps {
   definition: ItemDefinition | null;
@@ -19,17 +22,23 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   const toast = useToast();
   
   const [formData, setFormData] = useState<ItemDefinition>({
-    key: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
+    key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
   });
   const [isNew, setIsNew] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   useEffect(() => {
     if (definition) {
-      setFormData({ ...definition, separator: definition.separator || '|' });
+      setFormData({ 
+          ...definition, 
+          separator: definition.separator || '|',
+          name: definition.name || '',
+          icon: definition.icon || ''
+      });
       setIsNew(false);
     } else {
       setFormData({ 
-        key: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' 
+        key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' 
       });
       setIsNew(true);
     }
@@ -49,29 +58,44 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       return;
     }
     
-    onSave(formData);
+    // Clean up empty optional fields
+    const toSave = { ...formData };
+    if (!toSave.name) delete toSave.name;
+    if (!toSave.icon) delete toSave.icon;
+
+    onSave(toSave);
     onClose();
   };
 
-  const handleInjectWorldbook = async () => {
-    const { key, type, defaultCategory, description, separator } = formData;
-    const catName = categories[defaultCategory]?.name || defaultCategory;
+  // 生成预览字符串
+  const getPreviewString = () => {
+    const { key, type, defaultCategory, separator } = formData;
+    const catDef = categories[defaultCategory];
+    const catName = catDef?.name || defaultCategory; // Use Name or Key? Standard suggests Key in protocol for stability, but Name for human readability. Protocol uses Category KEY.
+    // Wait, parser uses Category Key or Name? Parser usually uses Category KEY in bracket `[Char^CAT|...]`. 
+    // Let's assume we want to guide user to use Category KEY for stability.
     
-    // 生成格式示例
-    let formatExample = '';
+    const catKey = catDef?.key || defaultCategory;
     const sep = separator || '|';
-    switch (type) {
-        case 'numeric': formatExample = `[角色^${catName}|${key}::当前值@最大值]`; break;
-        case 'array': formatExample = `[角色^${catName}|${key}::物品A${sep}物品B]`; break;
-        default: formatExample = `[角色^${catName}|${key}::内容文本]`;
-    }
+    
+    let valueExample = '值';
+    if (type === 'numeric') valueExample = '100@100';
+    if (type === 'array') valueExample = `物品A${sep}物品B`;
+    if (type === 'text') valueExample = '文本内容';
 
-    const content = `条目: ${key}\n分类: ${catName}\n类型: ${type}\n分隔符: "${sep}"\n描述: ${description || '（暂无）'}\n\n格式参考：\n${formatExample}`;
+    return `[角色^${catKey}|${key}::${valueExample}]`;
+  };
+
+  const handleInjectWorldbook = async () => {
+    const { key, type, defaultCategory, description, separator, name } = formData;
+    const catName = categories[defaultCategory]?.name || defaultCategory;
+    const sep = separator || '|';
+    const preview = getPreviewString();
+
+    const content = `条目: ${key}\n显示名: ${name || key}\n分类: ${catName}\n类型: ${type}\n分隔符: "${sep}"\n描述: ${description || '（暂无）'}\n\n格式参考：\n${preview}`;
 
     try {
         const entries = await tavernService.getLorebookEntries();
-        // 查找逻辑: 模糊匹配 (key 完全匹配 或 key(xxx) 形式)
-        // 使用正则：^Key$ 或 ^Key\(.*\)$
         const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const fuzzyRegex = new RegExp(`^${escapedKey}(\\(.*\\))?$`);
 
@@ -106,6 +130,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   if (!isOpen) return null;
 
   const categoryList = Object.values(categories).sort((a,b) => a.order - b.order);
+  const IconDisplay = formData.icon && (LucideIcons as any)[formData.icon] ? (LucideIcons as any)[formData.icon] : null;
 
   return (
     <>
@@ -141,18 +166,53 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
         {/* Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            <div className="form-group">
-                <label className="form-label">Key (条目名)</label>
-                <input 
-                    className="form-input" 
-                    value={formData.key} 
-                    onChange={e => handleChange('key', e.target.value)}
-                    placeholder="e.g. HP, Inventory"
-                    disabled={!isNew}
-                    style={{ fontWeight: 600, opacity: !isNew ? 0.7 : 1 }}
-                />
+            {/* 1. Identity */}
+            <div className="form-section">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                        <label className="form-label">Key (唯一键)</label>
+                        <input 
+                            className="form-input" 
+                            value={formData.key} 
+                            onChange={e => handleChange('key', e.target.value)}
+                            placeholder="e.g. HP"
+                            disabled={!isNew}
+                            style={{ fontWeight: 600, opacity: !isNew ? 0.7 : 1, fontFamily: 'monospace' }}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">显示名称 (Name)</label>
+                        <input 
+                            className="form-input" 
+                            value={formData.name || ''} 
+                            onChange={e => handleChange('name', e.target.value)}
+                            placeholder="e.g. 生命值"
+                        />
+                    </div>
+                </div>
             </div>
 
+            {/* 2. Format Preview */}
+            <div className="glass-panel" style={{ padding: '12px', border: '1px solid var(--color-primary)', background: 'rgba(var(--color-primary), 0.05)' }}>
+                <label className="form-label" style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Eye size={14} /> 格式预览 (Format Preview)
+                </label>
+                <div style={{ 
+                    marginTop: '8px', 
+                    fontFamily: 'monospace', 
+                    fontSize: '0.85rem', 
+                    wordBreak: 'break-all',
+                    color: 'var(--text-primary)',
+                    background: 'var(--bg-app)',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px dashed var(--chip-border)'
+                }}>
+                    {getPreviewString()}
+                </div>
+            </div>
+
+            {/* 3. Configuration */}
             <div className="form-group">
                 <label className="form-label">所属分类 (Default Category)</label>
                 <select 
@@ -188,6 +248,32 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                     ))}
                 </div>
             </div>
+            
+            <div className="form-group">
+                <label className="form-label">图标 (Icon)</label>
+                <div 
+                    onClick={() => setShowIconPicker(!showIconPicker)}
+                    className="glass-panel"
+                    style={{ 
+                        padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                        cursor: 'pointer', border: '1px solid var(--chip-border)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {IconDisplay ? <IconDisplay size={20} color="var(--color-primary)" /> : <span style={{color: 'var(--text-tertiary)'}}>无图标</span>}
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>{formData.icon || '选择图标...'}</span>
+                    </div>
+                    <ChevronRight size={16} color="var(--text-tertiary)" style={{ transform: showIconPicker ? 'rotate(90deg)' : 'none', transition: '0.2s' }} />
+                </div>
+                {showIconPicker && (
+                    <div className="glass-panel" style={{ marginTop: '8px', padding: '12px', height: '180px', border: '1px solid var(--chip-border)' }}>
+                        <IconPicker 
+                            selectedIcon={formData.icon || ''} 
+                            onSelect={(icon) => { handleChange('icon', icon); setShowIconPicker(false); }} 
+                        />
+                    </div>
+                )}
+            </div>
 
             <div className="form-group">
                 <label className="form-label">分隔符 (Separator)</label>
@@ -198,9 +284,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                     placeholder="默认: |"
                     style={{ fontFamily: 'monospace' }}
                 />
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                   AI 输出数组时的分隔符号。例如使用 "," 则 AI 输出 "A,B,C"。
-                </span>
             </div>
 
             <div className="form-group">
@@ -231,7 +314,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       </div>
       <style>{`
         .form-group { display: flex; flexDirection: column; gap: 8px; }
-        .form-label { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
+        .form-label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
         .form-input { 
             padding: 10px; border-radius: 8px; border: 1px solid var(--chip-border); 
             background: var(--bg-app); color: var(--text-primary); outline: none; transition: 0.2s;

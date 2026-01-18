@@ -1,15 +1,23 @@
+
 import React from 'react';
 import { StatusBarItem } from '../../../types';
 import { Lock } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 interface NumericRendererProps {
   item: StatusBarItem;
+  label?: string;
+  icon?: string;
   onInteract?: (item: StatusBarItem) => void;
 }
 
-const NumericRenderer: React.FC<NumericRendererProps> = ({ item, onInteract }) => {
+const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, onInteract }) => {
   const rawValue = item.values[0] || '0';
   const changeValue = item.values[1];
+  const displayLabel = label || item.key;
+  
+  // 动态加载图标
+  const IconComponent = icon && (LucideIcons as any)[icon] ? (LucideIcons as any)[icon] : null;
   
   let current = 0;
   let max = 0;
@@ -42,10 +50,11 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, onInteract }) =
     <div 
         className="status-item-row interactive-row" 
         onClick={() => onInteract && onInteract(item)}
-        title="点击引用数值"
+        title={`Key: ${item.key}`}
     >
       <div className="status-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        {item.key}
+        {IconComponent && <IconComponent size={14} style={{ opacity: 0.7 }} />}
+        {displayLabel}
         {item.user_modified && (
           <span title="用户已锁定，AI无法修改" style={{ display: 'flex' }}>
             <Lock size={10} className="text-warning" style={{ opacity: 0.7 }} />

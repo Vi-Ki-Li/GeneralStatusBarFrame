@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
@@ -89,6 +90,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
         <SortableContext items={items.map((item, idx) => getItemId(item, idx))} strategy={verticalListSortingStrategy}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {items.map((item, idx) => {
+                    // 获取完整的 Definition
                     const def = getItemDefinition(itemDefinitions, item.key);
                     const uniqueId = getItemId(item, idx);
                     
@@ -99,6 +101,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
                                     index={idx}
                                     item={item} 
                                     uiType={def.type}
+                                    definition={def} // 传递 Definition
                                     isFirst={idx === 0}
                                     isLast={idx === items.length - 1}
                                     onChange={(newItem) => handleItemChange(idx, newItem)}

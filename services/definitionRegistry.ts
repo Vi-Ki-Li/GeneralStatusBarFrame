@@ -22,20 +22,24 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
  * 默认条目定义 (示例)
  */
 export const DEFAULT_ITEM_DEFINITIONS: ItemDefinition[] = [
-  { key: 'HP', type: 'numeric', defaultCategory: 'CV', description: '角色的生命值' },
-  { key: 'MP', type: 'numeric', defaultCategory: 'CV', description: '角色的魔法值' },
-  { key: 'Name', type: 'text', defaultCategory: 'CP', description: '角色全名' },
-  { key: 'Inventory', type: 'array', defaultCategory: 'CR', description: '背包物品列表' },
+  { key: 'HP', name: '生命值', type: 'numeric', defaultCategory: 'CV', description: '角色的生命值' },
+  { key: 'MP', name: '魔法值', type: 'numeric', defaultCategory: 'CV', description: '角色的魔法值' },
+  { key: 'Name', name: '姓名', type: 'text', defaultCategory: 'CP', description: '角色全名' },
+  { key: 'Inventory', name: '背包', type: 'array', defaultCategory: 'CR', description: '背包物品列表' },
+  { key: 'Level', name: '等级', type: 'numeric', defaultCategory: 'CP', description: '角色等级' },
+  { key: 'Gold', name: '金币', type: 'numeric', defaultCategory: 'CR', description: '持有金币数量' },
   
   // Meta Definitions
   { 
       key: 'Present', 
+      name: '在场状态',
       type: 'text', 
       defaultCategory: 'Meta', 
       description: '[系统核心] 控制角色显隐。填写 true/on 显示，false/off 隐藏。' 
   },
   { 
       key: 'Visible', 
+      name: '可见性',
       type: 'text', 
       defaultCategory: 'Meta', 
       description: '[别名] 同 Present。控制角色可见性。' 

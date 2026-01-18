@@ -16,7 +16,9 @@ export interface CategoryDefinition {
 
 // 2. 条目定义 (具体数据的规则)
 export interface ItemDefinition {
-  key: string;          // "HP", "Name"
+  key: string;          // "HP", "Name" (唯一标识符)
+  name?: string;        // "生命值" (显示名) - v6.5 新增
+  icon?: string;        // 图标 - v6.5 新增
   type: 'text' | 'numeric' | 'array';
   description?: string; // 给 AI 看的描述
   defaultCategory?: string; // 默认归属分类 (UI辅助用)

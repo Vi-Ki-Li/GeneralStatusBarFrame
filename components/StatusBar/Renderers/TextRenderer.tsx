@@ -1,24 +1,33 @@
+
 import React from 'react';
 import { StatusBarItem } from '../../../types';
 import { Lock } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 interface TextRendererProps {
   item: StatusBarItem;
+  label?: string;
+  icon?: string;
   onInteract?: (item: StatusBarItem) => void;
 }
 
-const TextRenderer: React.FC<TextRendererProps> = ({ item, onInteract }) => {
+const TextRenderer: React.FC<TextRendererProps> = ({ item, label, icon, onInteract }) => {
   const text = item.values.join(' ');
   const isLongText = text.length > 20;
+  const displayLabel = label || item.key;
+  
+  // 动态加载图标
+  const IconComponent = icon && (LucideIcons as any)[icon] ? (LucideIcons as any)[icon] : null;
 
   return (
-    <div className="status-item-row" style={{ alignItems: isLongText ? 'flex-start' : 'center', flexDirection: isLongText ? 'column' : 'row' }}>
+    <div className="status-item-row" style={{ alignItems: isLongText ? 'flex-start' : 'center', flexDirection: isLongText ? 'column' : 'row' }} title={`Key: ${item.key}`}>
       <div className="status-label" style={{ 
           marginBottom: isLongText ? '4px' : '0', 
           width: isLongText ? '100%' : 'auto',
           display: 'flex', alignItems: 'center', gap: '4px' 
       }}>
-        {item.key}
+        {IconComponent && <IconComponent size={14} style={{ opacity: 0.7 }} />}
+        {displayLabel}
         {item.user_modified && (
           <span title="用户已锁定，AI无法修改" style={{ display: 'flex' }}>
             <Lock size={10} className="text-warning" style={{ opacity: 0.7 }} />

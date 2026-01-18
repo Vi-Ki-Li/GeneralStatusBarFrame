@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
@@ -55,10 +56,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
   const renderItem = (item: StatusBarItem) => {
     // 关键修正: 根据 Item Key 查找 Definition
     const def = getItemDefinition(data.item_definitions, item.key);
+    // 优先显示定义的名称，否则显示Key
+    const label = def.name || item.key;
     
     const commonProps = {
         key: item.key,
         item: item,
+        label: label, // 传递显示名
+        icon: def.icon, // 传递图标
         onInteract: (item: StatusBarItem, val?: string) => {
             const text = val || item.values.join(', ');
             console.log(`[Interaction] ${item.key}: ${text}`);
