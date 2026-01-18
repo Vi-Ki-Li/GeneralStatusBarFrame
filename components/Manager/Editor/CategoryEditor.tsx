@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
 import * as LucideIcons from 'lucide-react';
 import { PlusCircle, CircleHelp } from 'lucide-react';
 import { getItemDefinition } from '../../../services/definitionRegistry';
+import { v4 as uuidv4 } from 'uuid';
 
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -25,7 +26,15 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
     ? (LucideIcons as any)[categoryDef.icon] 
     : CircleHelp;
 
-  const getItemId = (item: StatusBarItem, index: number) => `${item.key}-${index}`;
+  // 核心修复: 确保所有条目都有一个稳定的 UI ID
+  const processedItems = useMemo(() => {
+    return items.map(item => ({
+      ...item,
+      _uuid: item._uuid || uuidv4()
+    }));
+  }, [items]);
+
+  const getItemId = (item: StatusBarItem) => item._uuid!;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -36,10 +45,11 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
     const { active, over } = event;
     
     if (active.id !== over?.id) {
-      const oldIndex = items.findIndex((item, idx) => getItemId(item, idx) === active.id);
-      const newIndex = items.findIndex((item, idx) => getItemId(item, idx) === over?.id);
+      const oldIndex = processedItems.findIndex((item) => getItemId(item) === active.id);
+      const newIndex = processedItems.findIndex((item) => getItemId(item) === over?.id);
       
       if (oldIndex !== -1 && newIndex !== -1) {
+          // 在原始数据上执行移动
           onUpdateItems(arrayMove(items, oldIndex, newIndex));
       }
     }
@@ -59,6 +69,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
 
   const handleAddItem = () => {
     const newItem: StatusBarItem = {
+      _uuid: uuidv4(),
       key: '新条目',
       values: [],
       category: categoryKey,
@@ -77,16 +88,19 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map((item, idx) => getItemId(item, idx))} strategy={verticalListSortingStrategy}>
+        <SortableContext items={processedItems.map(item => getItemId(item))} strategy={verticalListSortingStrategy}>
             <div className="category-editor__item-list">
-                {items.map((item, idx) => {
+                {processedItems.map((item, idx) => {
                     const def = getItemDefinition(itemDefinitions, item.key);
-                    const uniqueId = getItemId(item, idx);
+                    const uniqueId = getItemId(item);
                     
                     return (
                         <SortableItem key={uniqueId} id={uniqueId}>
                             {(dragListeners, isDragging) => (
                                 <ItemEditorRow 
+                                    allDefinitions={Object.values(itemDefinitions)}
+                                    // 过滤时使用原始的 key 列表
+                                    existingKeysInCategory={items.map(i => i.key)}
                                     index={idx}
                                     item={item} 
                                     uiType={def.type}

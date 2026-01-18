@@ -3,8 +3,10 @@ import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
 import './ItemEditorRow.css';
 
-interface ItemEditorRowProps {
-  item: StatusBarItem;
+interface ItemEditorRowProps { 
+  allDefinitions?: ItemDefinition[];
+  existingKeysInCategory?: string[];
+  item: StatusBarItem; 
   uiType: 'text' | 'numeric' | 'array';
   definition?: ItemDefinition;
   index: number;
@@ -16,15 +18,68 @@ interface ItemEditorRowProps {
 }
 
 const ItemEditorRow: React.FC<ItemEditorRowProps> = ({ 
+  allDefinitions = [], 
+  existingKeysInCategory = [], 
   item, uiType, definition, index, isFirst, isLast, 
   onChange, onDelete, dragListeners
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const isMobile = window.innerWidth <= 768;
 
-  const [isInputActive, setIsInputActive] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const keySectionRef = useRef<HTMLDivElement>(null); 
+  const [suggestions, setSuggestions] = useState<ItemDefinition[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => { 
+    const handleClickOutside = (event: MouseEvent) => {
+        if (keySectionRef.current && !keySectionRef.current.contains(event.target as Node)) {
+            setShowSuggestions(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []); 
+
+  // --- 核心逻辑重构 ---
+  const updateSuggestions = (filterText: string = '') => {
+    // 1. 严格分类过滤
+    let filteredDefs = allDefinitions.filter(def => def.defaultCategory === item.category);
+    
+    // 2. 严格排除已存在项
+    filteredDefs = filteredDefs.filter(def => !existingKeysInCategory.includes(def.key));
+
+    // 3. 实时输入筛选
+    if (filterText) {
+        const lowerFilter = filterText.toLowerCase();
+        filteredDefs = filteredDefs.filter(def => 
+            def.key.toLowerCase().includes(lowerFilter) ||
+            (def.name && def.name.toLowerCase().includes(lowerFilter))
+        );
+    }
+    
+    setSuggestions(filteredDefs);
+  };
+
+  const handleKeyChange = (newKey: string) => {
+    // 立即更新父组件状态
+    notifyChange({ ...item, key: newKey });
+    
+    // 如果建议菜单是打开的，就根据输入内容实时筛选
+    if (showSuggestions) {
+      updateSuggestions(newKey);
+    }
+  }; 
+
+  const toggleSuggestions = () => {
+    // 只有在准备打开菜单时才更新建议列表
+    if (!showSuggestions) {
+        updateSuggestions(''); // 用当前key预筛选一下
+    }
+    setShowSuggestions(prev => !prev);
+  };
+  // --- 结束 ---
 
   const parseNumeric = (val: string) => {
     if (val.includes('@')) {
@@ -50,9 +105,16 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     });
   };
 
-  const handleKeyChange = (newKey: string) => {
-    notifyChange({ ...item, key: newKey });
-  };
+  const handleSuggestionClick = (def: ItemDefinition) => { 
+      let newValues: string[];
+      switch (def.type) {
+          case 'numeric': newValues = ['0@100']; break;
+          case 'array': newValues = []; break;
+          default: newValues = ['']; break;
+      }
+      onChange({ ...item, key: def.key, values: newValues, user_modified: true, source_id: 9999 });
+      setShowSuggestions(false);
+  }; 
 
   const handleNumericChange = (field: 'curr' | 'max' | 'change' | 'reason', val: string) => {
     const values = [...item.values];
@@ -84,8 +146,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   const commonInputProps = {
-    onFocus: () => setIsInputActive(true),
-    onBlur: () => setIsInputActive(false),
     onPointerDown: (e: React.PointerEvent) => e.stopPropagation(), 
     onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation()
   };
@@ -241,19 +301,39 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         </div>
       )}
 
-      <div className="item-editor-row__key-section">
+      <div className="item-editor-row__key-section" ref={keySectionRef}>
         {definition?.name && (
             <span className="item-editor-row__display-name">
                 {definition.name}
             </span>
         )}
-        <input 
-          className={`item-editor-row__input item-editor-row__input--key ${definition?.name ? 'with-display-name' : ''}`}
-          value={item.key}
-          onChange={e => handleKeyChange(e.target.value)}
-          placeholder="键名"
-          {...commonInputProps}
-        />
+        <div className="item-editor-row__key-input-wrapper">
+            <input 
+              className={`item-editor-row__input item-editor-row__input--key ${definition?.name ? 'with-display-name' : ''}`}
+              value={item.key}
+              onChange={e => handleKeyChange(e.target.value)}
+              placeholder="键名"
+              {...commonInputProps}
+            />
+            <button onClick={toggleSuggestions} className="item-editor-row__suggestion-toggle">
+                <ChevronDown size={16} className={showSuggestions ? 'open' : ''} />
+            </button>
+        </div>
+        {showSuggestions && ( 
+            <div className="item-editor-row__suggestions-list animate-fade-in">
+                {suggestions.length > 0 ? suggestions.map(def => (
+                    <div key={def.key} className="item-editor-row__suggestion-item" onClick={() => handleSuggestionClick(def)}>
+                        <div>
+                            <div className="item-editor-row__suggestion-key">{def.key}</div>
+                            <div className="item-editor-row__suggestion-name">{def.name}</div>
+                        </div>
+                        <div className="item-editor-row__suggestion-type">{def.type}</div>
+                    </div>
+                )) : (
+                    <div className="item-editor-row__suggestion-empty">无可用选项</div>
+                )}
+            </div>
+        )} 
         {!isMobile && (
             <button onClick={toggleLock} className="item-editor-row__lock-toggle">
             {item.user_modified ? <Lock size={12} /> : <LockOpen size={12} />}

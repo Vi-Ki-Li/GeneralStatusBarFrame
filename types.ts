@@ -33,6 +33,7 @@ export interface StatusBarItem {
   user_modified: boolean;
   originalLine?: string;
   category: string; 
+  _uuid?: string; // 此处添加1行
 }
 
 // 4. 角色数据容器
