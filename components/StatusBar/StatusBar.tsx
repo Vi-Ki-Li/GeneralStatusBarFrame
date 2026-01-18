@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
-import { getCharacterName } from '../../utils/idManager';
+import { resolveDisplayName } from '../../utils/idManager';
 import StatusSection from './StatusSection';
 import CharacterTabs from './CharacterTabs';
 import NumericRenderer from './Renderers/NumericRenderer';
@@ -87,9 +87,10 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
   const activeCharData = data.characters?.[activeCharId];
   const charCategories = activeCharData ? getSortedCategories(Object.keys(activeCharData)) : [];
 
+  // 使用新的解析逻辑获取显示名称
   const charMapForTabs = charIds.map(id => ({
       id,
-      name: getCharacterName(data.id_map, id)
+      name: resolveDisplayName(data, id)
   }));
 
   return (
@@ -102,7 +103,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
         <div style={{ marginTop: '20px' }}>
             <CharacterTabs 
                 characters={charMapForTabs.map(c => c.name)} 
-                activeChar={getCharacterName(data.id_map, activeCharId)}
+                activeChar={resolveDisplayName(data, activeCharId)}
                 onSelect={(name) => {
                     const found = charMapForTabs.find(c => c.name === name);
                     if (found) setActiveCharId(found.id);

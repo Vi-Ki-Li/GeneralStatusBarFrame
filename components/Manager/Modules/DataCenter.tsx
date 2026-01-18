@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../../types';
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
-import { getCharacterName, generateCharacterId } from '../../../utils/idManager';
+import { resolveDisplayName } from '../../../utils/idManager';
 import { useToast } from '../../Toast/ToastContext';
 import CharacterListSidebar from '../CharacterListSidebar';
 import CategoryEditor from '../Editor/CategoryEditor';
+import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import { Plus } from 'lucide-react';
 
 interface DataCenterProps {
@@ -16,32 +17,48 @@ interface DataCenterProps {
 const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => {
   const [selectedId, setSelectedId] = useState<string>('SHARED');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showMobileAdd, setShowMobileAdd] = useState(false);
   const toast = useToast();
 
   // Prepare Character List
   const charIds = Object.keys(data.characters || {});
   const charList = charIds.map(id => ({
       id, 
-      name: getCharacterName(data.id_map, id)
+      name: resolveDisplayName(data, id)
   })).sort((a, b) => {
       if (a.id === 'char_user') return -1;
       if (b.id === 'char_user') return 1;
       return a.name.localeCompare(b.name);
   });
 
-  const handleAddCharacter = (name: string) => {
-      const existingId = Object.keys(data.id_map).find(key => data.id_map[key] === name);
-      if (existingId && data.characters[existingId]) {
-          toast.warning("角色已存在");
+  const handleAddCharacter = (id: string, name: string) => {
+      // 1. 检查 ID 是否已存在
+      if (data.id_map[id] || data.characters[id]) {
+          toast.warning("ID 已存在，无法创建重复角色");
           return;
       }
-      const newId = existingId || generateCharacterId();
+
       const newData = JSON.parse(JSON.stringify(data));
-      newData.id_map[newId] = name;
-      newData.characters[newId] = {};
+      
+      // 2. 注册 ID 映射 (ID -> Name)
+      // 注意：这里的 Name 仅作为 id_map 的回退值
+      newData.id_map[id] = name;
+      
+      // 3. 初始化角色数据结构
+      newData.characters[id] = {};
+      
+      // 4. 自动添加 [CP|名字] 条目 (数据驱动的显示名)
+      newData.characters[id]['CP'] = [{
+          key: '名字',
+          values: [name],
+          source_id: 9999,
+          user_modified: true, // 标记为用户修改，防止被 AI 轻易覆盖（除非 AI 也是更新这个 Key）
+          category: 'CP'
+      }];
+
       onUpdate(newData);
-      setSelectedId(newId);
-      toast.success(`角色 "${name}" 已创建`);
+      setSelectedId(id);
+      toast.success(`角色 "${name}" (${id}) 已创建`);
   };
 
   const handleResetData = () => setShowResetConfirm(true);
@@ -92,15 +109,9 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
       {!isMobile ? (
         <div style={{ width: '220px', height: '100%', borderRight: '1px solid var(--chip-border)' }}>
           <CharacterListSidebar 
-            characters={charList.map(c => c.name)} 
-            selectedId={selectedId === 'SHARED' ? 'SHARED' : getCharacterName(data.id_map, selectedId)}
-            onSelect={(nameOrShared) => {
-              if (nameOrShared === 'SHARED') setSelectedId('SHARED');
-              else {
-                const found = charList.find(c => c.name === nameOrShared);
-                if (found) setSelectedId(found.id);
-              }
-            }}
+            characters={charList} 
+            selectedId={selectedId}
+            onSelect={setSelectedId}
             onAddCharacter={handleAddCharacter}
             onResetData={handleResetData}
           />
@@ -111,7 +122,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
             {charList.map(c => (
                 <button key={c.id} onClick={() => setSelectedId(c.id)} className={`mobile-tab-item ${selectedId === c.id ? 'active' : ''}`}>{c.name}</button>
             ))}
-            <button onClick={() => handleAddCharacter(prompt("角色名?")||"")} className="mobile-tab-item"><Plus size={14} /></button>
+            <button onClick={() => setShowMobileAdd(true)} className="mobile-tab-item"><Plus size={14} /></button>
          </div>
       )}
 
@@ -119,7 +130,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
       <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '24px', position: 'relative' }}>
           <div style={{ marginBottom: '20px' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {selectedId === 'SHARED' ? '共享世界数据' : getCharacterName(data.id_map, selectedId)}
+                  {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(data, selectedId)}
               </h2>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
                   ID: {selectedId}
@@ -138,6 +149,14 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
           ))}
           <div style={{ height: '40px' }} />
       </div>
+
+      {/* Mobile Add Modal */}
+      <MobileAddCharacterModal 
+         isOpen={showMobileAdd} 
+         onClose={() => setShowMobileAdd(false)}
+         onConfirm={handleAddCharacter}
+         existingIds={charList.map(c => c.id)}
+      />
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (

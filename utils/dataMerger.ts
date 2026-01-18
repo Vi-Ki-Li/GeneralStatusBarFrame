@@ -16,7 +16,8 @@ export function mergeStatusBarData(
 
   // 初始化必要结构
   if (!resultData.id_map) resultData.id_map = {};
-  if (!resultData.definitions) resultData.definitions = {}; // Should be init in App, but safety check
+  if (!resultData.categories) resultData.categories = {};
+  if (!resultData.item_definitions) resultData.item_definitions = {};
 
   // 1. 时间线收缩检测
   const storedMessageCount = resultData._meta?.message_count ?? 0;

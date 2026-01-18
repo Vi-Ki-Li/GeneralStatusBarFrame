@@ -176,8 +176,8 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
             <div style={{ 
               height: '150px', 
               overflowY: 'auto', 
-              background: 'rgba(0,0,0,0.3)', 
-              color: '#4ec9b0', 
+              background: 'rgba(0,0,0,0.2)', 
+              color: 'var(--text-primary)', 
               padding: '10px', 
               borderRadius: '6px',
               fontFamily: 'monospace',
@@ -208,7 +208,7 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
             whiteSpace: 'pre-wrap',
             minHeight: '200px', /* Ensure height on mobile */
             maxHeight: '500px',
-            color: 'var(--text-tertiary)'
+            color: 'var(--text-primary)'
           }}>
             {JSON.stringify(currentData, null, 2)}
           </div>
