@@ -1,4 +1,3 @@
-
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
@@ -23,6 +22,10 @@ export interface ItemDefinition {
   description?: string; // 给 AI 看的描述
   defaultCategory?: string; // 默认归属分类 (UI辅助用)
   separator?: string;   // v6.2 自定义分隔符 (例如 "," 或 ";")，默认为 "|"
+  structure?: {         // v6.6 结构定义 (Definition-Driven Core)
+    parts: string[];    // e.g. ['current', 'max', 'change', 'reason']
+    labels?: string[];  // e.g. ['当前', '最大', '变化', '原因']
+  };
 }
 
 // 3. 状态栏单个数据条目

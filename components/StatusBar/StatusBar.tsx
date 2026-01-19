@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
@@ -56,6 +57,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
         item: item,
         label: label,
         icon: def.icon,
+        definition: def,
         onInteract: (item: StatusBarItem, val?: string) => {
             const text = val || item.values.join(', ');
             console.log(`[Interaction] ${item.key}: ${text}`);

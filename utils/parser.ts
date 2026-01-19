@@ -12,6 +12,8 @@ const REGEX_OLD_FORMAT = /\[([a-zA-Z0-9_-]+)\|(.*?)::(.*)\]/;
  */
 function parseValues(valueString: string, separator: string = '|'): string[] {
   if (!separator) separator = '|';
+  // 防止空字符串分割出空数组元素
+  if (!valueString.trim()) return [];
   return valueString.split(separator).map(v => v.trim());
 }
 
@@ -27,9 +29,7 @@ function parseBoolean(val: string): boolean | undefined {
 
 /**
  * 解析状态栏文本
- * v6.2: 需要传入 definitions 以支持自定义分隔符
- * v6.3: 支持 Meta 指令解析
- * v6.4: Meta 指令现在同时作为数据条目穿透
+ * v6.6 Refactor: Definition-Driven Parsing
  */
 export function parseStatusBarText(
   text: string, 
@@ -56,7 +56,7 @@ export function parseStatusBarText(
       const key = match[3].trim();
       const valueString = match[4].trim();
 
-      // --- Meta指令拦截 (v6.4: 不再 Return，而是继续执行) ---
+      // --- Meta指令拦截 ---
       if (category.toLowerCase() === 'meta' || category.toLowerCase() === 'system') {
         const boolVal = parseBoolean(valueString);
         if (boolVal !== undefined) {
@@ -67,11 +67,10 @@ export function parseStatusBarText(
              result.meta[charName].isPresent = boolVal;
           }
         }
-        // 注意：此处不再 return，允许 Meta 数据作为普通条目进入 result.characters
       }
       // ------------------
 
-      // 查找定义以获取分隔符
+      // 查找定义以获取分隔符 (Definition-Driven)
       const def = definitions[key];
       const separator = def?.separator || '|';
       const values = parseValues(valueString, separator);

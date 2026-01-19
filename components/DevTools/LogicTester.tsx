@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
@@ -30,16 +31,17 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     }
   }, [initialData]);
 
+  // Updated Test Case for v6.6 Core
   const [inputText, setInputText] = useState<string>(
-`// 1. 标准数值更新 (Diff 模式)
-[Eria^CV|HP::80@100|-5|中毒]
+`// 1. 标准数值更新 (Definition: HP uses '|')
+[Eria^CV|HP::80|100|-5|中毒]
 
-// 2. 状态更新
-[User^CP|状态::兴奋]
+// 2. 状态更新 (English Keys)
+[User^CP|Status::Excited]
 
 // 3. 自定义分隔符测试 
-// (请确保在"定义工坊"中将 'Inventory' 的分隔符设为 ',')
-[Eria^CR|Inventory::长剑, 铁盾, 治疗药水]
+// (Inventory uses ',')
+[Eria^CR|Inventory::Sword, Shield, Potion]
 
 // 4. 元数据控制 (角色退场)
 [Eria^Meta|Present::false]

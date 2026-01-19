@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ItemDefinition, LorebookEntry, CategoryDefinition } from '../../../types';
 import { tavernService } from '../../../services/mockTavernService';
@@ -24,15 +25,29 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   const [formData, setFormData] = useState<ItemDefinition>({
     key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
   });
+  
+  // Local state for structure inputs (comma separated strings)
+  const [partsInput, setPartsInput] = useState('');
+  const [labelsInput, setLabelsInput] = useState('');
+
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   useEffect(() => {
     if (definition) {
-      setFormData({ ...definition, separator: definition.separator || '|', name: definition.name || '', icon: definition.icon || '' });
+      setFormData({ 
+          ...definition, 
+          separator: definition.separator || '|', 
+          name: definition.name || '', 
+          icon: definition.icon || '' 
+      });
+      setPartsInput(definition.structure?.parts?.join(', ') || '');
+      setLabelsInput(definition.structure?.labels?.join(', ') || '');
       setIsNew(false);
     } else {
       setFormData({ key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' });
+      setPartsInput('');
+      setLabelsInput('');
       setIsNew(true);
     }
   }, [definition, isOpen]);
@@ -53,6 +68,17 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     if (!toSave.name) delete toSave.name;
     if (!toSave.icon) delete toSave.icon;
 
+    // Process Structure
+    const parts = partsInput.split(',').map(s => s.trim()).filter(s => s);
+    const labels = labelsInput.split(',').map(s => s.trim()).filter(s => s);
+    
+    if (parts.length > 0) {
+        toSave.structure = { parts };
+        if (labels.length > 0) toSave.structure.labels = labels;
+    } else {
+        delete toSave.structure;
+    }
+
     onSave(toSave);
     onClose();
   };
@@ -62,40 +88,21 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     const catKey = categories[defaultCategory]?.key || defaultCategory;
     const sep = separator || '|';
     
-    let valueExample = type === 'numeric' ? '100@100' : type === 'array' ? `物品A${sep}物品B` : '文本内容';
+    // Preview based on structure input
+    const parts = partsInput.split(',').map(s => s.trim()).filter(s => s);
+    
+    let valueExample = '';
+    if (parts.length > 0) {
+        valueExample = parts.map((p, i) => {
+            if (p === 'current' || p === 'value') return '80';
+            if (p === 'max') return '100';
+            return `[${p}]`;
+        }).join(sep);
+    } else {
+        valueExample = type === 'numeric' ? '100|100' : type === 'array' ? `ItemA${sep}ItemB` : 'TextValue';
+    }
+
     return `[角色^${catKey}|${key}::${valueExample}]`;
-  };
-
-  const handleInjectWorldbook = async () => {
-    const { key, type, defaultCategory, description, separator, name } = formData;
-    const catName = categories[defaultCategory]?.name || defaultCategory;
-    const sep = separator || '|';
-    const preview = getPreviewString();
-
-    const content = `条目: ${key}\n显示名: ${name || key}\n分类: ${catName}\n类型: ${type}\n分隔符: "${sep}"\n描述: ${description || '（暂无）'}\n\n格式参考：\n${preview}`;
-
-    try {
-        const entries = await tavernService.getLorebookEntries();
-        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const fuzzyRegex = new RegExp(`^${escapedKey}(\\(.*\\))?$`);
-
-        let targetEntry = entries.find(e => fuzzyRegex.test(e.comment));
-        
-        if (targetEntry) {
-            const updatedEntry = { ...targetEntry, content, enabled: true };
-            const updatedList = entries.map(e => e.uid === targetEntry!.uid ? updatedEntry : e);
-            await tavernService.setLorebookEntries(updatedList);
-            toast.success(`世界书条目 "${targetEntry.comment}" 已更新`);
-        } else {
-            const maxUid = Math.max(...entries.map(e => e.uid), 0);
-            const newEntry: LorebookEntry = {
-                uid: maxUid + 1, key: [key], keysecondary: [], comment: key,
-                content: content, enabled: true, position: maxUid + 1, constant: false, selective: false
-            };
-            await tavernService.setLorebookEntries([...entries, newEntry]);
-            toast.success(`新建世界书条目 "${key}"`);
-        }
-    } catch (e) { toast.error("世界书注入失败"); }
   };
 
   if (!isOpen) return null;
@@ -146,34 +153,54 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                     ))}
                 </div>
             </div>
-            
-            <div className="form-group">
-                <label className="form-label">图标 (Icon)</label>
-                <div onClick={() => setShowIconPicker(!showIconPicker)} className="icon-selector__display">
-                    <div className="icon-selector__display-info">
-                        {IconDisplay ? <IconDisplay size={20} /> : <span>无图标</span>}
-                        <span>{formData.icon || '选择图标...'}</span>
-                    </div>
-                    <ChevronRight size={16} className={`icon-selector__arrow ${showIconPicker ? 'open' : ''}`} />
+
+            <div className="form-group-grid">
+                <div className="form-group">
+                     <label className="form-label">分隔符 (Separator)</label>
+                     <input className="form-input" value={formData.separator || '|'} onChange={e => handleChange('separator', e.target.value)} placeholder="默认: |" />
                 </div>
-                {showIconPicker && (
-                    <div className="icon-selector__picker-wrapper glass-panel">
-                        <IconPicker selectedIcon={formData.icon || ''} onSelect={(icon) => { handleChange('icon', icon); setShowIconPicker(false); }} />
+                 <div className="form-group">
+                    <label className="form-label">图标 (Icon)</label>
+                    <div onClick={() => setShowIconPicker(!showIconPicker)} className="icon-selector__display">
+                        <div className="icon-selector__display-info">
+                            {IconDisplay ? <IconDisplay size={20} /> : <span>无</span>}
+                        </div>
+                        <ChevronRight size={16} className={`icon-selector__arrow ${showIconPicker ? 'open' : ''}`} />
                     </div>
-                )}
+                </div>
+            </div>
+            
+            {showIconPicker && (
+                <div className="icon-selector__picker-wrapper glass-panel">
+                    <IconPicker selectedIcon={formData.icon || ''} onSelect={(icon) => { handleChange('icon', icon); setShowIconPicker(false); }} />
+                </div>
+            )}
+
+            <div className="form-group">
+                <label className="form-label">结构定义 (Parts)</label>
+                <input 
+                    className="form-input" 
+                    value={partsInput} 
+                    onChange={e => setPartsInput(e.target.value)} 
+                    placeholder="e.g. current, max, change" 
+                />
+                <span className="form-hint">用逗号分隔部分名称</span>
             </div>
 
             <div className="form-group">
-                <label className="form-label">分隔符 (Separator)</label>
-                <input className="form-input" value={formData.separator || '|'} onChange={e => handleChange('separator', e.target.value)} placeholder="默认: |" />
+                <label className="form-label">标签定义 (Labels)</label>
+                <input 
+                    className="form-input" 
+                    value={labelsInput} 
+                    onChange={e => setLabelsInput(e.target.value)} 
+                    placeholder="e.g. 当前, 最大, 变化" 
+                />
+                <span className="form-hint">对应 Parts 的中文标签 (可选)</span>
             </div>
 
             <div className="form-group">
                 <label className="form-label">AI 描述与指令 (Description)</label>
                 <textarea className="form-input" value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} placeholder="告诉 AI 这个条目代表什么..." />
-                <button onClick={handleInjectWorldbook} className="btn btn--ghost inject-btn">
-                    <BookOpen size={16} /> 注入/更新世界书
-                </button>
             </div>
         </div>
 

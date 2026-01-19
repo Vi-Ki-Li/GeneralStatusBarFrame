@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
@@ -42,15 +43,10 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []); 
 
-  // --- 核心逻辑重构 ---
   const updateSuggestions = (filterText: string = '') => {
-    // 1. 严格分类过滤
     let filteredDefs = allDefinitions.filter(def => def.defaultCategory === item.category);
-    
-    // 2. 严格排除已存在项
     filteredDefs = filteredDefs.filter(def => !existingKeysInCategory.includes(def.key));
 
-    // 3. 实时输入筛选
     if (filterText) {
         const lowerFilter = filterText.toLowerCase();
         filteredDefs = filteredDefs.filter(def => 
@@ -58,35 +54,17 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
             (def.name && def.name.toLowerCase().includes(lowerFilter))
         );
     }
-    
     setSuggestions(filteredDefs);
   };
 
   const handleKeyChange = (newKey: string) => {
-    // 立即更新父组件状态
     notifyChange({ ...item, key: newKey });
-    
-    // 如果建议菜单是打开的，就根据输入内容实时筛选
-    if (showSuggestions) {
-      updateSuggestions(newKey);
-    }
+    if (showSuggestions) updateSuggestions(newKey);
   }; 
 
   const toggleSuggestions = () => {
-    // 只有在准备打开菜单时才更新建议列表
-    if (!showSuggestions) {
-        updateSuggestions(''); // 用当前key预筛选一下
-    }
+    if (!showSuggestions) updateSuggestions('');
     setShowSuggestions(prev => !prev);
-  };
-  // --- 结束 ---
-
-  const parseNumeric = (val: string) => {
-    if (val.includes('@')) {
-      const [curr, max] = val.split('@');
-      return { curr, max };
-    }
-    return { curr: val, max: '' };
   };
 
   const notifyChange = (modifiedItem: StatusBarItem) => {
@@ -107,8 +85,9 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   const handleSuggestionClick = (def: ItemDefinition) => { 
       let newValues: string[];
+      // Reset values based on new definition structure
       switch (def.type) {
-          case 'numeric': newValues = ['0@100']; break;
+          case 'numeric': newValues = ['0', '100']; break;
           case 'array': newValues = []; break;
           default: newValues = ['']; break;
       }
@@ -116,19 +95,10 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       setShowSuggestions(false);
   }; 
 
-  const handleNumericChange = (field: 'curr' | 'max' | 'change' | 'reason', val: string) => {
-    const values = [...item.values];
-    const { curr, max } = parseNumeric(values[0] || '');
-    
-    let newVal0 = values[0];
-    
-    if (field === 'curr') newVal0 = max ? `${val}@${max}` : val;
-    if (field === 'max') newVal0 = val ? `${curr}@${val}` : curr;
-
-    values[0] = newVal0;
-    if (field === 'change') values[1] = val;
-    if (field === 'reason') values[2] = val;
-
+  // v6.6 Refactor: Direct index manipulation for Numeric
+  const handleNumericChange = (index: number, val: string) => {
+    const values = [...(item.values || [])];
+    values[index] = val;
     notifyChange({ ...item, values });
   };
 
@@ -151,44 +121,25 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   const renderNumericInput = () => {
-    const { curr, max } = parseNumeric(item.values[0] || '');
-    const change = item.values[1] || '';
-    const reason = item.values[2] || '';
+    // Determine labels from structure
+    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因'];
+    const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason'];
+    const values = item.values || [];
 
     return (
       <div className="item-editor-row__numeric-inputs">
-        <div className="item-editor-row__numeric-group">
-            <input 
-              className="item-editor-row__input" 
-              placeholder="当前" 
-              value={curr}
-              onChange={e => handleNumericChange('curr', e.target.value)}
-              {...commonInputProps}
-            />
-            <span className="item-editor-row__numeric-separator">/</span>
-            <input 
-              className="item-editor-row__input" 
-              placeholder="最大" 
-              value={max}
-              onChange={e => handleNumericChange('max', e.target.value)}
-              {...commonInputProps}
-            />
-        </div>
-        
-        <input 
-          className="item-editor-row__input item-editor-row__input--change" 
-          placeholder="±变化" 
-          value={change}
-          onChange={e => handleNumericChange('change', e.target.value)}
-          {...commonInputProps}
-        />
-        <input 
-          className="item-editor-row__input item-editor-row__input--reason" 
-          placeholder="原因 (选填)" 
-          value={reason}
-          onChange={e => handleNumericChange('reason', e.target.value)}
-          {...commonInputProps}
-        />
+        {parts.map((part, idx) => (
+            <div key={idx} className={`item-editor-row__numeric-field ${part === 'reason' ? 'wide' : ''}`}>
+                 <input 
+                    className="item-editor-row__input"
+                    placeholder={labels[idx] || part}
+                    value={values[idx] || ''}
+                    onChange={e => handleNumericChange(idx, e.target.value)}
+                    {...commonInputProps}
+                 />
+                 {idx < parts.length - 1 && part !== 'reason' && <span className="item-editor-row__numeric-separator">/</span>}
+            </div>
+        ))}
       </div>
     );
   };
@@ -238,7 +189,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   if (!isEditing && isMobile) {
-      const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' ') || '(空)';
+      const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' | ') || '(空)';
       const displayName = definition?.name || item.key;
       const isNamed = !!definition?.name;
 

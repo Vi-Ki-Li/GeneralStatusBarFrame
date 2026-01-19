@@ -22,13 +22,51 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
  * 默认条目定义 (示例)
  */
 export const DEFAULT_ITEM_DEFINITIONS: ItemDefinition[] = [
-  { key: 'HP', name: '生命值', type: 'numeric', defaultCategory: 'CV', description: '角色的生命值' },
-  { key: 'MP', name: '魔法值', type: 'numeric', defaultCategory: 'CV', description: '角色的魔法值' },
-  { key: 'Name', name: '姓名', type: 'text', defaultCategory: 'CP', description: '角色全名' },
-  { key: 'Inventory', name: '背包', type: 'array', defaultCategory: 'CR', description: '背包物品列表' },
-  { key: 'Level', name: '等级', type: 'numeric', defaultCategory: 'CP', description: '角色等级' },
-  { key: 'Gold', name: '金币', type: 'numeric', defaultCategory: 'CR', description: '持有金币数量' },
+  // --- CV (Numeric) ---
+  { 
+    key: 'HP', name: '生命值', type: 'numeric', defaultCategory: 'CV', 
+    description: '角色的生命值。格式: 当前值|最大值|变化量|原因',
+    separator: '|',
+    structure: { 
+      parts: ['current', 'max', 'change', 'reason'], 
+      labels: ['当前', '最大', '变化', '原因'] 
+    } 
+  },
+  { 
+    key: 'MP', name: '魔法值', type: 'numeric', defaultCategory: 'CV', 
+    description: '角色的魔法值。',
+    separator: '|',
+    structure: { 
+      parts: ['current', 'max', 'change', 'reason'], 
+      labels: ['当前', '最大', '变化', '原因'] 
+    }
+  },
   
+  // --- CP (Text/Profile) ---
+  { key: 'Name', name: '姓名', type: 'text', defaultCategory: 'CP', description: '角色全名' },
+  { key: 'Level', name: '等级', type: 'numeric', defaultCategory: 'CP', description: '角色等级' },
+  { key: 'Race', name: '种族', type: 'text', defaultCategory: 'CP' },
+  { key: 'Class', name: '职业', type: 'text', defaultCategory: 'CP' },
+  { key: 'Status', name: '状态', type: 'array', defaultCategory: 'CP', separator: ',', structure: { parts: ['tags'] } },
+
+  // --- CR (Inventory/Array) ---
+  { 
+    key: 'Inventory', name: '背包', type: 'array', defaultCategory: 'CR', 
+    description: '背包物品列表，使用逗号分隔',
+    separator: ',',
+    structure: { parts: ['item'] } 
+  },
+  { 
+    key: 'Gold', name: '金币', type: 'numeric', defaultCategory: 'CR', 
+    description: '持有金币数量',
+    structure: { parts: ['amount', 'change'] }
+  },
+  
+  // --- ST (Environment) ---
+  { key: 'Time', name: '时间', type: 'text', defaultCategory: 'ST' },
+  { key: 'Weather', name: '天气', type: 'text', defaultCategory: 'ST' },
+  { key: 'Location', name: '地点', type: 'text', defaultCategory: 'ST' },
+
   // Meta Definitions
   { 
       key: 'Present', 
