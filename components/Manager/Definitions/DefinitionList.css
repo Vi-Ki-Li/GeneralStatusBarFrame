@@ -1,3 +1,4 @@
+
 .definition-list {
   padding: 0;
   height: 100%;
@@ -143,6 +144,7 @@
 .def-card__meta-group {
   display: flex;
   gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 .def-card__meta-chip {
   display: flex;
@@ -154,6 +156,17 @@
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--chip-border);
+}
+.def-card__meta-chip.highlight {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: var(--color-success);
+}
+
+.def-card__display-name {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    margin-top: -4px;
 }
 
 .inline-confirm {

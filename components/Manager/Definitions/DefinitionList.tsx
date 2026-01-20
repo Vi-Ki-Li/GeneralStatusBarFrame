@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
@@ -122,33 +123,43 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
 
         {activeTab === 'items' && (
              <div className="definition-list__grid">
-                {itemDefinitions.map(def => (
-                    <div key={def.key} className="def-card def-card--item glass-panel">
-                        <div className="def-card__header">
-                            <div className="def-card__name-group">
-                                <div className="def-card__name">{def.key}</div>
-                                <div className="def-card__category-tag">
-                                    {data.categories[def.defaultCategory || '']?.name || def.defaultCategory || 'Default'}
+                {itemDefinitions.map(def => {
+                    const isComplex = def.structure?.parts && def.structure.parts.length > 0;
+                    return (
+                        <div key={def.key} className="def-card def-card--item glass-panel">
+                            <div className="def-card__header">
+                                <div className="def-card__name-group">
+                                    <div className="def-card__name">{def.key}</div>
+                                    <div className="def-card__category-tag">
+                                        {data.categories[def.defaultCategory || '']?.name || def.defaultCategory || 'Default'}
+                                    </div>
+                                </div>
+                                <div className="def-card__actions">
+                                    {confirmDeleteItemKey === def.key ? (
+                                        <InlineConfirm onConfirm={() => executeDeleteItemDef(def.key)} onCancel={() => setConfirmDeleteItemKey(null)} />
+                                    ) : (
+                                        <>
+                                            <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="btn btn--ghost"><Edit2 size={16} /></button>
+                                            <button onClick={() => setConfirmDeleteItemKey(def.key)} className="btn btn--ghost btn--delete"><Trash2 size={16} /></button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                            <div className="def-card__actions">
-                                {confirmDeleteItemKey === def.key ? (
-                                    <InlineConfirm onConfirm={() => executeDeleteItemDef(def.key)} onCancel={() => setConfirmDeleteItemKey(null)} />
-                                ) : (
-                                    <>
-                                        <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="btn btn--ghost"><Edit2 size={16} /></button>
-                                        <button onClick={() => setConfirmDeleteItemKey(def.key)} className="btn btn--ghost btn--delete"><Trash2 size={16} /></button>
-                                    </>
+                            <div className="def-card__meta-group">
+                                <span className="def-card__meta-chip">
+                                    <Type size={12} />
+                                    {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : '标签组'}
+                                </span>
+                                {isComplex && (
+                                    <span className="def-card__meta-chip highlight">
+                                        自定义结构 ({def.structure?.parts.length})
+                                    </span>
                                 )}
                             </div>
+                            {def.name && <div className="def-card__display-name">{def.name}</div>}
                         </div>
-                        <div className="def-card__meta-group">
-                            <span className="def-card__meta-chip"><Type size={12} />
-                                {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : '标签组'}
-                            </span>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {itemDefinitions.length === 0 && (
                      <div className="definition-list__empty-state">暂无特殊条目规则。</div>
                 )}

@@ -1,3 +1,4 @@
+
 /* Shared Drawer Styles */
 .drawer__overlay {
   position: absolute;
@@ -11,7 +12,7 @@
   position: absolute;
   top: 0; right: 0; bottom: 0;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px; /* Widened from 450px to fit structure builder better */
   background: var(--bg-app);
   border-left: 1px solid var(--chip-border);
   z-index: 101;
@@ -48,7 +49,7 @@
   padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
 }
 
 .drawer__footer {
@@ -69,47 +70,33 @@
 .form-input { 
     padding: 10px; border-radius: 8px; border: 1px solid var(--chip-border); 
     background: var(--bg-app); color: var(--text-primary); outline: none; transition: 0.2s;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    min-width: 0; /* Allows shrinking */
 }
 .form-input:disabled { opacity: 0.7; }
-.form-input[value*="HP"] { font-weight: 600; font-family: monospace; }
-.form-input[placeholder*="分隔符"] { font-family: monospace; }
 .form-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
-textarea.form-input { min-height: 100px; line-height: 1.5; }
+textarea.form-input { min-height: 100px; line-height: 1.5; resize: vertical; }
 
 .format-preview {
-  margin-top: 8px;
+  margin-top: 4px;
   font-family: monospace;
   font-size: 0.85rem;
   word-break: break-all;
   color: var(--text-primary);
-  background: var(--bg-app);
-  padding: 8px;
-  border-radius: 4px;
+  background: rgba(0,0,0,0.03);
+  padding: 10px;
+  border-radius: 6px;
   border: 1px dashed var(--chip-border);
-}
-
-.type-selector { display: flex; gap: 8px; }
-.type-selector__btn {
-  flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--chip-border);
-  background: transparent; color: var(--text-secondary);
-  cursor: pointer; font-weight: var(--font-weight-medium);
-  transition: var(--transition-fast);
-}
-.type-selector__btn.active {
-  border-color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--color-primary);
 }
 
 .icon-selector__display {
   padding: 10px; display: flex; align-items: center; justify-content: space-between;
   cursor: pointer; border: 1px solid var(--chip-border);
   border-radius: var(--radius-md);
+  background: var(--bg-app);
 }
 .icon-selector__display-info { display: flex; align-items: center; gap: 12px; }
 .icon-selector__display-info span:first-child { color: var(--text-tertiary); }
-.icon-selector__display-info span:last-child { font-family: monospace; font-size: 0.9rem; }
 .icon-selector__arrow { color: var(--text-tertiary); transition: 0.2s; }
 .icon-selector__arrow.open { transform: rotate(90deg); }
 .icon-selector__picker-wrapper {
@@ -117,12 +104,149 @@ textarea.form-input { min-height: 100px; line-height: 1.5; }
   border: 1px solid var(--chip-border);
 }
 
-.inject-btn {
-  margin-top: 12px; width: 100%;
-  border-style: dashed;
-  border-color: var(--color-success);
-  color: var(--color-success);
+/* --- Structure Builder Styles --- */
+.structure-builder {
+    background: rgba(0,0,0,0.02);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--chip-border);
 }
-.inject-btn:hover {
-  background: rgba(16, 185, 129, 0.05);
+
+.structure-builder__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.structure-builder__templates {
+    display: flex;
+    gap: 6px;
+}
+
+.structure-builder__templates button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border: 1px solid var(--chip-border);
+    border-radius: 4px;
+    background: var(--bg-app);
+    cursor: pointer;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+.structure-builder__templates button:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.structure-builder__list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.structure-builder__empty {
+    text-align: center;
+    padding: 12px;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    border: 1px dashed var(--chip-border);
+    border-radius: 6px;
+}
+
+.structure-part-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg-app);
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--chip-border);
+}
+
+.structure-part-inputs {
+    flex: 1; /* Take up remaining space */
+    min-width: 0; /* Critical for grid inside flex to shrink */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.part-input {
+    padding: 6px;
+    font-size: 0.85rem;
+    height: 32px;
+    width: 100%; /* Ensure input respects grid cell */
+}
+
+.structure-part-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0; /* CRITICAL FIX: Prevent buttons from being squashed */
+    margin-left: 4px;
+}
+
+.structure-part-actions button {
+    width: 28px; /* Slightly larger touch target */
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.structure-part-actions button:hover:not(:disabled) {
+    background: rgba(0,0,0,0.05);
+}
+.structure-part-actions button.delete:hover {
+    color: var(--color-danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+.structure-part-actions button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.structure-builder__add-btn {
+    width: 100%;
+    padding: 8px;
+    border: 1px dashed var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+    color: var(--color-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.structure-builder__add-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+@media (max-width: 600px) {
+    .drawer__panel {
+        max-width: 100%;
+    }
+    .structure-part-row {
+        flex-wrap: wrap;
+    }
+    .structure-part-inputs {
+        min-width: 100%; /* Stack on very small screens */
+    }
+    .structure-part-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+    }
 }

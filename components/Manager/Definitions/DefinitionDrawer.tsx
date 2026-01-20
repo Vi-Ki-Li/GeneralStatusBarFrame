@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { ItemDefinition, LorebookEntry, CategoryDefinition } from '../../../types';
-import { tavernService } from '../../../services/mockTavernService';
+import { ItemDefinition, CategoryDefinition } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
-import { X, Save, BookOpen, ChevronRight, Eye } from 'lucide-react';
+import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import './DefinitionDrawer.css';
 
@@ -17,6 +16,11 @@ interface DefinitionDrawerProps {
   existingKeys: string[];
 }
 
+interface StructurePart {
+    key: string;
+    label: string;
+}
+
 const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({ 
   definition, categories, isOpen, onClose, onSave, existingKeys 
 }) => {
@@ -26,10 +30,8 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
   });
   
-  // Local state for structure inputs (comma separated strings)
-  const [partsInput, setPartsInput] = useState('');
-  const [labelsInput, setLabelsInput] = useState('');
-
+  // Local state for structure builder
+  const [structureParts, setStructureParts] = useState<StructurePart[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
 
@@ -41,13 +43,23 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
           name: definition.name || '', 
           icon: definition.icon || '' 
       });
-      setPartsInput(definition.structure?.parts?.join(', ') || '');
-      setLabelsInput(definition.structure?.labels?.join(', ') || '');
+      
+      // Parse existing structure
+      if (definition.structure?.parts) {
+          const parts = definition.structure.parts;
+          const labels = definition.structure.labels || [];
+          const mapped = parts.map((p, i) => ({
+              key: p,
+              label: labels[i] || p
+          }));
+          setStructureParts(mapped);
+      } else {
+          setStructureParts([]);
+      }
       setIsNew(false);
     } else {
       setFormData({ key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' });
-      setPartsInput('');
-      setLabelsInput('');
+      setStructureParts([]);
       setIsNew(true);
     }
   }, [definition, isOpen]);
@@ -69,12 +81,11 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     if (!toSave.icon) delete toSave.icon;
 
     // Process Structure
-    const parts = partsInput.split(',').map(s => s.trim()).filter(s => s);
-    const labels = labelsInput.split(',').map(s => s.trim()).filter(s => s);
-    
-    if (parts.length > 0) {
-        toSave.structure = { parts };
-        if (labels.length > 0) toSave.structure.labels = labels;
+    if (structureParts.length > 0) {
+        toSave.structure = {
+            parts: structureParts.map(p => p.key),
+            labels: structureParts.map(p => p.label)
+        };
     } else {
         delete toSave.structure;
     }
@@ -83,26 +94,87 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     onClose();
   };
 
+  // --- Structure Editor Logic ---
+  const addPart = () => {
+      setStructureParts([...structureParts, { key: '', label: '' }]);
+  };
+
+  const updatePart = (index: number, field: keyof StructurePart, value: string) => {
+      const newParts = [...structureParts];
+      newParts[index][field] = value;
+      setStructureParts(newParts);
+  };
+
+  const removePart = (index: number) => {
+      const newParts = [...structureParts];
+      newParts.splice(index, 1);
+      setStructureParts(newParts);
+  };
+
+  const movePart = (index: number, direction: -1 | 1) => {
+      if (index + direction < 0 || index + direction >= structureParts.length) return;
+      const newParts = [...structureParts];
+      const temp = newParts[index];
+      newParts[index] = newParts[index + direction];
+      newParts[index + direction] = temp;
+      setStructureParts(newParts);
+  };
+
+  const applyTemplate = (type: 'numeric-5' | 'numeric-3' | 'numeric-simple' | 'text-simple') => {
+      let template: StructurePart[] = [];
+      switch (type) {
+          case 'numeric-5':
+              template = [
+                  { key: 'current', label: '当前值' },
+                  { key: 'max', label: '最大值' },
+                  { key: 'change', label: '变化量' },
+                  { key: 'reason', label: '原因' },
+                  { key: 'description', label: '描述' }
+              ];
+              handleChange('type', 'numeric');
+              break;
+          case 'numeric-3':
+              template = [
+                  { key: 'current', label: '当前' },
+                  { key: 'max', label: '最大' },
+                  { key: 'description', label: '描述' }
+              ];
+              handleChange('type', 'numeric');
+              break;
+          case 'numeric-simple':
+              template = [
+                  { key: 'value', label: '数值' }
+              ];
+              handleChange('type', 'numeric');
+              break;
+          default:
+              template = []; // Clear
+              handleChange('type', 'text');
+              break;
+      }
+      setStructureParts(template);
+  };
+
   const getPreviewString = () => {
-    const { key, type, defaultCategory, separator } = formData;
+    const { key, defaultCategory, separator } = formData;
     const catKey = categories[defaultCategory]?.key || defaultCategory;
     const sep = separator || '|';
     
-    // Preview based on structure input
-    const parts = partsInput.split(',').map(s => s.trim()).filter(s => s);
-    
     let valueExample = '';
-    if (parts.length > 0) {
-        valueExample = parts.map((p, i) => {
-            if (p === 'current' || p === 'value') return '80';
-            if (p === 'max') return '100';
-            return `[${p}]`;
+    if (structureParts.length > 0) {
+        valueExample = structureParts.map(p => {
+            const k = p.key.toLowerCase();
+            if (k === 'current' || k === 'value') return '80';
+            if (k === 'max') return '100';
+            if (k === 'change') return '-5';
+            if (k === 'reason') return '原因';
+            return `[${p.label || p.key}]`;
         }).join(sep);
     } else {
-        valueExample = type === 'numeric' ? '100|100' : type === 'array' ? `ItemA${sep}ItemB` : 'TextValue';
+        valueExample = formData.type === 'numeric' ? '100' : '文本内容';
     }
 
-    return `[角色^${catKey}|${key}::${valueExample}]`;
+    return `[${catKey ? '角色^' + catKey : '分类'}|${key}::${valueExample}]`;
   };
 
   if (!isOpen) return null;
@@ -120,47 +192,42 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
         </div>
 
         <div className="drawer__content">
+            {/* --- Basic Info --- */}
             <div className="form-group-grid">
                 <div className="form-group">
                     <label className="form-label">Key (唯一键)</label>
                     <input className="form-input" value={formData.key} onChange={e => handleChange('key', e.target.value)} placeholder="e.g. HP" disabled={!isNew} />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">显示名称 (Name)</label>
+                    <label className="form-label">显示名称</label>
                     <input className="form-input" value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder="e.g. 生命值" />
-                </div>
-            </div>
-
-            <div className="form-group">
-                <label className="form-label icon-label"><Eye size={14} /> 格式预览 (Format Preview)</label>
-                <div className="format-preview">{getPreviewString()}</div>
-            </div>
-
-            <div className="form-group">
-                <label className="form-label">所属分类 (Default Category)</label>
-                <select className="form-input" value={formData.defaultCategory} onChange={e => handleChange('defaultCategory', e.target.value)}>
-                    {categoryList.map(cat => (<option key={cat.key} value={cat.key}>{cat.name} ({cat.key})</option>))}
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label className="form-label">渲染类型 (Type)</label>
-                <div className="type-selector">
-                    {['text', 'numeric', 'array'].map(type => (
-                        <button key={type} onClick={() => handleChange('type', type)} className={`type-selector__btn ${formData.type === type ? 'active' : ''}`}>
-                            {type === 'text' ? '文本' : type === 'numeric' ? '数值' : '标签组'}
-                        </button>
-                    ))}
                 </div>
             </div>
 
             <div className="form-group-grid">
                 <div className="form-group">
-                     <label className="form-label">分隔符 (Separator)</label>
+                    <label className="form-label">所属分类</label>
+                    <select className="form-input" value={formData.defaultCategory} onChange={e => handleChange('defaultCategory', e.target.value)}>
+                        {categoryList.map(cat => (<option key={cat.key} value={cat.key}>{cat.name} ({cat.key})</option>))}
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">渲染类型</label>
+                    <select className="form-input" value={formData.type} onChange={e => handleChange('type', e.target.value)}>
+                        <option value="text">文本 (Text)</option>
+                        <option value="numeric">数值 (Numeric)</option>
+                        <option value="array">标签组 (Array)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="form-group-grid">
+                <div className="form-group">
+                     <label className="form-label">分隔符</label>
                      <input className="form-input" value={formData.separator || '|'} onChange={e => handleChange('separator', e.target.value)} placeholder="默认: |" />
                 </div>
                  <div className="form-group">
-                    <label className="form-label">图标 (Icon)</label>
+                    <label className="form-label">图标</label>
                     <div onClick={() => setShowIconPicker(!showIconPicker)} className="icon-selector__display">
                         <div className="icon-selector__display-info">
                             {IconDisplay ? <IconDisplay size={20} /> : <span>无</span>}
@@ -176,30 +243,60 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                 </div>
             )}
 
-            <div className="form-group">
-                <label className="form-label">结构定义 (Parts)</label>
-                <input 
-                    className="form-input" 
-                    value={partsInput} 
-                    onChange={e => setPartsInput(e.target.value)} 
-                    placeholder="e.g. current, max, change" 
-                />
-                <span className="form-hint">用逗号分隔部分名称</span>
+            {/* --- Structure Builder --- */}
+            <div className="form-group structure-builder">
+                <div className="structure-builder__header">
+                    <label className="form-label">数据结构定义</label>
+                    <div className="structure-builder__templates">
+                        <button onClick={() => applyTemplate('numeric-5')} title="标准5段式 (当前/最大/变化/原因/描述)"><LayoutTemplate size={14}/> 预设数值</button>
+                        <button onClick={() => applyTemplate('numeric-3')} title="简易3段式 (当前/最大/描述)"><LayoutTemplate size={14}/> 简易</button>
+                    </div>
+                </div>
+                
+                <div className="structure-builder__list">
+                    {structureParts.length === 0 ? (
+                        <div className="structure-builder__empty">
+                            默认结构 (单值)
+                        </div>
+                    ) : (
+                        structureParts.map((part, idx) => (
+                            <div key={idx} className="structure-part-row">
+                                <div className="structure-part-inputs">
+                                    <input 
+                                        className="form-input part-input" 
+                                        value={part.key} 
+                                        onChange={e => updatePart(idx, 'key', e.target.value)}
+                                        placeholder="字段Key (e.g. max)"
+                                    />
+                                    <input 
+                                        className="form-input part-input" 
+                                        value={part.label} 
+                                        onChange={e => updatePart(idx, 'label', e.target.value)}
+                                        placeholder="显示标签 (e.g. 最大值)"
+                                    />
+                                </div>
+                                <div className="structure-part-actions">
+                                    <button onClick={() => movePart(idx, -1)} disabled={idx === 0}><ChevronUp size={16}/></button>
+                                    <button onClick={() => movePart(idx, 1)} disabled={idx === structureParts.length - 1}><ChevronDown size={16}/></button>
+                                    <button onClick={() => removePart(idx)} className="delete"><Trash2 size={16}/></button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+                
+                <button onClick={addPart} className="structure-builder__add-btn">
+                    <Plus size={16} /> 添加字段
+                </button>
             </div>
 
             <div className="form-group">
-                <label className="form-label">标签定义 (Labels)</label>
-                <input 
-                    className="form-input" 
-                    value={labelsInput} 
-                    onChange={e => setLabelsInput(e.target.value)} 
-                    placeholder="e.g. 当前, 最大, 变化" 
-                />
-                <span className="form-hint">对应 Parts 的中文标签 (可选)</span>
+                <label className="form-label icon-label"><Eye size={14} /> 格式预览</label>
+                <div className="format-preview">{getPreviewString()}</div>
             </div>
 
             <div className="form-group">
-                <label className="form-label">AI 描述与指令 (Description)</label>
+                <label className="form-label">AI 描述与指令</label>
                 <textarea className="form-input" value={formData.description || ''} onChange={e => handleChange('description', e.target.value)} placeholder="告诉 AI 这个条目代表什么..." />
             </div>
         </div>
