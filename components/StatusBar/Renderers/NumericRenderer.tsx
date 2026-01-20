@@ -123,10 +123,8 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
       
       {(descStr || reasonStr) && (
         <div className="numeric-renderer__sub-row">
+            {reasonStr && <span className="numeric-renderer__reason">({reasonStr})</span>}
             {descStr && <span className="numeric-renderer__description">{descStr}</span>}
-            {reasonStr && !changeStr && (
-                 <span className="numeric-renderer__reason">({reasonStr})</span>
-            )}
         </div>
       )}
     </div>

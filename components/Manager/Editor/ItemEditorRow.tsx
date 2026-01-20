@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
-import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
+import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronDown, Check, Edit2 } from 'lucide-react';
 import './ItemEditorRow.css';
 
 interface ItemEditorRowProps { 
@@ -87,19 +87,33 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   const handleSuggestionClick = (def: ItemDefinition) => { 
       let newValues: string[];
-      switch (def.type) {
-          case 'numeric': newValues = ['0', '100', '', '', '']; break;
-          case 'array': newValues = []; break;
-          default: newValues = ['']; break;
+      // Init values based on structure length if available
+      if (def.structure?.parts) {
+          newValues = new Array(def.structure.parts.length).fill('');
+          if (def.structure.parts.includes('max')) {
+              const maxIdx = def.structure.parts.indexOf('max');
+              newValues[maxIdx] = '100';
+          }
+          if (def.structure.parts.includes('current') || def.structure.parts.includes('value')) {
+               const valIdx = Math.max(def.structure.parts.indexOf('current'), def.structure.parts.indexOf('value'));
+               newValues[valIdx] = '0';
+          }
+      } else {
+          switch (def.type) {
+              case 'numeric': newValues = ['0', '100', '', '', '']; break;
+              case 'array': newValues = []; break;
+              default: newValues = ['']; break;
+          }
       }
+      
       onChange({ ...item, key: def.key, values: newValues, user_modified: true, source_id: 9999 });
       setShowSuggestions(false);
   }; 
 
-  const handleNumericChange = (index: number, val: string) => {
+  const handleValueChange = (index: number, val: string) => {
     const values = [...(item.values || [])];
     values[index] = val;
-    // Ensure array has enough padding if user types in a later index
+    // Ensure padding
     for (let i = 0; i <= index; i++) {
         if (values[i] === undefined) values[i] = '';
     }
@@ -125,75 +139,27 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     readOnly: isOverlay 
   };
 
-  // 渲染数值输入 - 支持 5 段式结构
-  const renderNumericInput = () => {
-    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因', '描述'];
+  // --- v6.8: Completely Dynamic Input Rendering ---
+  const renderDynamicInputs = () => {
+    // Default fallback structure if not defined
     const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason', 'description'];
+    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因', '描述'];
     const values = item.values || [];
 
     return (
-      <div className="item-editor-row__numeric-wrapper">
-          <div className="item-editor-row__numeric-grid">
-            {/* Row 1: Current / Max */}
-            <div className="item-editor-row__numeric-cell main-val">
-                <input 
-                    className="item-editor-row__input numeric"
-                    placeholder={labels[0] || 'Value'}
-                    value={values[0] || ''}
-                    onChange={e => handleNumericChange(0, e.target.value)}
-                    {...commonInputProps}
-                />
-            </div>
-            
-            <div className="item-editor-row__numeric-separator">/</div>
-
-            <div className="item-editor-row__numeric-cell max-val">
-                <input 
-                    className="item-editor-row__input numeric"
-                    placeholder={labels[1] || 'Max'}
-                    value={values[1] || ''}
-                    onChange={e => handleNumericChange(1, e.target.value)}
-                    {...commonInputProps}
-                />
-            </div>
-
-            {/* Row 2: Change & Reason */}
-            {parts.length > 2 && (
-                <>
-                    <div className="item-editor-row__numeric-cell change-val">
-                        <input 
-                            className="item-editor-row__input numeric-sm"
-                            placeholder={labels[2] || 'Change'}
-                            value={values[2] || ''}
-                            onChange={e => handleNumericChange(2, e.target.value)}
-                            {...commonInputProps}
-                        />
-                    </div>
-                    <div className="item-editor-row__numeric-cell reason-val">
-                        <input 
-                            className="item-editor-row__input numeric-sm"
-                            placeholder={labels[3] || 'Reason'}
-                            value={values[3] || ''}
-                            onChange={e => handleNumericChange(3, e.target.value)}
-                            {...commonInputProps}
-                        />
-                    </div>
-                </>
-            )}
-          </div>
-          
-          {/* Row 3: Description (Full Width) */}
-          {parts.length > 4 && (
-             <div className="item-editor-row__numeric-desc">
-                 <input 
-                    className="item-editor-row__input numeric-xs"
-                    placeholder={labels[4] || 'Description (描述)'}
-                    value={values[4] || ''}
-                    onChange={e => handleNumericChange(4, e.target.value)}
-                    {...commonInputProps}
-                 />
-             </div>
-          )}
+      <div className="item-editor-row__dynamic-grid">
+          {parts.map((part, idx) => (
+              <div key={idx} className="item-editor-row__dynamic-cell">
+                  <input 
+                      className="item-editor-row__input"
+                      placeholder={labels[idx] || part}
+                      value={values[idx] || ''}
+                      onChange={e => handleValueChange(idx, e.target.value)}
+                      {...commonInputProps}
+                  />
+                  <span className="item-editor-row__field-label">{labels[idx] || part}</span>
+              </div>
+          ))}
       </div>
     );
   };
@@ -354,7 +320,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       </div>
 
       <div className="item-editor-row__value-section">
-        {uiType === 'numeric' && renderNumericInput()}
+        {uiType === 'numeric' && renderDynamicInputs()}
         {uiType === 'array' && renderArrayInput()}
         {uiType === 'text' && (
           <textarea 

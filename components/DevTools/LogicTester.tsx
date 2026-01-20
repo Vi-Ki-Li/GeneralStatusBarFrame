@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
-import { StatusBarData } from '../../types';
+import { StatusBarData, ItemDefinition } from '../../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
 import { Play, RotateCcw, AlertTriangle } from 'lucide-react';
 import './LogicTester.css';
@@ -31,21 +31,20 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     }
   }, [initialData]);
 
-  // Updated Test Case for v6.6 Core
+  // Updated Test Case for v6.8 Core (Definition-Driven Custom Structure)
   const [inputText, setInputText] = useState<string>(
 `// 1. 标准数值更新 (Definition: HP uses '|')
-[Eria^CV|HP::80|100|-5|中毒]
+[Eria^CV|体力::80|100|-5|中毒]
 
-// 2. 状态更新 (English Keys)
+// 2. 自定义结构测试 (Mana: current|max|regen)
+// 注意：需在 LogicTester 初始化时注入 Mana 定义
+[Eria^CV|Mana::10|100|5]
+
+// 3. 状态更新 (English Keys)
 [User^CP|Status::Excited]
 
-// 3. 自定义分隔符测试 
-// (Inventory uses ',')
-[Eria^CR|Inventory::Sword, Shield, Potion]
-
 // 4. 元数据控制 (角色退场)
-[Eria^Meta|Present::false]
-[Luna^Meta|Visible::true]`
+[Eria^Meta|Present::false]`
   );
   
   const [sourceId, setSourceId] = useState<number>(11);
@@ -54,9 +53,27 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
   const [lastParsed, setLastParsed] = useState<any>(null);
 
   const handleRun = () => {
-    const parsed = parseStatusBarText(inputText, sourceId, currentData.item_definitions);
+    // 注入临时定义以便测试 (Dynamic Injection for Test)
+    const testDefinitions = { 
+        ...currentData.item_definitions,
+        'Mana': {
+            key: 'Mana',
+            name: '魔法值 (Custom)',
+            type: 'numeric',
+            defaultCategory: 'CV',
+            separator: '|',
+            structure: { 
+                parts: ['current', 'max', 'regen'],
+                labels: ['当前', '最大', '回复']
+            }
+        } as ItemDefinition
+    };
+
+    const parsed = parseStatusBarText(inputText, sourceId, testDefinitions);
     setLastParsed(parsed);
-    const result = mergeStatusBarData(currentData, parsed, sourceId);
+    
+    // Merge result but ensure we keep the test definition in the result data
+    const result = mergeStatusBarData({ ...currentData, item_definitions: testDefinitions }, parsed, sourceId);
     
     setLogs(result.logs);
     setWarnings(result.warnings);
