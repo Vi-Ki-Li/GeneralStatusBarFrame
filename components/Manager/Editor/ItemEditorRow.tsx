@@ -16,13 +16,14 @@ interface ItemEditorRowProps {
   onChange: (newItem: StatusBarItem) => void;
   onDelete: () => void;
   dragListeners?: any;
+  isOverlay?: boolean; 
 }
 
 const ItemEditorRow: React.FC<ItemEditorRowProps> = ({ 
   allDefinitions = [], 
   existingKeysInCategory = [], 
   item, uiType, definition, index, isFirst, isLast, 
-  onChange, onDelete, dragListeners
+  onChange, onDelete, dragListeners, isOverlay = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const isMobile = window.innerWidth <= 768;
@@ -34,6 +35,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => { 
+    if (isOverlay) return; 
     const handleClickOutside = (event: MouseEvent) => {
         if (keySectionRef.current && !keySectionRef.current.contains(event.target as Node)) {
             setShowSuggestions(false);
@@ -41,7 +43,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []); 
+  }, [isOverlay]); 
 
   const updateSuggestions = (filterText: string = '') => {
     let filteredDefs = allDefinitions.filter(def => def.defaultCategory === item.category);
@@ -85,9 +87,8 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   const handleSuggestionClick = (def: ItemDefinition) => { 
       let newValues: string[];
-      // Reset values based on new definition structure
       switch (def.type) {
-          case 'numeric': newValues = ['0', '100']; break;
+          case 'numeric': newValues = ['0', '100', '', '', '']; break;
           case 'array': newValues = []; break;
           default: newValues = ['']; break;
       }
@@ -95,10 +96,13 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       setShowSuggestions(false);
   }; 
 
-  // v6.6 Refactor: Direct index manipulation for Numeric
   const handleNumericChange = (index: number, val: string) => {
     const values = [...(item.values || [])];
     values[index] = val;
+    // Ensure array has enough padding if user types in a later index
+    for (let i = 0; i <= index; i++) {
+        if (values[i] === undefined) values[i] = '';
+    }
     notifyChange({ ...item, values });
   };
 
@@ -117,29 +121,79 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   const commonInputProps = {
     onPointerDown: (e: React.PointerEvent) => e.stopPropagation(), 
-    onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation()
+    onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
+    readOnly: isOverlay 
   };
 
+  // 渲染数值输入 - 支持 5 段式结构
   const renderNumericInput = () => {
-    // Determine labels from structure
-    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因'];
-    const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason'];
+    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因', '描述'];
+    const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason', 'description'];
     const values = item.values || [];
 
     return (
-      <div className="item-editor-row__numeric-inputs">
-        {parts.map((part, idx) => (
-            <div key={idx} className={`item-editor-row__numeric-field ${part === 'reason' ? 'wide' : ''}`}>
+      <div className="item-editor-row__numeric-wrapper">
+          <div className="item-editor-row__numeric-grid">
+            {/* Row 1: Current / Max */}
+            <div className="item-editor-row__numeric-cell main-val">
+                <input 
+                    className="item-editor-row__input numeric"
+                    placeholder={labels[0] || 'Value'}
+                    value={values[0] || ''}
+                    onChange={e => handleNumericChange(0, e.target.value)}
+                    {...commonInputProps}
+                />
+            </div>
+            
+            <div className="item-editor-row__numeric-separator">/</div>
+
+            <div className="item-editor-row__numeric-cell max-val">
+                <input 
+                    className="item-editor-row__input numeric"
+                    placeholder={labels[1] || 'Max'}
+                    value={values[1] || ''}
+                    onChange={e => handleNumericChange(1, e.target.value)}
+                    {...commonInputProps}
+                />
+            </div>
+
+            {/* Row 2: Change & Reason */}
+            {parts.length > 2 && (
+                <>
+                    <div className="item-editor-row__numeric-cell change-val">
+                        <input 
+                            className="item-editor-row__input numeric-sm"
+                            placeholder={labels[2] || 'Change'}
+                            value={values[2] || ''}
+                            onChange={e => handleNumericChange(2, e.target.value)}
+                            {...commonInputProps}
+                        />
+                    </div>
+                    <div className="item-editor-row__numeric-cell reason-val">
+                        <input 
+                            className="item-editor-row__input numeric-sm"
+                            placeholder={labels[3] || 'Reason'}
+                            value={values[3] || ''}
+                            onChange={e => handleNumericChange(3, e.target.value)}
+                            {...commonInputProps}
+                        />
+                    </div>
+                </>
+            )}
+          </div>
+          
+          {/* Row 3: Description (Full Width) */}
+          {parts.length > 4 && (
+             <div className="item-editor-row__numeric-desc">
                  <input 
-                    className="item-editor-row__input"
-                    placeholder={labels[idx] || part}
-                    value={values[idx] || ''}
-                    onChange={e => handleNumericChange(idx, e.target.value)}
+                    className="item-editor-row__input numeric-xs"
+                    placeholder={labels[4] || 'Description (描述)'}
+                    value={values[4] || ''}
+                    onChange={e => handleNumericChange(4, e.target.value)}
                     {...commonInputProps}
                  />
-                 {idx < parts.length - 1 && part !== 'reason' && <span className="item-editor-row__numeric-separator">/</span>}
-            </div>
-        ))}
+             </div>
+          )}
       </div>
     );
   };
@@ -150,21 +204,23 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         {item.values.map((tag, idx) => (
           <div key={idx} className="item-editor-row__tag-chip">
             {tag}
-            <button 
-              type="button"
-              onClick={() => {
-                  const values = [...item.values];
-                  values.splice(idx, 1);
-                  notifyChange({ ...item, values });
-              }}
-              className="item-editor-row__tag-delete"
-            >
-              <X size={12} />
-            </button>
+            {!isOverlay && (
+                <button 
+                type="button"
+                onClick={() => {
+                    const values = [...item.values];
+                    values.splice(idx, 1);
+                    notifyChange({ ...item, values });
+                }}
+                className="item-editor-row__tag-delete"
+                >
+                <X size={12} />
+                </button>
+            )}
           </div>
         ))}
         
-        {isAddingTag ? (
+        {!isOverlay && (isAddingTag ? (
             <div className="item-editor-row__tag-add-form">
                 <input 
                     ref={tagInputRef}
@@ -183,12 +239,12 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
             >
                 <Plus size={12} /> 添加
             </button>
-        )}
+        ))}
       </div>
     );
   };
 
-  if (!isEditing && isMobile) {
+  if (!isEditing && isMobile && !isOverlay) {
       const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' | ') || '(空)';
       const displayName = definition?.name || item.key;
       const isNamed = !!definition?.name;
@@ -228,9 +284,9 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   return (
     <div 
-      className={`item-editor-row ${isMobile ? 'item-editor-row--expanded' : ''} ${item.user_modified ? 'item-editor-row--locked' : ''}`}
+      className={`item-editor-row ${isMobile ? 'item-editor-row--expanded' : ''} ${item.user_modified ? 'item-editor-row--locked' : ''} ${isOverlay ? 'item-editor-row--overlay' : ''}`}
     >
-      {isMobile && (
+      {isMobile && !isOverlay && (
           <div className="item-editor-row__header--mobile">
               <span className="item-editor-row__title--mobile">编辑条目</span>
               <div className="item-editor-row__actions--mobile">
@@ -245,10 +301,12 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       )}
 
       {!isMobile && (
-        <div className="item-editor-row__drag-handle">
-            <div {...dragListeners}>
-                <GripVertical size={18} />
-            </div>
+        <div 
+            className="item-editor-row__drag-handle" 
+            {...dragListeners}
+            style={{ cursor: isOverlay ? 'grabbing' : 'grab', touchAction: 'none' }}
+        >
+            <GripVertical size={18} />
         </div>
       )}
 
@@ -266,11 +324,13 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
               placeholder="键名"
               {...commonInputProps}
             />
-            <button onClick={toggleSuggestions} className="item-editor-row__suggestion-toggle">
-                <ChevronDown size={16} className={showSuggestions ? 'open' : ''} />
-            </button>
+            {!isOverlay && (
+                <button onClick={toggleSuggestions} className="item-editor-row__suggestion-toggle">
+                    <ChevronDown size={16} className={showSuggestions ? 'open' : ''} />
+                </button>
+            )}
         </div>
-        {showSuggestions && ( 
+        {showSuggestions && !isOverlay && ( 
             <div className="item-editor-row__suggestions-list animate-fade-in">
                 {suggestions.length > 0 ? suggestions.map(def => (
                     <div key={def.key} className="item-editor-row__suggestion-item" onClick={() => handleSuggestionClick(def)}>
@@ -285,7 +345,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
                 )}
             </div>
         )} 
-        {!isMobile && (
+        {!isMobile && !isOverlay && (
             <button onClick={toggleLock} className="item-editor-row__lock-toggle">
             {item.user_modified ? <Lock size={12} /> : <LockOpen size={12} />}
             <span>{item.user_modified ? '已锁定' : '自动更新'}</span>
@@ -306,16 +366,18 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         )}
       </div>
 
-      <div className="item-editor-row__delete-section">
-          <button 
-            onClick={onDelete}
-            className="item-editor-row__delete-btn"
-            title="删除"
-          >
-            <Trash2 size={16} />
-            {isMobile && <span>删除此项</span>}
-          </button>
-      </div>
+      {!isOverlay && (
+        <div className="item-editor-row__delete-section">
+            <button 
+                onClick={onDelete}
+                className="item-editor-row__delete-btn"
+                title="删除"
+            >
+                <Trash2 size={16} />
+                {isMobile && <span>删除此项</span>}
+            </button>
+        </div>
+      )}
     </div>
   );
 };

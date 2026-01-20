@@ -1,3 +1,4 @@
+
 /* --- Base Item Row Styles (Shared) --- */
 .status-item-row {
   display: flex;
@@ -44,6 +45,18 @@
   padding-left: var(--spacing-xs);
   margin-left: calc(-1 * var(--spacing-xs));
   margin-right: calc(-1 * var(--spacing-xs));
+  
+  /* Change to column to support sub-row */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.numeric-renderer__main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .status-item-row--numeric:hover {
@@ -93,6 +106,29 @@ body.dark-mode .status-item-row--numeric:hover {
   padding: 1px 4px;
   border-radius: var(--radius-sm);
   font-weight: var(--font-weight-medium);
+}
+
+/* --- Description & Reason Sub-row --- */
+.numeric-renderer__sub-row {
+  display: flex;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding-left: 2px;
+  opacity: 0.8;
+  align-items: center;
+}
+
+.numeric-renderer__description {
+  color: var(--text-secondary);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.numeric-renderer__reason {
+  color: var(--text-tertiary);
 }
 
 /* --- Grid Layout Overrides --- */

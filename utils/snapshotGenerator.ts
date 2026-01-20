@@ -1,10 +1,11 @@
 
-import { StatusBarData, StatusBarItem, SnapshotEvent, CharacterData } from '../types';
+import { StatusBarData, StatusBarItem, SnapshotEvent, CharacterData, ItemDefinition } from '../types';
 import _ from 'lodash';
 
 /**
  * 叙事生成器 (Narrative Engine)
  * 负责对比状态数据的变化，并生成自然语言描述。
+ * v6.7 Refactor: Supports Flat Array Structure (Definition-Driven)
  */
 
 // 常量定义
@@ -29,50 +30,50 @@ const defaultTemplates: Record<string, string> = {
 };
 
 /**
- * 解析数值字符串
- * 支持格式: "80@100", "80", "80|+5|原因"
+ * 纯数值解析器
+ * 不再处理 @ 分隔，只处理单个字符串是否为数字
  */
-function parseNumericValue(valueString: string): { value: number; maxValue: number | null } | null {
-  if (typeof valueString !== 'string' || valueString.trim() === '') {
-    return null;
-  }
-  // 格式1: N1@N2 (e.g., "75@100")
-  let match = valueString.match(/^(-?\d+(?:\.\d+)?)\s*@\s*(-?\d+(?:\.\d+)?)/);
-  if (match) {
-    return { value: parseFloat(match[1]), maxValue: parseFloat(match[2]) };
-  }
-  // 格式2: N1|... (e.g., "900|+20") - 我们只关心用于比较的N1部分
-  match = valueString.match(/^(-?\d+(?:\.\d+)?)\s*\|/);
-  if (match) {
-    return { value: parseFloat(match[1]), maxValue: null };
-  }
-  // 格式3: N[单位] (e.g., "25岁", "-10dB")
-  match = valueString.match(/^(-?\d+(?:\.\d+)?)\s*(\D.*)$/);
-  if (match) {
-    return { value: parseFloat(match[1]), maxValue: null };
-  }
-  // 格式4: 纯数字 N (e.g., "100")
-  match = valueString.match(/^(-?\d+(?:\.\d+)?)$/);
-  if (match) {
-    return { value: parseFloat(match[1]), maxValue: null };
-  }
-  return null;
+function parseSingleNumber(str: string): number | null {
+    if (typeof str !== 'string' || !str.trim()) return null;
+    const match = str.match(/^(-?\d+(?:\.\d+)?)/); // Match start of string number
+    return match ? parseFloat(match[1]) : null;
+}
+
+/**
+ * 获取数值结构映射
+ */
+function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { current: number | null, max: number | null, reason: string | null, change: number | null } {
+    const values = item.values || [];
+    
+    // Default Map: [Current, Max, Change, Reason]
+    let currIdx = 0;
+    let maxIdx = 1;
+    let chgIdx = 2;
+    let rsnIdx = 3;
+
+    if (def?.structure?.parts) {
+        currIdx = def.structure.parts.indexOf('current');
+        if (currIdx === -1) currIdx = def.structure.parts.indexOf('value');
+        maxIdx = def.structure.parts.indexOf('max');
+        chgIdx = def.structure.parts.indexOf('change');
+        rsnIdx = def.structure.parts.indexOf('reason');
+    }
+
+    const current = parseSingleNumber(values[currIdx] ?? '');
+    const max = maxIdx > -1 ? parseSingleNumber(values[maxIdx] ?? '') : null;
+    const change = chgIdx > -1 ? parseSingleNumber(values[chgIdx] ?? '') : null;
+    const reason = rsnIdx > -1 ? (values[rsnIdx] || null) : null;
+
+    return { current, max, change, reason };
 }
 
 /**
  * 辅助格式化器
  */
 const formatters = {
-  numeric(rawValueString: string | string[]) {
-    const str = Array.isArray(rawValueString) ? rawValueString[0] : rawValueString;
-    const parsed = parseNumericValue(str);
-    if (!parsed) return str;
-    if (parsed.maxValue !== null && parsed.maxValue > 0) return `${parsed.value}/${parsed.maxValue}`;
-    
-    // 尝试提取单位
-    const unitMatch = String(str).match(/^(-?\d+(?:\d+)?)\s*(\D.*)$/);
-    if (unitMatch) return `${parsed.value}${unitMatch[2]}`;
-    return String(parsed.value);
+  numeric(val: number, max: number | null) {
+    if (max !== null && max > 0) return `${val}/${max}`;
+    return String(val);
   },
   array(value: any, category: string) {
     if (!Array.isArray(value)) return String(value);
@@ -96,25 +97,25 @@ function processItemChange(
   character: string | null,
   category: string,
   key: string,
-  detectedEvents: SnapshotEvent[]
+  detectedEvents: SnapshotEvent[],
+  itemDefs: { [key: string]: ItemDefinition }
 ) {
-  const determineDataType = (itemValue: any): 'numeric' | 'text' | 'array' => {
-    if (!itemValue) return 'text';
-    const rawValueString = Array.isArray(itemValue) ? itemValue[0] : itemValue;
-    // 如果是数组且有多项，或者是特定分类，视为数组
-    if (Array.isArray(itemValue) && itemValue.length > 1) return 'array';
-    if (SINGLE_STRUCTURE_CATEGORIES.has(category)) return 'array';
-
-    const strVal = Array.isArray(rawValueString) ? rawValueString.join('@') : String(rawValueString);
-    if (parseNumericValue(strVal)) {
-      return 'numeric';
-    }
-    return 'text';
+  const def = itemDefs[key];
+  
+  // 判定数据类型 (Priority: Definition > Heuristic)
+  const determineDataType = (item: StatusBarItem): 'numeric' | 'text' | 'array' => {
+      if (def?.type) return def.type;
+      // Fallback heuristics
+      const val0 = item.values[0];
+      if (parseSingleNumber(val0) !== null && item.values.length > 1) return 'numeric'; // Likely numeric structure
+      if (SINGLE_STRUCTURE_CATEGORIES.has(category) || (item.values.length > 1 && !parseSingleNumber(val0))) return 'array';
+      return 'text';
   };
+
+  const dataType = newItem ? determineDataType(newItem) : (oldItem ? determineDataType(oldItem) : 'text');
 
   // 1. 新增条目
   if (!oldItem && newItem) {
-    const dataType = determineDataType(newItem.values);
     const event: SnapshotEvent = {
       source: newItem.user_modified ? 'user' : 'ai',
       character,
@@ -126,11 +127,11 @@ function processItemChange(
       current: newItem.values,
       details: { value: newItem.values },
     };
+    
     if (dataType === 'numeric') {
-      const change = newItem.values[1] || null;
-      const reason = newItem.values[2] || null;
-      if (change) event.details!.change = parseFloat(change.replace(/[±+]/, ''));
-      if (reason) event.details!.reason = reason;
+        const { change, reason } = getNumericStructure(newItem, def);
+        if (change !== null) event.details!.change = change;
+        if (reason) event.details!.reason = reason;
     }
     detectedEvents.push(event);
     return;
@@ -138,9 +139,8 @@ function processItemChange(
 
   // 2. 删除条目
   if (oldItem && !newItem) {
-    const dataType = determineDataType(oldItem.values);
     detectedEvents.push({
-      source: 'ai', // 假设删除主要由 AI 触发，除非我们在 UI 中实现了删除
+      source: 'ai',
       character,
       category,
       key,
@@ -157,88 +157,61 @@ function processItemChange(
   if (!newItem || !oldItem || _.isEqual(newItem.values, oldItem.values)) return;
 
   const source = newItem.user_modified ? 'user' : 'ai';
-  let newRawValue = newItem.values?.[0];
-  let oldRawValue = oldItem.values?.[0];
 
-  // 尝试数值解析
-  const newParsed = parseNumericValue(newRawValue);
-  const oldParsed = parseNumericValue(oldRawValue);
+  if (dataType === 'numeric') {
+      const oldStruct = getNumericStructure(oldItem, def);
+      const newStruct = getNumericStructure(newItem, def);
+      
+      if (oldStruct.current === null || newStruct.current === null) return; // Cannot compare non-numbers
+      if (oldStruct.current === newStruct.current) return; // Value didn't change (maybe description did, ignore for now)
 
-  if (newParsed && oldParsed) {
-    const newValue = newParsed.value;
-    const oldValue = oldParsed.value;
-    
-    if (newValue === oldValue) return; // 数值没变，可能是后面备注变了，暂时忽略
+      const diff = newStruct.current - oldStruct.current;
+      const base = oldStruct.current === 0 ? (newStruct.current !== 0 ? 1 : 100) : oldStruct.current;
+      const max = newStruct.max || oldStruct.max;
+      
+      let ratio = Math.abs(diff) / Math.abs(base);
+      if (max) ratio = Math.abs(diff) / max;
 
-    let changeRatio =
-      oldValue === 0 ? (newValue !== 0 ? 1.0 : 0) : Math.abs(newValue - oldValue) / Math.abs(oldValue);
-    const maxValue = newParsed.maxValue ?? oldParsed.maxValue;
-    if (maxValue !== null && maxValue > 0) changeRatio = Math.abs(newValue - oldValue) / maxValue;
+      let changeType = ratio >= NUMERIC_RELATIVE_THRESHOLD ? 'numeric_dramatic' : 'numeric_subtle';
+      changeType += diff > 0 ? '_increase' : '_decrease';
 
-    let changeType = changeRatio >= NUMERIC_RELATIVE_THRESHOLD ? 'numeric_dramatic' : 'numeric_subtle';
-    changeType += newValue > oldValue ? '_increase' : '_decrease';
-
-    const reason = newItem.values[2] || null;
-    const details: any = { from: oldValue, to: newValue, change: newValue - oldValue, ratio: changeRatio };
-    if (reason) details.reason = reason;
-
-    detectedEvents.push({
-      source,
-      character,
-      category,
-      key,
-      change_type: changeType,
-      data_type: 'numeric',
-      previous: oldItem.values,
-      current: newItem.values,
-      details,
-    });
-    return;
+      detectedEvents.push({
+        source, character, category, key, change_type: changeType, data_type: 'numeric',
+        previous: oldItem.values, current: newItem.values,
+        details: { 
+            from: oldStruct.current, 
+            to: newStruct.current, 
+            change: diff, 
+            reason: newStruct.reason,
+            ratio 
+        }
+      });
+      return;
   }
 
-  // 尝试数组分析 (如果是数组类型)
-  // 如果 category 是 WP (World Plot) 或 CR (Inventory)，通常作为数组处理
-  if (determineDataType(newItem.values) === 'array') {
-    const newList = newItem.values.flat();
-    const oldList = oldItem.values.flat();
-    const added = _.difference(newList, oldList);
-    const removed = _.difference(oldList, newList);
+  if (dataType === 'array') {
+    const added = _.difference(newItem.values, oldItem.values).filter(v => v);
+    const removed = _.difference(oldItem.values, newItem.values).filter(v => v);
 
     if (added.length > 0 || removed.length > 0) {
-      let changeType =
-        added.length > 0 && removed.length > 0
-          ? 'array_items_replaced'
-          : added.length > 0
-            ? 'array_items_added'
-            : 'array_items_removed';
+      let changeType = added.length > 0 && removed.length > 0 ? 'array_items_replaced' 
+        : added.length > 0 ? 'array_items_added' : 'array_items_removed';
       
       detectedEvents.push({
-        source,
-        character,
-        category,
-        key,
-        change_type: changeType,
-        data_type: 'array',
-        previous: oldItem.values,
-        current: newItem.values,
+        source, character, category, key, change_type: changeType, data_type: 'array',
+        previous: oldItem.values, current: newItem.values,
         details: { added, removed },
       });
       return;
     }
   }
 
-  // 默认：文本变化
-  if (newRawValue !== oldRawValue) {
+  // Text Change
+  if (newItem.values[0] !== oldItem.values[0]) {
     detectedEvents.push({
-      source,
-      character,
-      category,
-      key,
-      change_type: 'text_change',
-      data_type: 'text',
-      previous: oldItem.values,
-      current: newItem.values,
-      details: { from: oldRawValue, to: newRawValue, value: newRawValue },
+      source, character, category, key, change_type: 'text_change', data_type: 'text',
+      previous: oldItem.values, current: newItem.values,
+      details: { from: oldItem.values[0], to: newItem.values[0], value: newItem.values[0] },
     });
   }
 }
@@ -248,6 +221,7 @@ function processItemChange(
  */
 export function detectChanges(oldData: StatusBarData, newData: StatusBarData): SnapshotEvent[] {
   const detectedEvents: SnapshotEvent[] = [];
+  const definitions = newData.item_definitions || {};
 
   // 1. 处理共享数据
   const allSharedCats = new Set([...Object.keys(oldData.shared || {}), ...Object.keys(newData.shared || {})]);
@@ -259,11 +233,11 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
     allKeys.forEach(key => {
       const oldItem = oldItems.find(i => i.key === key);
       const newItem = newItems.find(i => i.key === key);
-      processItemChange(oldItem, newItem, null, cat, key, detectedEvents);
+      processItemChange(oldItem, newItem, null, cat, key, detectedEvents, definitions);
     });
   });
 
-  // 2. 处理角色数据 (v6.3 重构: 基于 Meta 判定进退场)
+  // 2. 处理角色数据
   const allCharIds = new Set([
       ...Object.keys(oldData.id_map || {}), 
       ...Object.keys(newData.id_map || {})
@@ -272,44 +246,24 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
   allCharIds.forEach(charId => {
     const oldMeta = oldData.character_meta?.[charId];
     const newMeta = newData.character_meta?.[charId];
-    
-    // Default isPresent is TRUE unless explicitly false
     const oldPresent = oldMeta?.isPresent !== false;
     const newPresent = newMeta?.isPresent !== false;
-
-    // 简单获取显示名 (ID fallback)
     const charName = newData.id_map[charId] || oldData.id_map[charId] || charId;
 
-    // 进场检测
+    // 进退场检测
     if (!oldPresent && newPresent) {
       detectedEvents.push({
-        source: 'ai',
-        character: charName,
-        category: 'meta',
-        key: 'presence',
-        change_type: 'character_enters',
-        data_type: 'text',
-        previous: false,
-        current: true,
-        details: { message: `${charName} enters.` }
+        source: 'ai', character: charName, category: 'meta', key: 'presence', change_type: 'character_enters',
+        data_type: 'text', previous: false, current: true, details: { message: `${charName} enters.` }
       });
-    } 
-    // 退场检测
-    else if (oldPresent && !newPresent) {
+    } else if (oldPresent && !newPresent) {
       detectedEvents.push({
-        source: 'ai',
-        character: charName,
-        category: 'meta',
-        key: 'presence',
-        change_type: 'character_leaves',
-        data_type: 'text',
-        previous: true,
-        current: false,
-        details: { message: `${charName} leaves.` }
+        source: 'ai', character: charName, category: 'meta', key: 'presence', change_type: 'character_leaves',
+        data_type: 'text', previous: true, current: false, details: { message: `${charName} leaves.` }
       });
     }
 
-    // 处理数据变更 (只在角色存在或刚离开时处理? 或者总是处理? 总是处理比较安全)
+    // 数据变更
     const oldChar = oldData.characters?.[charId];
     const newChar = newData.characters?.[charId];
     const allCats = new Set([...Object.keys(oldChar || {}), ...Object.keys(newChar || {})]);
@@ -322,7 +276,7 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
       allKeys.forEach(key => {
         const oldItem = oldItems.find(i => i.key === key);
         const newItem = newItems.find(i => i.key === key);
-        processItemChange(oldItem, newItem, charName, cat, key, detectedEvents);
+        processItemChange(oldItem, newItem, charName, cat, key, detectedEvents, definitions);
       });
     });
   });
@@ -341,8 +295,8 @@ function formatPlaceholder(placeholder: string, event: SnapshotEvent): string {
   // 处理特殊子句
   if (placeholder === 'changeClause') {
     const { reason, from, to, change } = details || {};
-    const fromStr = formatters.numeric(String(from));
-    const toStr = formatters.numeric(String(to));
+    const fromStr = formatters.numeric(from, null);
+    const toStr = formatters.numeric(to, null);
     const chgVal = change as number;
     const changeText = chgVal > 0 ? `增加了${chgVal}` : `减少了${Math.abs(chgVal)}`;
     const reasonText = reason ? `因为“${reason}”，` : '';
@@ -364,32 +318,21 @@ function formatPlaceholder(placeholder: string, event: SnapshotEvent): string {
 
   // 数据映射
   let sourceData: any;
-  let rawString: any;
 
   switch (placeholder) {
-    case 'value':
-      sourceData = current;
-      rawString = current;
-      break;
-    case 'previousValue':
-      sourceData = previous;
-      rawString = previous;
-      break;
-    case 'addedItems':
-      sourceData = details?.added;
-      break;
-    case 'removedItems':
-      sourceData = details?.removed;
-      break;
-    default:
-      return `{${placeholder}}`;
+    case 'value': sourceData = current; break;
+    case 'previousValue': sourceData = previous; break;
+    case 'addedItems': sourceData = details?.added; break;
+    case 'removedItems': sourceData = details?.removed; break;
+    default: return `{${placeholder}}`;
   }
 
   if (sourceData === undefined || sourceData === null) return '';
 
   switch (data_type) {
     case 'numeric':
-      return formatters.numeric(String(Array.isArray(rawString) ? rawString[0] : rawString));
+       // For text narrative, we usually just want the current value
+       return String(Array.isArray(sourceData) ? sourceData[0] : sourceData);
     case 'array':
       return formatters.array(sourceData, event.category);
     default:

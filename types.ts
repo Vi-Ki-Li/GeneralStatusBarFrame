@@ -1,3 +1,4 @@
+
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
@@ -36,7 +37,7 @@ export interface StatusBarItem {
   user_modified: boolean;
   originalLine?: string;
   category: string; 
-  _uuid?: string; // 此处添加1行
+  _uuid: string; // v6.7: UUID is now required for robust drag-and-drop
 }
 
 // 4. 角色数据容器

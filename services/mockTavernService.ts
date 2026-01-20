@@ -1,71 +1,78 @@
 
 import { LorebookEntry, StatusBarData } from '../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './definitionRegistry';
+import { v4 as uuidv4 } from 'uuid';
 
-// 初始 v6.1 数据 (Rich Mock Data)
+// 构建 Mock 数据 (模拟解析后的状态 - Flat Structure)
 const MOCK_DATA_V6: StatusBarData = {
   categories: getDefaultCategoriesMap(),
   item_definitions: getDefaultItemDefinitionsMap(),
   id_map: {
     'char_user': 'User',
-    'char_eria': 'Eria',
-    'char_luna': 'Luna'
+    'char_eria': 'Eria'
   },
   shared: {
     'ST': [
-      { key: 'Time', values: ['清晨 8:00'], category: 'ST', source_id: 10, user_modified: false },
-      { key: 'Weather', values: ['晴朗', '微风'], category: 'ST', source_id: 10, user_modified: false },
-      { key: 'Location', values: ['银月城', '中心广场'], category: 'ST', source_id: 10, user_modified: false }
+      { key: '时间', values: ['2023年10月1日', '周一', '08:00'], category: 'ST', source_id: 10, user_modified: false, _uuid: uuidv4() },
+      { key: '当前地点', values: ['银月城酒馆'], category: 'ST', source_id: 10, user_modified: false, _uuid: uuidv4() },
+      { key: '天气', values: ['晴朗', '22℃', '微风'], category: 'ST', source_id: 10, user_modified: false, _uuid: uuidv4() }
     ],
     'WP': [
-      { key: 'News', values: ['王国庆典筹备中'], category: 'WP', source_id: 10, user_modified: false },
-      { key: 'Quest', values: ['哥布林王 (500G)'], category: 'WP', source_id: 10, user_modified: false }
+      { key: '剧情发展', values: ['询问酒保关于巨龙的传闻', '查看悬赏栏', '在此休息'], category: 'WP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+      { key: '世界新闻', values: ['北方战事吃紧', '魔法学院开始招生'], category: 'WP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+      { key: '可移动地点', values: ['市集（步行10分钟）', '城门（马车5分钟）'], category: 'WP', source_id: 10, user_modified: false, _uuid: uuidv4() }
     ],
     'MI': [
-      { key: 'OOC', values: ['观众看得开心吗？'], category: 'MI', source_id: 10, user_modified: false }
+      { key: '吐槽', values: ['😂 这酒保怎么长得像策划？'], category: 'MI', source_id: 10, user_modified: false, _uuid: uuidv4() }
     ]
   },
   characters: {
     'char_user': {
       'CP': [
-        { key: 'Name', values: ['旅行者'], category: 'CP', source_id: 10, user_modified: false },
-        { key: 'Class', values: ['冒险家'], category: 'CP', source_id: 10, user_modified: false }
+        { key: '名字', values: ['旅行者'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '种族', values: ['人类'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '职业', values: ['见习冒险者'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ],
       'CV': [
-        // 注意：这里使用了新的分割格式 |，解析后直接存为数组
-        { key: 'HP', values: ['90', '100'], category: 'CV', source_id: 10, user_modified: false }
+        // Flattened: [Current, Max, Change, Reason, Description]
+        { key: '体力', values: ['100', '100', '0', '', '健康'], category: 'CV', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '理智值', values: ['90', '100', '-5', '目击诡异', '轻微动摇'], category: 'CV', source_id: 10, user_modified: false, _uuid: uuidv4() }
+      ],
+      'CR': [
+        // Flattened: [Amount, Change, Reason]
+        { key: '现金', values: ['500', '0', '初始资金'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '道具物品', values: ['生锈的铁剑', '新手地图'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ]
     },
     'char_eria': {
       'CP': [
-        { key: 'Name', values: ['Eria'], category: 'CP', source_id: 10, user_modified: false },
-        { key: 'Race', values: ['精灵'], category: 'CP', source_id: 10, user_modified: false },
-        { key: 'Status', values: ['轻微中毒', '警惕'], category: 'CP', source_id: 10, user_modified: false }
+        { key: '名字', values: ['Eria'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '年龄', values: ['128岁'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '种族', values: ['森林精灵'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '特征', values: ['银发', '碧眼', '尖耳'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '身体外观', values: ['身穿轻便的皮甲，背着长弓，眼神锐利。'], category: 'CP', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ],
       'CV': [
-        // 复杂结构: Current | Max | Change | Reason
-        { key: 'HP', values: ['80', '100', '-5', '中毒'], category: 'CV', source_id: 10, user_modified: false },
-        { key: 'MP', values: ['150', '200'], category: 'CV', source_id: 10, user_modified: false },
+        { key: '体力', values: ['75', '100', '-10', '陷阱', '左臂受伤'], category: 'CV', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '魔力/能量值', values: ['180', '200', '0', '', '充盈'], category: 'CV', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '疼痛', values: ['30', '100', '+10', '受伤', '隐隐作痛'], category: 'CV', source_id: 10, user_modified: false, _uuid: uuidv4() }
+      ],
+      'RP': [
+        { key: '好感度', values: ['20', '100', '+5', '初次见面', '陌生'], category: 'RP', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '信任度', values: ['10', '100', '0', '', '警惕'], category: 'RP', source_id: 10, user_modified: false, _uuid: uuidv4() }
+      ],
+      'CS': [
+        { key: '角色状态', values: ['警惕地观察四周，手按在剑柄上。'], category: 'CS', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '角色想法', values: ['这些人类太吵闹了...'], category: 'CS', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ],
       'CR': [
-        // 数组类型，Separator 为 ','
-        { key: 'Inventory', values: ['铁剑', '皮甲', '治疗药水x3'], category: 'CR', source_id: 10, user_modified: false },
-        { key: 'Gold', values: ['1250'], category: 'CR', source_id: 10, user_modified: false }
-      ]
-    },
-    'char_luna': {
-      'CP': [
-        { key: 'Name', values: ['Luna'], category: 'CP', source_id: 10, user_modified: false }
-      ],
-      'CV': [
-        { key: 'HP', values: ['120', '120'], category: 'CV', source_id: 10, user_modified: false }
+        { key: '道具物品', values: ['精灵长弓', '箭矢x12', '止血草'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ]
     }
   },
   character_meta: {
       'char_user': { isPresent: true },
-      'char_eria': { isPresent: true },
-      'char_luna': { isPresent: true }
+      'char_eria': { isPresent: true }
   },
   _meta: {
     message_count: 10,
@@ -77,37 +84,16 @@ type EntriesListener = (entries: LorebookEntry[]) => void;
 
 class MockTavernService {
   private lorebook: LorebookEntry[] = [ 
-    { uid: 101, key: [], keysecondary: [], comment: '样式-暗黑主题', content: `
-:root {
-  --color-primary: #f43f5e; /* Rose 500 */
-  --color-accent: #38bdf8; /* Sky 400 */
-}
-.glass-panel {
-  border-radius: 8px;
-}
-`, enabled: true, position: 1 },
-    { uid: 201, key: [], keysecondary: [], comment: '[CP|Race]', content: '简述角色种族', enabled: true, position: 2 },
-    { uid: 202, key: [], keysecondary: [], comment: '[CR|Gold]', content: '简述角色所持金币数量', enabled: true, position: 3 },
-    { uid: 204, key: [], keysecondary: [], comment: '[CP|Class]', content: '简述角色职业', enabled: true, position: 5 },
-    { uid: 301, key: [], keysecondary: [], comment: '设置-自动保存', content: 'true', enabled: true, position: 6 },
-    { 
-      uid: 1001, key: ["HP"], keysecondary: [], 
-      comment: "[CV|HP]", 
-      content: "角色的生命值。格式: [角色^CV|HP::当前值|最大值]", 
-      enabled: true, position: 10 
-    },
-    { 
-      uid: 1002, key: ["MP"], keysecondary: [], 
-      comment: "[CV|MP]", 
-      content: "角色的魔法值。格式: [角色^CV|MP::当前值|最大值]", 
-      enabled: true, position: 11 
-    },
-     { 
-      uid: 1003, key: ["Inventory"], keysecondary: [], 
-      comment: "[CR|Inventory]", 
-      content: "角色的背包。格式: [角色^CR|Inventory::物品1,物品2]", 
-      enabled: false, position: 12
-    }
+    // 注入用户提供的 JSON 条目 (仅作为 Content 参考，实际解析依赖 variables)
+    { "uid":5,"comment":"[ST|时间]","content":"[ST|时间::{年月日}@{星期}@{时间}]\n# 规则: 主视角角色当前所在地的具体时间，根据剧情合理推进时间，格式为 年月日@星期@时分。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":6,"comment":"[ST|当前地点]","content":"[ST|当前地点::{当前地点}]\n# 规则: 主视角角色当前所在具体地点。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":7,"comment":"[ST|天气]","content":"[ST|天气::{天气}]\n# 规则: 简述主视角角色当前所在地的天气状况及温度。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":9,"comment":"[CP|名字]","content":"[角色名^CP|名字::{名字}]\n# 规则: 当前场景中每一个可交互角色（以及<user>）的名称，若不明确则以<user>认知中/目测/假设/合理推测的对方的名字/称呼为准。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":11,"comment":"[CP|身高]","content":"[角色名^CP|身高::Ncm]\n# 规则: 角色的身高，单位为厘米(cm)，若不明确则以<user>认知中/目测/假设/合理推测的对方的身高为准。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":22,"comment":"[CV|疼痛]","content":"[角色名^CV|疼痛::N1|100|±N2|{变化原因}|{疼痛描述}]\n# 规则: N1当前疼痛值(0-100)，N2变化值，附原因及描述；超过80剧痛。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":23,"comment":"[CV|体力]","content":"[角色名^CV|体力::N1|100|±N2|{变化原因}|{体力描述}]\n# 规则: N1当前体力值(0-100)，N2变化值，附原因及描述。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":84,"comment":"[WP|剧情发展]","content":"[WP|剧情发展::{剧情发展选项1}|{剧情发展选项2}|...]\n# 规则: 提供5个简短精炼、不重复、符合剧情及人设、玩家视角、延续当前剧情的选项，用|分隔。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":1001, "comment": "样式-默认", "content": "/* 默认样式占位 */", "enabled": true, "position": 0, key: [], keysecondary: [] }
   ]; 
   private variables: { statusBarCharacterData?: StatusBarData } = {
     statusBarCharacterData: JSON.parse(JSON.stringify(MOCK_DATA_V6))

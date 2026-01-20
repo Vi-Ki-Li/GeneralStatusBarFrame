@@ -1,5 +1,6 @@
 
 import { ParsedUpdate, ItemDefinition } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 // 正则表达式定义 (支持 [角色^分类|键::值])
 const REGEX_NEW_FORMAT = /\[([^^|::\[\]]+)\^([a-zA-Z0-9_-]+)\|([^^|::\[\]]+)::([^\]^::\[\]]*)\]/;
@@ -88,7 +89,8 @@ export function parseStatusBarText(
         source_id: sourceMessageId,
         user_modified: false,
         originalLine: line,
-        category
+        category,
+        _uuid: uuidv4()
       });
       return;
     }
@@ -114,7 +116,8 @@ export function parseStatusBarText(
         source_id: sourceMessageId,
         user_modified: false,
         originalLine: line,
-        category
+        category,
+        _uuid: uuidv4()
       });
     }
   });

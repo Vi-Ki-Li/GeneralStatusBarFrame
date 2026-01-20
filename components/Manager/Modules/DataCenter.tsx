@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../../types';
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
@@ -8,6 +9,7 @@ import CharacterListSidebar from '../CharacterListSidebar';
 import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import { Plus, Save, RotateCcw, AlertCircle } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import './DataCenter.css';
 
@@ -26,9 +28,39 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
   
   const toast = useToast();
 
+  // 核心修复：在初始化时一次性补全所有缺失的 UUID，防止子组件死循环
   useEffect(() => {
-    if (!hasUnsavedChanges) {
-        setLocalData(data);
+    const patchedData: StatusBarData = _.cloneDeep(data);
+    let patched = false;
+
+    const ensureUUID = (items: StatusBarItem[]) => {
+        if (!Array.isArray(items)) return;
+        items.forEach(item => {
+            if (!item._uuid) {
+                item._uuid = uuidv4();
+                patched = true;
+            }
+        });
+    };
+
+    if (patchedData.shared) {
+        Object.values(patchedData.shared).forEach(items => ensureUUID(items));
+    }
+    if (patchedData.characters) {
+        Object.values(patchedData.characters).forEach(charData => {
+            Object.values(charData).forEach((items) => ensureUUID(items as unknown as StatusBarItem[]));
+        });
+    }
+
+    // 如果发现有修补，立即更新本地状态（但不标记为未保存，因为这是系统级修正）
+    if (patched) {
+        console.log('[DataCenter] Global UUID patch applied');
+        setLocalData(patchedData);
+    } else {
+        // 如果没有外部更新且没有修补，保持同步
+        if (!hasUnsavedChanges) {
+             setLocalData(data);
+        }
     }
   }, [data, hasUnsavedChanges]);
 
@@ -72,7 +104,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
       newData.id_map[id] = name;
       newData.characters[id] = {};
       newData.characters[id]['CP'] = [{
-          key: '名字', values: [name], source_id: 9999, user_modified: true, category: 'CP'
+          key: '名字', values: [name], source_id: 9999, user_modified: true, category: 'CP', _uuid: uuidv4()
       }];
       if (!newData.character_meta) newData.character_meta = {};
       newData.character_meta[id] = { isPresent: true };
