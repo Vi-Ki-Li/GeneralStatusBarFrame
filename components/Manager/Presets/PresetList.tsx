@@ -1,112 +1,137 @@
 import React, { useEffect, useState } from 'react';
-import { Preset, LorebookEntry } from '../../../types';
+import { Preset, StatusBarData, ItemDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
-import SavePresetModal from './SavePresetModal';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader } from 'lucide-react';
+import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
-const PresetList: React.FC = () => {
+interface PresetListProps {
+  data: StatusBarData;
+  onUpdate: (newData: StatusBarData) => void;
+}
+
+const PresetList: React.FC<PresetListProps> = ({ data, onUpdate }) => {
   const [presets, setPresets] = useState<Preset[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentEnabledCount, setCurrentEnabledCount] = useState(0);
-  const [deletingPreset, setDeletingPreset] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
+  const [applyingPresetId, setApplyingPresetId] = useState<string | null>(null);
+  
+  const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
-  const [allEntries, setAllEntries] = useState<LorebookEntry[]>([]);
 
   const toast = useToast();
 
   useEffect(() => {
     loadPresets();
-    checkCurrentState();
-    loadAllEntries();
   }, []);
 
-  const loadAllEntries = async () => {
-      try {
-          const entries = await tavernService.getLorebookEntries();
-          setAllEntries(entries);
-      } catch (e) { console.error("Failed to load entries map"); }
-  };
+  const allDefinitions = Object.values(data.item_definitions);
+  const activePresetId = data._meta?.activePresetIds?.[0];
 
   const loadPresets = () => setPresets(presetService.getPresets());
 
-  const checkCurrentState = async () => {
+  const handleSavePreset = (preset: Preset) => {
     try {
-        const entries = await tavernService.getLorebookEntries();
-        const count = entries.filter(e => 
-            e.enabled && !e.comment.startsWith('设置-') && !e.comment.startsWith('样式-')
-        ).length;
-        setCurrentEnabledCount(count);
-    } catch (e) { console.error("Failed to check entries", e); }
-  };
-
-  const handleSavePreset = async (name: string) => {
-    try {
-      const entries = await tavernService.getLorebookEntries();
-      const enabledIds = entries
-        .filter(e => e.enabled && !e.comment.startsWith('设置-') && !e.comment.startsWith('样式-'))
-        .map(e => e.uid);
-
-      const newPreset: Preset = { name, timestamp: Date.now(), enabledIds, count: enabledIds.length };
-
-      presetService.savePreset(newPreset);
+      const savedPreset = presetService.savePreset(preset);
       loadPresets();
-      setIsModalOpen(false);
-      toast.success(`配置 "${name}" 已保存`);
-    } catch (e) { toast.error("保存配置失败"); }
+      setIsEditorOpen(false);
+      setEditingPreset(null);
+      toast.success(`配置 "${savedPreset.name}" 已保存`);
+    } catch (e) { 
+      toast.error("保存配置失败");
+    }
   };
 
-  const requestDelete = (name: string, e: React.MouseEvent) => {
+  const requestDelete = (preset: Preset, e: React.MouseEvent) => {
       e.stopPropagation();
-      setDeletingPreset(name);
+      setDeletingPreset(preset);
   };
 
   const confirmDelete = () => {
     if (deletingPreset) {
-      presetService.deletePreset(deletingPreset);
-      loadPresets();
-      toast.info(`配置 "${deletingPreset}" 已删除`);
-      setDeletingPreset(null);
+      try {
+        presetService.deletePreset(deletingPreset.id);
+        loadPresets();
+        toast.info(`配置 "${deletingPreset.name}" 已删除`);
+        setDeletingPreset(null);
+      } catch(e) {
+        toast.error("删除失败");
+      }
     }
   };
 
-  const handleApplyPreset = async (preset: Preset, e: React.MouseEvent) => {
+  const handleApplyPreset = async (preset: Preset, e: React.MouseEvent) => { // 此处修改1行
     e.stopPropagation();
+    setApplyingPresetId(preset.id);
     try {
-      const entries = await tavernService.getLorebookEntries();
-      let changedCount = 0;
+      const newData = { ...data };
+      if (!newData._meta) newData._meta = {};
+      
+      const isDeactivating = newData._meta.activePresetIds?.[0] === preset.id;
+      
+      // Toggle logic
+      if (isDeactivating) {
+          newData._meta.activePresetIds = [];
+      } else {
+          newData._meta.activePresetIds = [preset.id];
+      }
 
-      const updatedEntries = entries.map(entry => {
-        if (entry.comment.startsWith('设置-') || entry.comment.startsWith('样式-')) return entry;
-        const shouldEnable = preset.enabledIds.includes(entry.uid);
-        if (entry.enabled !== shouldEnable) {
-            changedCount++;
-            return { ...entry, enabled: shouldEnable };
-        }
-        return entry;
+      // --- Worldbook Sync Logic ---
+      const allEntries = await tavernService.getLorebookEntries();
+      const managedEntryKeys = new Set(Object.keys(data.item_definitions));
+      let changesMade = 0;
+
+      const updatedEntries = allEntries.map(entry => {
+          if (managedEntryKeys.has(entry.comment)) {
+              const shouldBeEnabled = !isDeactivating && preset.itemKeys.includes(entry.comment);
+              if (entry.enabled !== shouldBeEnabled) {
+                  changesMade++;
+                  return { ...entry, enabled: shouldBeEnabled };
+              }
+          }
+          return entry;
       });
 
-      if (changedCount > 0) {
+      if (changesMade > 0) {
           await tavernService.setLorebookEntries(updatedEntries);
-          toast.success(`配置 "${preset.name}" 已应用`, { description: `更新了 ${changedCount} 个条目的状态` });
-          checkCurrentState();
-      } else {
-          toast.info("当前状态与配置一致，无需更新");
       }
-    } catch (e) { toast.error("应用配置失败"); }
+      // --- End Worldbook Sync Logic ---
+      
+      onUpdate(newData);
+
+      if (isDeactivating) {
+          toast.info(`配置 "${preset.name}" 已取消应用`, {
+              description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
+          });
+      } else {
+          toast.success(`配置 "${preset.name}" 已应用`, {
+              description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
+          });
+      }
+
+    } catch (e) { 
+      console.error(e);
+      toast.error("应用配置失败");
+    } finally {
+        setApplyingPresetId(null);
+    }
   };
 
-  const toggleDetails = (name: string) => setExpandedPreset(expandedPreset === name ? null : name);
+  const toggleDetails = (id: string) => setExpandedPreset(expandedPreset === id ? null : id);
 
-  const renderEntryDetails = (enabledIds: number[]) => {
-      const includedEntries = allEntries.filter(e => enabledIds.includes(e.uid));
+  const renderEntryDetails = (preset: Preset) => {
+      const includedEntries = allDefinitions.filter(def => preset.itemKeys.includes(def.key));
       if (includedEntries.length === 0) return <div className="preset-item__no-entries">此配置不包含任何条目</div>;
+      
       return (
           <div className="preset-item__details-grid">
-              {includedEntries.map(entry => (
-                  <div key={entry.uid} className="preset-item__detail-chip">{entry.comment}</div>
+              {includedEntries.map(def => (
+                  <div key={def.key} className="preset-item__detail-chip">
+                    {def.name || def.key}
+                    {preset.styleOverrides[def.key] && preset.styleOverrides[def.key] !== 'style_default' && ' (*)'}
+                  </div>
               ))}
           </div>
       );
@@ -117,10 +142,10 @@ const PresetList: React.FC = () => {
       <div className="preset-list__header glass-panel">
         <div>
             <h3 className="preset-list__title"><Layers size={20} /> 配置预设库</h3>
-            <p className="preset-list__subtitle">保存当前启用的世界书条目组合，以便在不同场景间快速切换。</p>
+            <p className="preset-list__subtitle">创建“定义”与“样式”的组合，以“主题”的形式应用到聊天中。</p>
         </div>
-        <button className="btn btn--primary" onClick={() => { checkCurrentState(); setIsModalOpen(true); }}>
-            <Save size={16} /> 保存当前配置
+        <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
+            <Plus size={16} /> 新建预设
         </button>
       </div>
 
@@ -133,30 +158,37 @@ const PresetList: React.FC = () => {
          ) : (
              <div className="preset-list__items-container">
                  {presets.map(preset => {
-                     const isExpanded = expandedPreset === preset.name;
+                     const isExpanded = expandedPreset === preset.id;
+                     const isActive = activePresetId === preset.id;
+                     const isApplying = applyingPresetId === preset.id;
                      return (
-                        <div key={preset.name} className={`preset-item glass-panel ${isExpanded ? 'preset-item--expanded' : ''}`} onClick={() => toggleDetails(preset.name)}>
+                        <div key={preset.id} className={`preset-item glass-panel ${isExpanded ? 'preset-item--expanded' : ''} ${isActive ? 'preset-item--active' : ''}`} onClick={() => toggleDetails(preset.id)}>
                             <div className="preset-item__main">
                                 <div className="preset-item__info">
                                     <div className="preset-item__name-row">
+                                        {isActive && <CheckCircle size={16} className="preset-item__active-icon" />}
                                         <h4 className="preset-item__name">{preset.name}</h4>
                                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                     </div>
                                     <div className="preset-item__meta">
-                                        <span><BookOpen size={14} /> {preset.count} 条目</span>
+                                        <span><BookOpen size={14} /> {preset.itemKeys.length} 定义</span>
                                         <span><Clock size={14} /> {new Date(preset.timestamp).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                                 <div className="preset-item__actions">
-                                    <button className="btn btn--ghost btn--apply" onClick={(e) => handleApplyPreset(preset, e)}>
-                                        <CheckCircle size={14} /> 应用
+                                    <button className="btn btn--ghost btn--edit" onClick={(e) => { e.stopPropagation(); setEditingPreset(preset); setIsEditorOpen(true); }} title="编辑">
+                                        <Edit2 size={16} />
                                     </button>
-                                    <button className="btn btn--ghost btn--delete" onClick={(e) => requestDelete(preset.name, e)} title="删除">
+                                    <button className="btn btn--ghost btn--delete" onClick={(e) => requestDelete(preset, e)} title="删除">
                                         <Trash2 size={16} />
+                                    </button>
+                                    <button className={`btn ${isActive ? 'btn--active' : 'btn--ghost'} btn--apply`} onClick={(e) => handleApplyPreset(preset, e)} disabled={isApplying}>
+                                        {isApplying ? <Loader size={14} className="spinner" /> : <CheckCircle size={14} />}
+                                        {isApplying ? '应用中' : (isActive ? '取消应用' : '应用')}
                                     </button>
                                 </div>
                             </div>
-                            {isExpanded && renderEntryDetails(preset.enabledIds)}
+                            {isExpanded && renderEntryDetails(preset)}
                         </div>
                      );
                  })}
@@ -170,7 +202,7 @@ const PresetList: React.FC = () => {
              <div className="preset-list__delete-header">
                 <AlertTriangle size={24} /><h3>确认删除</h3>
              </div>
-             <p>您确定要删除预设 "{deletingPreset}" 吗？此操作不可撤销。</p>
+             <p>您确定要删除预设 "{deletingPreset.name}" 吗？此操作不可撤销。</p>
              <div className="preset-list__delete-actions">
                 <button className="btn btn--ghost" onClick={() => setDeletingPreset(null)}>取消</button>
                 <button className="btn btn--danger" onClick={confirmDelete}>
@@ -181,7 +213,13 @@ const PresetList: React.FC = () => {
         </div>
       )}
 
-      <SavePresetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePreset} entryCount={currentEnabledCount} />
+      <PresetEditorModal 
+        isOpen={isEditorOpen} 
+        onClose={() => setIsEditorOpen(false)} 
+        onSave={handleSavePreset} 
+        presetToEdit={editingPreset}
+        allDefinitions={allDefinitions}
+      />
     </div>
   );
 };

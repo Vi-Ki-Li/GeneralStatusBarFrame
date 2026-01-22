@@ -1,6 +1,7 @@
 import { Preset } from '../types';
+import { v4 as uuidv4 } from 'uuid'; // 此处添加1行
 
-const STORAGE_KEY = 'tavern_helper_presets';
+const STORAGE_KEY = 'tavern_helper_presets_v8'; // v8.0: 新的存储键
 
 export const presetService = {
   getPresets(): Preset[] {
@@ -13,29 +14,40 @@ export const presetService = {
     }
   },
 
-  savePreset(preset: Preset): void {
+  savePreset(preset: Preset): Preset { // 此处开始修改
     try {
       const presets = this.getPresets();
-      const existingIndex = presets.findIndex(p => p.name === preset.name);
       
-      if (existingIndex >= 0) {
-        presets[existingIndex] = preset;
+      if (preset.id) {
+        // Update existing
+        const existingIndex = presets.findIndex(p => p.id === preset.id);
+        if (existingIndex >= 0) {
+          presets[existingIndex] = preset;
+        } else {
+          presets.push(preset); // Should not happen if ID exists, but as a fallback
+        }
       } else {
-        presets.push(preset);
+        // Create new
+        const newPreset = { ...preset, id: uuidv4() };
+        presets.push(newPreset);
+        preset = newPreset; // Return the preset with the new ID
       }
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+      return preset;
     } catch (e) {
       console.error('[PresetService] Failed to save preset', e);
+      throw e; // Re-throw to be caught by UI
     }
   },
 
-  deletePreset(name: string): void {
+  deletePreset(id: string): void {
     try {
-      const presets = this.getPresets().filter(p => p.name !== name);
+      const presets = this.getPresets().filter(p => p.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
     } catch (e) {
       console.error('[PresetService] Failed to delete preset', e);
+      throw e;
     }
   }
-};
+}; // 此处完成修改

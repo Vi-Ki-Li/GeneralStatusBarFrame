@@ -1,10 +1,25 @@
-
-
 import { StyleDefinition } from '../types';
 
 const STORAGE_KEY = 'th_style_definitions';
 
+// v8.0: Mock Data for Preset Editor
+const MOCK_STYLE_UNITS: StyleDefinition[] = [ // 此处开始添加19行
+  { id: 'style_default', name: '默认样式', dataType: 'numeric', css: '' },
+  { id: 'style_red_bar', name: '红色血条', dataType: 'numeric', css: '.bar { background: red; }' },
+  { id: 'style_blue_bar', name: '蓝色魔力条', dataType: 'numeric', css: '.bar { background: blue; }' },
+  { id: 'style_tags_pill', name: '胶囊标签', dataType: 'array', css: '.tag { border-radius: 99px; }' },
+  { id: 'style_tags_block', name: '块状标签', dataType: 'array', css: '.tag { border-radius: 4px; }' },
+  { id: 'style_text_quote', name: '引用块文本', dataType: 'text', css: 'p { border-left: 3px solid grey; }' }
+];
+
+
 class StyleService {
+
+  // v8.0: Mock function for Preset Editor development
+  getMockStyleUnits(): StyleDefinition[] {
+    return MOCK_STYLE_UNITS;
+  }
+
   getStyleDefinitions(): StyleDefinition[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);

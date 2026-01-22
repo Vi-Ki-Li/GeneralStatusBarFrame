@@ -46,6 +46,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
       case 'SYSTEM':
         return <SystemConfig 
             data={data} 
+            onUpdate={onUpdate} // 此处添加1行
             snapshotEnabled={snapshotEnabled} 
             onToggleSnapshot={onToggleSnapshot} 
             snapshotMeta={snapshotMeta} 

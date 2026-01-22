@@ -1,6 +1,3 @@
-
-
-
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
@@ -91,6 +88,7 @@ export interface StatusBarData {
     message_count?: number;
     last_updated?: string;
     version?: number;
+    activePresetIds?: string[]; // v8.0: 主题应用器
   };
 }
 
@@ -151,13 +149,16 @@ export interface SnapshotMeta {
   description_summary?: string;
 }
 
-// 12. 配置预设
-export interface Preset {
+// 12. 配置预设 (v8.0 Refactor)
+export interface Preset { // 此处开始修改
+  id: string; // Unique ID for the preset
   name: string;
   timestamp: number;
-  enabledIds: number[];
-  count: number;
-}
+  itemKeys: string[]; // Array of ItemDefinition keys included in this preset
+  styleOverrides: {
+    [itemKey: string]: string; // Key: ItemDefinition.key, Value: StyleDefinition.id
+  };
+} // 此处完成修改
 
 export interface AppOptions {
   darkMode: boolean;
