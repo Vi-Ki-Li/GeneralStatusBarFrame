@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
@@ -70,7 +71,8 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
       <div className="category-editor__item-list">
         {items.map((item, idx) => {
             const def = getItemDefinition(itemDefinitions, item.key);
-            
+            const uiType = def.type; // 此处删除 const uiType = def.type === 'list-of-objects' ? 'array' : def.type;
+
             return (
                 <ItemEditorRow 
                     key={item._uuid || `item-${idx}`}
@@ -78,7 +80,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
                     existingKeysInCategory={items.map(i => i.key)}
                     index={idx}
                     item={item} 
-                    uiType={def.type}
+                    uiType={uiType}
                     definition={def}
                     isFirst={idx === 0}
                     isLast={idx === items.length - 1}

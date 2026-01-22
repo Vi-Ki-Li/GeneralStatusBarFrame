@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
@@ -8,6 +9,7 @@ import CharacterTabs from './CharacterTabs';
 import NumericRenderer from './Renderers/NumericRenderer';
 import ArrayRenderer from './Renderers/ArrayRenderer';
 import TextRenderer from './Renderers/TextRenderer';
+import ObjectListRenderer from './Renderers/ObjectListRenderer'; // 此处添加1行
 import { useToast } from '../Toast/ToastContext';
 import './StatusBar.css';
 
@@ -68,6 +70,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     switch (def.type) {
       case 'numeric': return <NumericRenderer {...commonProps} />;
       case 'array': return <ArrayRenderer {...commonProps} />;
+      case 'list-of-objects': return <ObjectListRenderer {...commonProps} />; // 此处添加1行
       default: return <TextRenderer {...commonProps} />;
     }
   };

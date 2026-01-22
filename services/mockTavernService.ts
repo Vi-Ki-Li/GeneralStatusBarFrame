@@ -1,4 +1,5 @@
 
+
 import { LorebookEntry, StatusBarData, ItemDefinition, CategoryDefinition } from '../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,7 +68,8 @@ const MOCK_DATA_V6: StatusBarData = {
         { key: '角色想法', values: ['这些人类太吵闹了...'], category: 'CS', source_id: 10, user_modified: false, _uuid: uuidv4() }
       ],
       'CR': [
-        { key: '道具物品', values: ['精灵长弓', '箭矢x12', '止血草'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() }
+        { key: '道具物品', values: ['精灵长弓', '箭矢x12', '止血草'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() },
+        { key: '技能', values: ['火球术@3', '冰霜箭@2'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() } // 此处添加1行
       ]
     }
   },

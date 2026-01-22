@@ -4,15 +4,26 @@ import { ItemDefinition, LorebookEntry } from '../types';
  * Generates the full content string for a lorebook entry based on a definition.
  */
 export function generateLorebookContent(definition: ItemDefinition, categories: { [key: string]: any }): string {
-    const { key, description, structure, separator, defaultCategory, type, name } = definition;
+    const { key, description, structure, separator, partSeparator, defaultCategory, type, name } = definition; // 此处修改1行
     const catDef = categories[defaultCategory || ''] || {};
     const catKey = catDef.key || defaultCategory || '';
-    const sep = separator || (type === 'array' ? ',' : '|');
 
     let valueExample = '';
-    if (structure?.parts && structure.parts.length > 0) {
+
+    if (type === 'list-of-objects') { 
+        const pSep = partSeparator || '@';
+        if (structure?.parts && structure.parts.length > 0) {
+            valueExample = structure.parts.map(part => `{${part}}`).join(pSep);
+        } else {
+            valueExample = '{object_part_1}@{object_part_2}'; // Fallback
+        }
+        // Show an example of multiple objects
+        const objSep = separator || '|';
+        valueExample = `${valueExample}${objSep}${valueExample}`;
+    } else if (structure?.parts && structure.parts.length > 0) {
+        const sep = separator || (type === 'array' ? ',' : '|');
         valueExample = structure.parts.map(part => `{${part}}`).join(sep);
-    } else {
+    } else { 
         valueExample = type === 'array' ? `{${name || key}}` : `{${key}}`;
     }
 

@@ -17,7 +17,7 @@ interface DefinitionListProps {
 const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   const toast = useToast();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
-  const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories'); // 此处添加1行
+  const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories');
 
   const [editingItemDef, setEditingItemDef] = useState<ItemDefinition | null>(null);
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
@@ -39,7 +39,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   
   const selectedCategory = selectedCategoryKey ? data.categories[selectedCategoryKey] : null;
 
-  const handleSelectCategory = (key: string | null) => { // 此处开始添加4行
+  const handleSelectCategory = (key: string | null) => {
     setSelectedCategoryKey(key);
     setMobileView('items');
   };
@@ -241,7 +241,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
                                   <div className="def-card__meta-group">
                                       <span className="def-card__meta-chip">
                                           <Type size={12} />
-                                          {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : '标签组'}
+                                          {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : def.type === 'list-of-objects' ? '对象列表' : '标签组'}
                                       </span>
                                       {isComplex && (
                                           <span className="def-card__meta-chip highlight">

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Trash2, Plus, X, Lock, LockOpen, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
@@ -8,7 +9,7 @@ interface ItemEditorRowProps {
   allDefinitions?: ItemDefinition[];
   existingKeysInCategory?: string[];
   item: StatusBarItem; 
-  uiType: 'text' | 'numeric' | 'array';
+  uiType: 'text' | 'numeric' | 'array' | 'list-of-objects'; // 此处修改1行
   definition?: ItemDefinition;
   index: number;
   isFirst: boolean;
@@ -101,7 +102,8 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       } else {
           switch (def.type) {
               case 'numeric': newValues = ['0', '100', '', '', '']; break;
-              case 'array': newValues = []; break;
+              case 'array':
+              case 'list-of-objects': newValues = []; break; // 此处修改1行
               default: newValues = ['']; break;
           }
       }
@@ -206,6 +208,73 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       </div>
     );
   };
+
+  const renderObjectListInputs = () => { // 此处开始添加67行
+    const labels = definition?.structure?.labels || definition?.structure?.parts || [];
+    const partSeparator = definition?.partSeparator || '@';
+    const numParts = labels.length;
+    if (numParts === 0) return <div>此对象列表未定义结构</div>;
+
+    const handleObjectChange = (objectIndex: number, partIndex: number, newValue: string) => {
+        const newValues = [...item.values];
+        let parts = (newValues[objectIndex] || '').split(partSeparator);
+        while (parts.length < numParts) parts.push('');
+        parts[partIndex] = newValue;
+        newValues[objectIndex] = parts.slice(0, numParts).join(partSeparator);
+        notifyChange({ ...item, values: newValues });
+    };
+
+    const handleAddObject = () => {
+        const newObjectString = new Array(numParts).fill('').join(partSeparator);
+        notifyChange({ ...item, values: [...item.values, newObjectString] });
+    };
+
+    const handleDeleteObject = (objectIndex: number) => {
+        const newValues = [...item.values];
+        newValues.splice(objectIndex, 1);
+        notifyChange({ ...item, values: newValues });
+    };
+    
+    return (
+        <div className="item-editor-row__object-list-editor">
+            <div className="item-editor-row__object-list-container">
+            {item.values.map((valueString, objectIndex) => {
+                const parts = valueString.split(partSeparator);
+                return (
+                    <div key={objectIndex} className="item-editor-row__object-card">
+                        <div className="item-editor-row__object-card-inputs">
+                            {labels.map((label, partIndex) => (
+                                <div key={partIndex} className="item-editor-row__object-field">
+                                    <label className="item-editor-row__object-label">{label}</label>
+                                    <input
+                                        className="item-editor-row__input item-editor-row__object-input"
+                                        value={parts[partIndex] || ''}
+                                        placeholder={label}
+                                        onChange={(e) => handleObjectChange(objectIndex, partIndex, e.target.value)}
+                                        {...commonInputProps}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                         {!isOverlay && (
+                            <div className="item-editor-row__object-actions">
+                                <button onClick={() => handleDeleteObject(objectIndex)} className="item-editor-row__object-delete-btn" title="删除此项">
+                                    <Trash2 size={16}/>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+            </div>
+             {!isOverlay && (
+                <button onClick={handleAddObject} className="item-editor-row__object-add-btn">
+                    <Plus size={16} /> 添加新项
+                </button>
+            )}
+        </div>
+    );
+  }; // 此处完成添加
 
   if (!isEditing && isMobile && !isOverlay) {
       const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' | ') || '(空)';
@@ -313,6 +382,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       <div className="item-editor-row__value-section">
         {uiType === 'numeric' && renderDynamicInputs()}
         {uiType === 'array' && renderArrayInput()}
+        {uiType === 'list-of-objects' && renderObjectListInputs()}
         {uiType === 'text' && (
           <textarea 
             className="item-editor-row__input item-editor-row__input--textarea"

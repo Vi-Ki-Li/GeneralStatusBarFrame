@@ -20,10 +20,11 @@ export interface ItemDefinition {
   key: string;          // "HP", "Name" (唯一标识符)
   name?: string;        // "生命值" (显示名) - v6.5 新增
   icon?: string;        // 图标 - v6.5 新增
-  type: 'text' | 'numeric' | 'array';
+  type: 'text' | 'numeric' | 'array' | 'list-of-objects'; // 此处修改1行
   description?: string; // 给 AI 看的描述
   defaultCategory?: string; // 默认归属分类 (UI辅助用)
-  separator?: string;   // v6.2 自定义分隔符 (例如 "," 或 ";")，默认为 "|"
+  separator?: string;   // v6.2: 对于 'array' 是值分隔符, 对于 'list-of-objects' 是对象分隔符
+  partSeparator?: string; // v7.1: 'list-of-objects' 内部的对象属性分隔符 (e.g., '@') // 此处添加1行
   structure?: {         // v6.6 结构定义 (Definition-Driven Core)
     parts: string[];    // e.g. ['current', 'max', 'change', 'reason']
     labels?: string[];  // e.g. ['当前', '最大', '变化', '原因']

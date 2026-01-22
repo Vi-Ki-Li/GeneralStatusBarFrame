@@ -251,6 +251,87 @@
   font-style: italic;
 }
 
+/* --- List of Objects Editor Styles --- */
+.item-editor-row__object-list-editor { /* 此处开始添加53行 */
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.item-editor-row__object-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.item-editor-row__object-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(0,0,0,0.02);
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-md);
+}
+
+.item-editor-row__object-card-inputs {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.item-editor-row__object-field {
+    flex: 1 1 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.item-editor-row__object-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.item-editor-row__object-input {
+    height: 32px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.85rem;
+}
+
+.item-editor-row__object-actions {
+    padding-top: 18px; /* Align with input */
+}
+.item-editor-row__object-delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+}
+.item-editor-row__object-delete-btn:hover {
+    color: var(--color-danger);
+}
+
+.item-editor-row__object-add-btn {
+    border: 1px dashed var(--chip-border);
+    background: rgba(0,0,0,0.02);
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: var(--transition-fast);
+}
+.item-editor-row__object-add-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+} /* 此处完成添加 */
+
 /* --- Mobile Styles --- */
 .item-editor-row--collapsed {
   display: flex;

@@ -104,7 +104,13 @@ function processItemChange(
   
   // 判定数据类型 (Priority: Definition > Heuristic)
   const determineDataType = (item: StatusBarItem): 'numeric' | 'text' | 'array' => {
-      if (def?.type) return def.type;
+      // FIX: The snapshot generator treats 'list-of-objects' as a type of 'array' for narrative purposes.
+      if (def?.type) {
+        if (def.type === 'list-of-objects') {
+            return 'array';
+        }
+        return def.type;
+      }
       // Fallback heuristics
       const val0 = item.values[0];
       if (parseSingleNumber(val0) !== null && item.values.length > 1) return 'numeric'; // Likely numeric structure

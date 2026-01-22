@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
@@ -44,7 +45,10 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
 [User^CP|Status::Excited]
 
 // 4. 元数据控制 (角色退场)
-[Eria^Meta|Present::false]`
+[Eria^Meta|Present::false]
+
+// 5. 对象列表测试 (List of Objects)
+[Eria^CR|技能::奥术飞弹@5|护盾术@1]`
   );
   
   const [sourceId, setSourceId] = useState<number>(11);

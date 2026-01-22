@@ -1,4 +1,5 @@
 
+
 import { CategoryDefinition, ItemDefinition, StatusBarData } from '../types';
 
 /**
@@ -46,6 +47,14 @@ export const DEFAULT_ITEM_DEFINITIONS: ItemDefinition[] = [
     key: '道具物品', name: '道具物品', type: 'array', defaultCategory: 'CR', icon: 'Backpack',
     separator: '@', structure: { parts: ['item'] }
   },
+  { // 此处开始添加6行
+    key: '技能', name: '技能', type: 'list-of-objects', defaultCategory: 'CR', icon: 'Swords',
+    separator: '|', partSeparator: '@',
+    structure: {
+      parts: ['name', 'level'],
+      labels: ['技能名', '等级']
+    }
+  }, // 此处完成添加
 
   // --- CV: 状态值 (核心扁平化结构: current|max|change|reason|description) ---
   { 

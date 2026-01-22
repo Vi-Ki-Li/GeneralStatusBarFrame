@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { ItemDefinition, CategoryDefinition } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
 import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { generateLorebookContent } from '../../../utils/lorebookInjector'; // 此处添加1行
+import { generateLorebookContent } from '../../../utils/lorebookInjector';
 import './DefinitionDrawer.css';
 
 interface DefinitionDrawerProps {
@@ -29,8 +30,8 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 }) => {
   const toast = useToast();
   
-  const [formData, setFormData] = useState<ItemDefinition>({
-    key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
+  const [formData, setFormData] = useState<ItemDefinition>({ // 此处删除 const formData = ...
+    key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|', partSeparator: '@'
   });
   
   const [structureParts, setStructureParts] = useState<StructurePart[]>([]);
@@ -42,6 +43,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       setFormData({ 
           ...definition, 
           separator: definition.separator || '|', 
+          partSeparator: definition.partSeparator || '@', 
           name: definition.name || '', 
           icon: definition.icon || '' 
       });
@@ -62,7 +64,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       setFormData({ 
           key: '', name: '', icon: '', type: 'text', 
           defaultCategory: preselectedCategory || 'Other', 
-          description: '', separator: '|' 
+          description: '', separator: '|', partSeparator: '@' 
       });
       setStructureParts([]);
       setIsNew(true);
@@ -85,6 +87,9 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     if (!toSave.name) delete toSave.name;
     if (!toSave.icon) delete toSave.icon;
 
+    if (toSave.type !== 'list-of-objects') { 
+        delete toSave.partSeparator;
+    } 
     if (structureParts.length > 0) {
         toSave.structure = {
             parts: structureParts.map(p => p.key.trim()).filter(Boolean),
@@ -174,7 +179,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       setStructureParts(template);
   };
 
-  const getPreviewContent = () => { // 此处开始添加15行
+  const getPreviewContent = () => {
     // Construct a temporary definition object from the current form state
     const tempDef: ItemDefinition = { ...formData };
     if (structureParts.length > 0) {
@@ -188,7 +193,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     
     // Call the authoritative function
     return generateLorebookContent(tempDef, categories);
-  }; // 此处完成添加
+  };
 
   if (!isOpen) return null;
 
@@ -229,16 +234,23 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                         <option value="text">文本 (Text)</option>
                         <option value="numeric">数值 (Numeric)</option>
                         <option value="array">标签组 (Array)</option>
+                        <option value="list-of-objects">对象列表 (List of Objects)</option> 
                     </select>
                 </div>
             </div>
 
             <div className="form-group-grid">
                 <div className="form-group">
-                     <label className="form-label">分隔符</label>
+                     <label className="form-label">{formData.type === 'list-of-objects' ? '对象分隔符' : '分隔符'}</label> 
                      <input className="form-input" value={formData.separator || '|'} onChange={e => handleChange('separator', e.target.value)} placeholder="默认: |" />
                 </div>
-                 <div className="form-group">
+                {formData.type === 'list-of-objects' ? ( 
+                    <div className="form-group animate-fade-in">
+                         <label className="form-label">部分分隔符</label>
+                         <input className="form-input" value={formData.partSeparator || '@'} onChange={e => handleChange('partSeparator', e.target.value)} placeholder="默认: @" />
+                    </div>
+                ) : (
+                 <div className="form-group"> 
                     <label className="form-label">图标</label>
                     <div onClick={() => setShowIconPicker(!showIconPicker)} className="icon-selector__display">
                         <div className="icon-selector__display-info">
@@ -247,9 +259,22 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                         <ChevronRight size={16} className={`icon-selector__arrow ${showIconPicker ? 'open' : ''}`} />
                     </div>
                 </div>
+                )}
             </div>
             
-            {showIconPicker && (
+            {formData.type === 'list-of-objects' && ( 
+                 <div className="form-group animate-fade-in">
+                    <label className="form-label">图标</label>
+                    <div onClick={() => setShowIconPicker(!showIconPicker)} className="icon-selector__display">
+                        <div className="icon-selector__display-info">
+                            {IconDisplay ? <IconDisplay size={20} /> : <span>无</span>}
+                        </div>
+                        <ChevronRight size={16} className={`icon-selector__arrow ${showIconPicker ? 'open' : ''}`} />
+                    </div>
+                </div>
+            )}
+            
+            {showIconPicker && ( 
                 <div className="icon-selector__picker-wrapper glass-panel">
                     <IconPicker selectedIcon={formData.icon || ''} onSelect={(icon) => { handleChange('icon', icon); setShowIconPicker(false); }} />
                 </div>
