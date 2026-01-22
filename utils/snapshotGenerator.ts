@@ -1,4 +1,3 @@
-
 import { StatusBarData, StatusBarItem, SnapshotEvent, CharacterData, ItemDefinition } from '../types';
 import _ from 'lodash';
 
@@ -43,7 +42,7 @@ function parseSingleNumber(str: string): number | null {
  * 获取数值结构映射
  */
 function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { current: number | null, max: number | null, reason: string | null, change: number | null } {
-    const values = item.values || [];
+    const values = (item.values || []) as string[];
     
     // Default Map: [Current, Max, Change, Reason]
     let currIdx = 0;
@@ -52,11 +51,12 @@ function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { curre
     let rsnIdx = 3;
 
     if (def?.structure?.parts) {
-        currIdx = def.structure.parts.indexOf('current');
-        if (currIdx === -1) currIdx = def.structure.parts.indexOf('value');
-        maxIdx = def.structure.parts.indexOf('max');
-        chgIdx = def.structure.parts.indexOf('change');
-        rsnIdx = def.structure.parts.indexOf('reason');
+        // FIX: Use findIndex on ItemDefinitionPart[]
+        currIdx = def.structure.parts.findIndex(p => p.key === 'current');
+        if (currIdx === -1) currIdx = def.structure.parts.findIndex(p => p.key === 'value');
+        maxIdx = def.structure.parts.findIndex(p => p.key === 'max');
+        chgIdx = def.structure.parts.findIndex(p => p.key === 'change');
+        rsnIdx = def.structure.parts.findIndex(p => p.key === 'reason');
     }
 
     const current = parseSingleNumber(values[currIdx] ?? '');
@@ -78,13 +78,13 @@ const formatters = {
   array(value: any, category: string) {
     if (!Array.isArray(value)) return String(value);
     if (SINGLE_STRUCTURE_CATEGORIES.has(category)) {
-      return value.flat().join('、');
+      return (value as string[]).flat().join('、');
     } else {
-      return value.map(item => (Array.isArray(item) ? `(${item.join('，')})` : item)).join('、');
+      return value.map(item => (Array.isArray(item) ? `(${(item as string[]).join('，')})` : (typeof item === 'object' ? Object.values(item).join('/') : item))).join('、');
     }
   },
   default(value: any) {
-    return Array.isArray(value) ? value.flat().join('，') : String(value);
+    return Array.isArray(value) ? (value as string[]).flat().join('，') : String(value);
   },
 };
 
@@ -113,8 +113,8 @@ function processItemChange(
       }
       // Fallback heuristics
       const val0 = item.values[0];
-      if (parseSingleNumber(val0) !== null && item.values.length > 1) return 'numeric'; // Likely numeric structure
-      if (SINGLE_STRUCTURE_CATEGORIES.has(category) || (item.values.length > 1 && !parseSingleNumber(val0))) return 'array';
+      if (parseSingleNumber(val0 as string) !== null && item.values.length > 1) return 'numeric'; // Likely numeric structure
+      if (SINGLE_STRUCTURE_CATEGORIES.has(category) || (item.values.length > 1 && !parseSingleNumber(val0 as string))) return 'array';
       return 'text';
   };
 
@@ -196,8 +196,9 @@ function processItemChange(
   }
 
   if (dataType === 'array') {
-    const added = _.difference(newItem.values, oldItem.values).filter(v => v);
-    const removed = _.difference(oldItem.values, newItem.values).filter(v => v);
+    // FIX: Use _.differenceWith for arrays of objects.
+    const added = _.differenceWith(newItem.values, oldItem.values, _.isEqual).filter(v => v);
+    const removed = _.differenceWith(oldItem.values, newItem.values, _.isEqual).filter(v => v);
 
     if (added.length > 0 || removed.length > 0) {
       let changeType = added.length > 0 && removed.length > 0 ? 'array_items_replaced' 

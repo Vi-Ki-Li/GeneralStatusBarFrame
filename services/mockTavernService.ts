@@ -1,5 +1,6 @@
 
 
+
 import { LorebookEntry, StatusBarData, ItemDefinition, CategoryDefinition } from '../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
@@ -69,7 +70,17 @@ const MOCK_DATA_V6: StatusBarData = {
       ],
       'CR': [
         { key: '道具物品', values: ['精灵长弓', '箭矢x12', '止血草'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() },
-        { key: '技能', values: ['火球术@3', '冰霜箭@2'], category: 'CR', source_id: 10, user_modified: false, _uuid: uuidv4() } // 此处添加1行
+        { 
+          key: '技能', 
+          values: [
+            { name: '火球术', level: '3' }, 
+            { name: '冰霜箭', level: '2' }
+          ], 
+          category: 'CR', 
+          source_id: 10, 
+          user_modified: false, 
+          _uuid: uuidv4() 
+        }
       ]
     }
   },
@@ -159,7 +170,7 @@ class MockTavernService {
     }
   }
 
-  async injectMultipleDefinitions( // 此处开始添加26行
+  async injectMultipleDefinitions(
     definitions: ItemDefinition[],
     categories: { [key: string]: CategoryDefinition }
   ): Promise<{ created: number; updated: number; no_change: number; errors: number; }> {
@@ -188,7 +199,7 @@ class MockTavernService {
     this.notifyListeners();
     
     return Promise.resolve(summary);
-  } // 此处完成添加
+  }
 }
 
 export const tavernService = new MockTavernService();

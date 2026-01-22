@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { ItemDefinition, CategoryDefinition } from '../../../types';
+import { ItemDefinition, ItemDefinitionPart, CategoryDefinition } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
 import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
@@ -30,7 +28,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 }) => {
   const toast = useToast();
   
-  const [formData, setFormData] = useState<ItemDefinition>({ // 此处删除 const formData = ...
+  const [formData, setFormData] = useState<ItemDefinition>({
     key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|', partSeparator: '@'
   });
   
@@ -48,14 +46,9 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
           icon: definition.icon || '' 
       });
       
+      // FIX: Correctly set structureParts from ItemDefinitionPart[]
       if (definition.structure?.parts) {
-          const parts = definition.structure.parts;
-          const labels = definition.structure.labels || [];
-          const mapped = parts.map((p, i) => ({
-              key: p,
-              label: labels[i] || p
-          }));
-          setStructureParts(mapped);
+          setStructureParts(definition.structure.parts);
       } else {
           setStructureParts([]);
       }
@@ -90,10 +83,10 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     if (toSave.type !== 'list-of-objects') { 
         delete toSave.partSeparator;
     } 
+    // FIX: Correctly form the structure object with ItemDefinitionPart[]
     if (structureParts.length > 0) {
         toSave.structure = {
-            parts: structureParts.map(p => p.key.trim()).filter(Boolean),
-            labels: structureParts.map(p => p.label.trim())
+            parts: structureParts.map(p => ({ key: p.key.trim(), label: p.label.trim() })).filter(p => p.key),
         };
     } else {
         delete toSave.structure;
@@ -144,7 +137,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       setStructureParts(newParts);
   };
 
-  const applyTemplate = (type: 'numeric-5' | 'numeric-3' | 'numeric-simple' | 'text-simple') => {
+  const applyTemplate = (type: 'numeric-5' | 'numeric-3' | 'numeric-simple' | 'text-simple' | 'list-of-objects') => {
       let template: StructurePart[] = [];
       switch (type) {
           case 'numeric-5':
@@ -166,10 +159,12 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
               handleChange('type', 'numeric');
               break;
           case 'numeric-simple':
-              template = [
-                  { key: 'value', label: '数值' }
-              ];
+              template = [ { key: 'value', label: '数值' } ];
               handleChange('type', 'numeric');
+              break;
+          case 'list-of-objects':
+              template = [ { key: 'name', label: '名称' }, { key: 'description', label: '描述' }];
+              handleChange('type', 'list-of-objects');
               break;
           default:
               template = [];
@@ -183,9 +178,9 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     // Construct a temporary definition object from the current form state
     const tempDef: ItemDefinition = { ...formData };
     if (structureParts.length > 0) {
+        // FIX: Reconstruct structure correctly for preview
         tempDef.structure = {
-            parts: structureParts.map(p => p.key.trim()).filter(Boolean),
-            labels: structureParts.map(p => p.label.trim())
+            parts: structureParts
         };
     } else {
         delete tempDef.structure;
@@ -285,7 +280,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                     <label className="form-label">数据结构定义</label>
                     <div className="structure-builder__templates">
                         <button onClick={() => applyTemplate('numeric-5')} title="标准5段式 (当前/最大/变化/原因/描述)"><LayoutTemplate size={14}/> 预设数值</button>
-                        <button onClick={() => applyTemplate('numeric-3')} title="简易3段式 (当前/最大/描述)"><LayoutTemplate size={14}/> 简易</button>
+                        <button onClick={() => applyTemplate('list-of-objects')} title="对象列表 (名称/描述)"><LayoutTemplate size={14}/> 预设对象</button>
                     </div>
                 </div>
                 

@@ -1,22 +1,9 @@
-
-import { ParsedUpdate, ItemDefinition } from '../types';
+import { ParsedUpdate, ItemDefinition, StatusBarItem } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // 正则表达式定义 (支持 [角色^分类|键::值])
 const REGEX_NEW_FORMAT = /\[([^^|::\[\]]+)\^([a-zA-Z0-9_-]+)\|([^^|::\[\]]+)::([^\]^::\[\]]*)\]/;
 const REGEX_OLD_FORMAT = /\[([a-zA-Z0-9_-]+)\|(.*?)::(.*)\]/;
-
-/**
- * 解析值字符串
- * @param valueString 原始值字符串
- * @param separator 自定义分隔符 (默认为 |)
- */
-function parseValues(valueString: string, separator: string = '|'): string[] {
-  if (!separator) separator = '|';
-  // 防止空字符串分割出空数组元素
-  if (!valueString.trim()) return [];
-  return valueString.split(separator).map(v => v.trim());
-}
 
 /**
  * 解析布尔值
@@ -48,77 +35,74 @@ export function parseStatusBarText(
   const lines = text.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
 
   lines.forEach(line => {
-    // 1. 尝试匹配完整格式: [角色^分类|键::值]
-    let match = line.match(REGEX_NEW_FORMAT);
+    let match = line.match(REGEX_NEW_FORMAT) || line.match(REGEX_OLD_FORMAT);
     
-    if (match) {
-      const charName = match[1].trim();
-      const category = match[2].trim();
-      const key = match[3].trim();
-      const valueString = match[4].trim();
+    if (!match) return;
 
-      // --- Meta指令拦截 ---
-      if (category.toLowerCase() === 'meta' || category.toLowerCase() === 'system') {
-        const boolVal = parseBoolean(valueString);
-        if (boolVal !== undefined) {
-          if (!result.meta) result.meta = {};
-          if (!result.meta[charName]) result.meta[charName] = {};
-          
-          if (key.toLowerCase() === 'present' || key.toLowerCase() === 'visible') {
-             result.meta[charName].isPresent = boolVal;
-          }
+    let isCharacterScoped = line.match(REGEX_NEW_FORMAT);
+    const charName = isCharacterScoped ? match[1].trim() : null;
+    const category = isCharacterScoped ? match[2].trim() : match[1].trim();
+    const key = isCharacterScoped ? match[3].trim() : match[2].trim();
+    const valueString = isCharacterScoped ? match[4].trim() : match[3].trim();
+
+    if (!valueString.trim()) return;
+
+    // --- Meta指令拦截 ---
+    if (charName && (category.toLowerCase() === 'meta' || category.toLowerCase() === 'system')) {
+      const boolVal = parseBoolean(valueString);
+      if (boolVal !== undefined) {
+        if (!result.meta) result.meta = {};
+        if (!result.meta[charName]) result.meta[charName] = {};
+        
+        if (key.toLowerCase() === 'present' || key.toLowerCase() === 'visible') {
+           result.meta[charName].isPresent = boolVal;
         }
       }
-      // ------------------
-
-      // 查找定义以获取分隔符 (Definition-Driven)
-      const def = definitions[key];
-      const separator = def?.separator || '|';
-      const values = parseValues(valueString, separator);
-
-      if (!result.characters[charName]) {
-        result.characters[charName] = {};
-      }
-      if (!result.characters[charName][category]) {
-        result.characters[charName][category] = [];
-      }
-
-      result.characters[charName][category].push({
-        key,
-        values,
-        source_id: sourceMessageId,
-        user_modified: false,
-        originalLine: line,
-        category,
-        _uuid: uuidv4()
-      });
-      return;
+      return; // Meta指令不应作为数据条目
     }
+    // ------------------
 
-    // 2. 尝试匹配旧格式: [分类|键::值] (视为共享数据)
-    match = line.match(REGEX_OLD_FORMAT);
-    if (match) {
-      const category = match[1].trim();
-      const key = match[2].trim();
-      const valueString = match[3].trim();
+    const def = definitions[key];
+    // FIX: Initialize `values` property to satisfy the type requirement.
+    const item: Omit<StatusBarItem, 'values'> & { values: string[] | Array<Record<string, string>> } = {
+      key,
+      values: [],
+      source_id: sourceMessageId,
+      user_modified: false,
+      originalLine: line,
+      category,
+      _uuid: uuidv4()
+    };
 
-      const def = definitions[key];
-      const separator = def?.separator || '|';
-      const values = parseValues(valueString, separator);
+    if (def?.type === 'list-of-objects') {
+      const objectSeparator = def.separator || '|';
+      const partSeparator = def.partSeparator || '@';
+      const partKeys = def.structure?.parts.map(p => p.key) || [];
 
-      if (!result.shared[category]) {
-        result.shared[category] = [];
+      if (partKeys.length > 0) {
+        item.values = valueString.split(objectSeparator).map(objStr => {
+          const parts = objStr.split(partSeparator);
+          const obj: Record<string, string> = {};
+          partKeys.forEach((partKey, index) => {
+            obj[partKey] = (parts[index] || '').trim();
+          });
+          return obj;
+        });
+      } else {
+        item.values = [valueString]; // Fallback if no structure defined
       }
-      
-      result.shared[category].push({
-        key,
-        values,
-        source_id: sourceMessageId,
-        user_modified: false,
-        originalLine: line,
-        category,
-        _uuid: uuidv4()
-      });
+    } else {
+      const separator = def?.separator || '|';
+      item.values = valueString.split(separator).map(v => v.trim());
+    }
+    
+    if (charName) {
+      if (!result.characters[charName]) result.characters[charName] = {};
+      if (!result.characters[charName][category]) result.characters[charName][category] = [];
+      result.characters[charName][category].push(item as StatusBarItem);
+    } else {
+      if (!result.shared[category]) result.shared[category] = [];
+      result.shared[category].push(item as StatusBarItem);
     }
   });
 

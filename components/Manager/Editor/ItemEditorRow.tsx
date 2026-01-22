@@ -1,15 +1,14 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Trash2, Plus, X, Lock, LockOpen, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
 import './ItemEditorRow.css';
+import _ from 'lodash';
 
 interface ItemEditorRowProps { 
   allDefinitions?: ItemDefinition[];
   existingKeysInCategory?: string[];
   item: StatusBarItem; 
-  uiType: 'text' | 'numeric' | 'array' | 'list-of-objects'; // 此处修改1行
+  uiType: 'text' | 'numeric' | 'array' | 'list-of-objects';
   definition?: ItemDefinition;
   index: number;
   isFirst: boolean;
@@ -88,22 +87,25 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   const handleSuggestionClick = (def: ItemDefinition) => { 
-      let newValues: string[];
+      let newValues: string[] | Array<Record<string, string>>;
       if (def.structure?.parts) {
-          newValues = new Array(def.structure.parts.length).fill('');
-          if (def.structure.parts.includes('max')) {
-              const maxIdx = def.structure.parts.indexOf('max');
-              newValues[maxIdx] = '100';
-          }
-          if (def.structure.parts.includes('current') || def.structure.parts.includes('value')) {
-               const valIdx = Math.max(def.structure.parts.indexOf('current'), def.structure.parts.indexOf('value'));
-               newValues[valIdx] = '0';
+          if (def.type === 'list-of-objects') {
+              const newObj: Record<string, string> = {};
+              def.structure.parts.forEach(p => { newObj[p.key] = ''; });
+              newValues = [newObj];
+          } else {
+              const strValues = new Array(def.structure.parts.length).fill('');
+              const maxIdx = def.structure.parts.findIndex(p => p.key === 'max');
+              if (maxIdx > -1) strValues[maxIdx] = '100';
+              const valIdx = def.structure.parts.findIndex(p => p.key === 'current' || p.key === 'value');
+              if (valIdx > -1) strValues[valIdx] = '0';
+              newValues = strValues;
           }
       } else {
           switch (def.type) {
               case 'numeric': newValues = ['0', '100', '', '', '']; break;
               case 'array':
-              case 'list-of-objects': newValues = []; break; // 此处修改1行
+              case 'list-of-objects': newValues = []; break;
               default: newValues = ['']; break;
           }
       }
@@ -113,7 +115,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   }; 
 
   const handleValueChange = (index: number, val: string) => {
-    const values = [...(item.values || [])];
+    const values = [...(item.values as string[] || [])];
     values[index] = val;
     for (let i = 0; i <= index; i++) {
         if (values[i] === undefined) values[i] = '';
@@ -124,7 +126,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   const handleConfirmAddTag = () => {
     const val = tagInputRef.current?.value || '';
     if (val.trim()) {
-        const values = [...item.values, val.trim()];
+        const values = [...(item.values as string[]), val.trim()];
         notifyChange({ ...item, values });
     }
     setIsAddingTag(false);
@@ -141,9 +143,10 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   const renderDynamicInputs = () => {
-    const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason', 'description'];
-    const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因', '描述'];
-    const values = item.values || [];
+    // FIX: Correctly derive parts and labels from the definition structure.
+    const parts = definition?.structure?.parts?.map(p => p.key) || ['current', 'max', 'change', 'reason', 'description'];
+    const labels = definition?.structure?.parts?.map(p => p.label) || ['当前', '最大', '变化', '原因', '描述'];
+    const values = (item.values || []) as string[];
 
     return (
       <div className="item-editor-row__dynamic-grid">
@@ -164,18 +167,19 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   };
 
   const renderArrayInput = () => {
+    const values = (item.values || []) as string[];
     return (
       <div className="item-editor-row__array-inputs">
-        {item.values.map((tag, idx) => (
+        {values.map((tag, idx) => (
           <div key={idx} className="item-editor-row__tag-chip">
             {tag}
             {!isOverlay && (
                 <button 
                 type="button"
                 onClick={() => {
-                    const values = [...item.values];
-                    values.splice(idx, 1);
-                    notifyChange({ ...item, values });
+                    const newValues = [...values];
+                    newValues.splice(idx, 1);
+                    notifyChange({ ...item, values: newValues });
                 }}
                 className="item-editor-row__tag-delete"
                 >
@@ -209,28 +213,29 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     );
   };
 
-  const renderObjectListInputs = () => { // 此处开始添加67行
-    const labels = definition?.structure?.labels || definition?.structure?.parts || [];
-    const partSeparator = definition?.partSeparator || '@';
-    const numParts = labels.length;
-    if (numParts === 0) return <div>此对象列表未定义结构</div>;
+  const renderObjectListInputs = () => {
+    // FIX: Complete rewrite to handle `Record<string, string>[]` data structure.
+    const partDefs = definition?.structure?.parts || [];
+    const objects = (item.values || []) as Array<Record<string, string>>;
+    
+    if (partDefs.length === 0) return <div>此对象列表未定义结构</div>;
 
-    const handleObjectChange = (objectIndex: number, partIndex: number, newValue: string) => {
-        const newValues = [...item.values];
-        let parts = (newValues[objectIndex] || '').split(partSeparator);
-        while (parts.length < numParts) parts.push('');
-        parts[partIndex] = newValue;
-        newValues[objectIndex] = parts.slice(0, numParts).join(partSeparator);
-        notifyChange({ ...item, values: newValues });
+    const handleObjectChange = (objectIndex: number, partKey: string, newValue: string) => {
+        const newValues = _.cloneDeep(objects);
+        if (newValues[objectIndex]) {
+            newValues[objectIndex][partKey] = newValue;
+            notifyChange({ ...item, values: newValues });
+        }
     };
 
     const handleAddObject = () => {
-        const newObjectString = new Array(numParts).fill('').join(partSeparator);
-        notifyChange({ ...item, values: [...item.values, newObjectString] });
+        const newObject: Record<string, string> = {};
+        partDefs.forEach(p => { newObject[p.key] = '' });
+        notifyChange({ ...item, values: [...objects, newObject] });
     };
 
     const handleDeleteObject = (objectIndex: number) => {
-        const newValues = [...item.values];
+        const newValues = [...objects];
         newValues.splice(objectIndex, 1);
         notifyChange({ ...item, values: newValues });
     };
@@ -238,34 +243,31 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     return (
         <div className="item-editor-row__object-list-editor">
             <div className="item-editor-row__object-list-container">
-            {item.values.map((valueString, objectIndex) => {
-                const parts = valueString.split(partSeparator);
-                return (
-                    <div key={objectIndex} className="item-editor-row__object-card">
-                        <div className="item-editor-row__object-card-inputs">
-                            {labels.map((label, partIndex) => (
-                                <div key={partIndex} className="item-editor-row__object-field">
-                                    <label className="item-editor-row__object-label">{label}</label>
-                                    <input
-                                        className="item-editor-row__input item-editor-row__object-input"
-                                        value={parts[partIndex] || ''}
-                                        placeholder={label}
-                                        onChange={(e) => handleObjectChange(objectIndex, partIndex, e.target.value)}
-                                        {...commonInputProps}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                         {!isOverlay && (
-                            <div className="item-editor-row__object-actions">
-                                <button onClick={() => handleDeleteObject(objectIndex)} className="item-editor-row__object-delete-btn" title="删除此项">
-                                    <Trash2 size={16}/>
-                                </button>
+            {objects.map((obj, objectIndex) => (
+                <div key={objectIndex} className="item-editor-row__object-card">
+                    <div className="item-editor-row__object-card-inputs">
+                        {partDefs.map((partDef, partIndex) => (
+                            <div key={partIndex} className="item-editor-row__object-field">
+                                <label className="item-editor-row__object-label">{partDef.label || partDef.key}</label>
+                                <input
+                                    className="item-editor-row__input item-editor-row__object-input"
+                                    value={obj[partDef.key] || ''}
+                                    placeholder={partDef.label || partDef.key}
+                                    onChange={(e) => handleObjectChange(objectIndex, partDef.key, e.target.value)}
+                                    {...commonInputProps}
+                                />
                             </div>
-                        )}
+                        ))}
                     </div>
-                );
-            })}
+                     {!isOverlay && (
+                        <div className="item-editor-row__object-actions">
+                            <button onClick={() => handleDeleteObject(objectIndex)} className="item-editor-row__object-delete-btn" title="删除此项">
+                                <Trash2 size={16}/>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ))}
             </div>
              {!isOverlay && (
                 <button onClick={handleAddObject} className="item-editor-row__object-add-btn">
@@ -274,10 +276,10 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
             )}
         </div>
     );
-  }; // 此处完成添加
+  };
 
   if (!isEditing && isMobile && !isOverlay) {
-      const summaryValue = item.values.join(uiType === 'array' ? ', ' : ' | ') || '(空)';
+      const summaryValue = item.values.map(v => typeof v === 'object' ? Object.values(v).join('/') : v).join(uiType === 'array' ? ', ' : ' | ') || '(空)';
       const displayName = definition?.name || item.key;
       const isNamed = !!definition?.name;
 
@@ -386,7 +388,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
         {uiType === 'text' && (
           <textarea 
             className="item-editor-row__input item-editor-row__input--textarea"
-            value={item.values.join('\n')} 
+            value={(item.values as string[]).join('\n')} 
             onChange={e => handleTextChange(e.target.value)}
             {...commonInputProps}
           />

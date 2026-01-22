@@ -62,7 +62,8 @@ export function resolveDisplayName(data: StatusBarData, id: string): string {
         const items = charData[cat];
         if (!items) return null;
         const found = items.find(item => targetKeys.includes(item.key) && item.values[0]);
-        return found ? found.values[0] : null;
+        // FIX: Add type assertion to string because a name item should always have a string value.
+        return found ? found.values[0] as string : null;
     };
 
     // 先查 CP

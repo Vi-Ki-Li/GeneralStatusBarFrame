@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
 import { Lock } from 'lucide-react';
@@ -24,27 +23,35 @@ const NumericRenderer: React.FC<NumericRendererProps> = ({ item, label, icon, on
   let reasonStr = '';
   let descStr = '';
 
-  const values = item.values || [];
+  // FIX: Cast values to string[] since this renderer only deals with numeric types which use string arrays.
+  const values = (item.values || []) as string[];
 
   if (definition?.structure?.parts) {
-      // Definition Driven: Strictly map array indices to parts
+      // FIX: Use findIndex on ItemDefinitionPart[] instead of indexOf.
       const parts = definition.structure.parts;
       
-      const currIdx = parts.indexOf('current');
-      if (currIdx >= 0 && values[currIdx] !== undefined) currentStr = values[currIdx];
-      else if (parts.indexOf('value') >= 0) currentStr = values[parts.indexOf('value')];
-      else if (values[0] !== undefined) currentStr = values[0];
+      const currIdx = parts.findIndex(p => p.key === 'current');
+      if (currIdx >= 0 && values[currIdx] !== undefined) {
+          currentStr = values[currIdx];
+      } else {
+          const valueIdx = parts.findIndex(p => p.key === 'value');
+          if (valueIdx >= 0) {
+              currentStr = values[valueIdx];
+          } else if (values[0] !== undefined) {
+              currentStr = values[0];
+          }
+      }
 
-      const maxIdx = parts.indexOf('max');
+      const maxIdx = parts.findIndex(p => p.key === 'max');
       if (maxIdx >= 0 && values[maxIdx]) maxStr = values[maxIdx];
       
-      const changeIdx = parts.indexOf('change');
+      const changeIdx = parts.findIndex(p => p.key === 'change');
       if (changeIdx >= 0 && values[changeIdx]) changeStr = values[changeIdx];
 
-      const reasonIdx = parts.indexOf('reason');
+      const reasonIdx = parts.findIndex(p => p.key === 'reason');
       if (reasonIdx >= 0 && values[reasonIdx]) reasonStr = values[reasonIdx];
 
-      const descIdx = parts.indexOf('description');
+      const descIdx = parts.findIndex(p => p.key === 'description');
       if (descIdx >= 0 && values[descIdx]) descStr = values[descIdx];
   } else {
       // Fallback Strategy

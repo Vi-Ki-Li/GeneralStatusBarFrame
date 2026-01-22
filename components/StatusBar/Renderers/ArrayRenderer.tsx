@@ -12,7 +12,8 @@ interface ArrayRendererProps {
 }
 
 const ArrayRenderer: React.FC<ArrayRendererProps> = ({ item, label, icon, onInteract }) => {
-  const tags = item.values.filter(v => v && v !== 'nil' && v.trim() !== '');
+  // FIX: Cast item.values to string[] as this renderer only handles array types with string values.
+  const tags = (item.values as string[]).filter(v => v && v.trim() !== '');
   const displayLabel = label || item.key;
   
   const IconComponent = icon && (LucideIcons as any)[icon] ? (LucideIcons as any)[icon] : null;

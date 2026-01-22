@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { parseStatusBarText } from '../../utils/parser';
 import { mergeStatusBarData } from '../../utils/dataMerger';
@@ -66,9 +64,13 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
             type: 'numeric',
             defaultCategory: 'CV',
             separator: '|',
+            // FIX: Corrected structure to match ItemDefinitionPart type.
             structure: { 
-                parts: ['current', 'max', 'regen'],
-                labels: ['当前', '最大', '回复']
+                parts: [
+                    { key: 'current', label: '当前' },
+                    { key: 'max', label: '最大' },
+                    { key: 'regen', label: '回复' }
+                ]
             }
         } as ItemDefinition
     };

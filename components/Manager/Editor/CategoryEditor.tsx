@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
@@ -71,7 +69,8 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
       <div className="category-editor__item-list">
         {items.map((item, idx) => {
             const def = getItemDefinition(itemDefinitions, item.key);
-            const uiType = def.type; // 此处删除 const uiType = def.type === 'list-of-objects' ? 'array' : def.type;
+            // FIX: Pass the correct type for list-of-objects to the editor.
+            const uiType = def.type;
 
             return (
                 <ItemEditorRow 

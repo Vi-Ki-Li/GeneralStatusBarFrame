@@ -4,7 +4,7 @@ import { ItemDefinition, LorebookEntry } from '../types';
  * Generates the full content string for a lorebook entry based on a definition.
  */
 export function generateLorebookContent(definition: ItemDefinition, categories: { [key: string]: any }): string {
-    const { key, description, structure, separator, partSeparator, defaultCategory, type, name } = definition; // 此处修改1行
+    const { key, description, structure, separator, partSeparator, defaultCategory, type, name } = definition;
     const catDef = categories[defaultCategory || ''] || {};
     const catKey = catDef.key || defaultCategory || '';
 
@@ -13,7 +13,8 @@ export function generateLorebookContent(definition: ItemDefinition, categories: 
     if (type === 'list-of-objects') { 
         const pSep = partSeparator || '@';
         if (structure?.parts && structure.parts.length > 0) {
-            valueExample = structure.parts.map(part => `{${part}}`).join(pSep);
+            // FIX: Access 'key' property of the part object.
+            valueExample = structure.parts.map(part => `{${part.key}}`).join(pSep);
         } else {
             valueExample = '{object_part_1}@{object_part_2}'; // Fallback
         }
@@ -22,7 +23,8 @@ export function generateLorebookContent(definition: ItemDefinition, categories: 
         valueExample = `${valueExample}${objSep}${valueExample}`;
     } else if (structure?.parts && structure.parts.length > 0) {
         const sep = separator || (type === 'array' ? ',' : '|');
-        valueExample = structure.parts.map(part => `{${part}}`).join(sep);
+        // FIX: Access 'key' property of the part object.
+        valueExample = structure.parts.map(part => `{${part.key}}`).join(sep);
     } else { 
         valueExample = type === 'array' ? `{${name || key}}` : `{${key}}`;
     }

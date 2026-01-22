@@ -1,4 +1,3 @@
-
 import { StatusBarData, StatusBarItem, MergeResult, ParsedUpdate } from '../types';
 import { resolveCharacterId } from './idManager';
 import _ from 'lodash';
@@ -31,7 +30,8 @@ export function syncMetaFromData(data: StatusBarData): string[] {
         const presentItem = metaItems.find(i => ['present', 'visible'].includes(i.key.toLowerCase()));
         
         if (presentItem && presentItem.values[0]) {
-            const boolVal = parseBoolean(presentItem.values[0]);
+            // FIX: Add type assertion to string because meta items should always contain string values.
+            const boolVal = parseBoolean(presentItem.values[0] as string);
             if (boolVal !== undefined) {
                 if (!data.character_meta![charId]) data.character_meta![charId] = { isPresent: true };
                 
@@ -111,7 +111,7 @@ export function mergeStatusBarData(
       }
 
       if (!_.isEqual(targetItem.values, sourceItem.values)) {
-        logs.push(`${logPrefix} 更新: ${targetItem.values} -> ${sourceItem.values}`);
+        logs.push(`${logPrefix} 更新: ${JSON.stringify(targetItem.values)} -> ${JSON.stringify(sourceItem.values)}`);
       }
       targetItem.values = sourceItem.values;
       targetItem.source_id = sourceItem.source_id;
