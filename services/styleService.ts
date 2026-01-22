@@ -1,29 +1,11 @@
 
-import { StyleUnit } from '../types';
 
-const STORAGE_KEY = 'th_style_units';
+import { StyleDefinition } from '../types';
 
-/**
- * Scopes CSS selectors with a given class.
- * This is a simplified implementation. It might not cover all edge cases
- * of complex CSS, but it works for basic selectors.
- */
-function scopeCss(css: string, scopeClass: string): string {
-    // This regex is designed to find CSS selectors outside of media query blocks.
-    // It's not perfect but handles simple cases.
-    return css.replace(/(^|}|@media[^{]+{\s*})([^{}]+?)({)/g, (match, p1, p2, p3) => {
-        if (p2.trim().startsWith('@')) {
-            return match; // Don't scope at-rules like @keyframes
-        }
-        const scopedSelectors = p2.split(',')
-            .map(selector => `.${scopeClass} ${selector.trim()}`)
-            .join(', ');
-        return `${p1}${scopedSelectors}${p3}`;
-    });
-}
+const STORAGE_KEY = 'th_style_definitions';
 
 class StyleService {
-  getStyleUnits(): StyleUnit[] {
+  getStyleDefinitions(): StyleDefinition[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -33,46 +15,45 @@ class StyleService {
     }
   }
 
-  saveStyleUnits(units: StyleUnit[]): void {
+  saveStyleDefinitions(definitions: StyleDefinition[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(units));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(definitions));
       this.injectAllStyles(); // Re-inject styles on any change
     } catch (e) {
       console.error('[StyleService] Failed to save styles', e);
     }
   }
 
-  getStyleUnit(id: string): StyleUnit | undefined {
-    return this.getStyleUnits().find(u => u.id === id);
+  getStyleDefinition(id: string): StyleDefinition | undefined {
+    return this.getStyleDefinitions().find(u => u.id === id);
   }
 
-  saveStyleUnit(unit: StyleUnit): void {
-    const units = this.getStyleUnits();
-    const index = units.findIndex(u => u.id === unit.id);
+  saveStyleDefinition(definition: StyleDefinition): void {
+    const definitions = this.getStyleDefinitions();
+    const index = definitions.findIndex(u => u.id === definition.id);
     if (index > -1) {
-      units[index] = unit;
+      definitions[index] = definition;
     } else {
-      units.push(unit);
+      definitions.push(definition);
     }
-    this.saveStyleUnits(units);
+    this.saveStyleDefinitions(definitions);
   }
 
-  deleteStyleUnit(id: string): void {
-    const units = this.getStyleUnits().filter(u => u.id !== id);
-    this.saveStyleUnits(units);
+  deleteStyleDefinition(id: string): void {
+    const definitions = this.getStyleDefinitions().filter(u => u.id !== id);
+    this.saveStyleDefinitions(definitions);
   }
   
   injectAllStyles(): void {
-    const units = this.getStyleUnits();
-    const css = units.map(unit => scopeCss(unit.css, `style-unit-${unit.id}`)).join('\n\n');
+    // Phase 1: Backtrack. Temporarily disabled.
+    console.log('[StyleService] Style injection is temporarily disabled during refactor.');
     
-    let styleTag = document.getElementById('style-units-injector');
-    if (!styleTag) {
-        styleTag = document.createElement('style');
-        styleTag.id = 'style-units-injector';
-        document.head.appendChild(styleTag);
-    }
-    styleTag.textContent = css;
+    // Ensure old style tags are cleared
+    const oldComponentTag = document.getElementById('style-units-injector');
+    if (oldComponentTag) oldComponentTag.textContent = '';
+    
+    const oldThemeTag = document.getElementById('theme-injector');
+    if (oldThemeTag) oldThemeTag.textContent = '';
   }
 }
 

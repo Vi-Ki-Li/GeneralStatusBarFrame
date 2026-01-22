@@ -1,3 +1,4 @@
+
 /* --- Main Studio Layout --- */
 .def-studio {
   display: flex;
@@ -193,7 +194,7 @@
   flex-shrink: 0;
 }
 
-.def-studio__header-actions { /* 此处开始添加16行 */
+.def-studio__header-actions {
   display: flex;
   gap: var(--spacing-md);
   align-items: center;
@@ -208,7 +209,6 @@
   animation: spin 1s linear infinite;
 }
 
-/* 此处完成添加 */
 .def-studio__main-title { 
   font-size: 1.2rem; 
   font-weight: var(--font-weight-semibold); 
@@ -342,3 +342,54 @@
 }
 .inline-confirm__btn--yes { color: var(--color-danger); }
 .inline-confirm__btn--no { color: var(--text-secondary); }
+
+/* --- Mobile Responsive Styles --- */
+.def-studio__back-btn { /* 此处开始添加41行 */
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .def-studio {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .def-studio__sidebar, .def-studio__main {
+    width: 100%;
+    height: 100%;
+    border-right: none;
+    flex-shrink: 0;
+  }
+
+  .def-studio__main {
+    border-top: 1px solid var(--chip-border);
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .def-studio__back-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: var(--spacing-sm) 0;
+  }
+
+  .def-studio__main-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+  }
+
+  .def-studio__header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -1,7 +1,8 @@
 
+
 import React, { useEffect, useState, useRef } from 'react';
 import { tavernService } from './services/mockTavernService';
-import { styleService } from './services/styleService'; // 此处添加1行
+import { styleService } from './services/styleService';
 import { StatusBarData, SnapshotMeta, LorebookEntry } from './types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './services/definitionRegistry';
 import { Moon, Sun, LayoutDashboard, Wrench, FastForward, Menu, X } from 'lucide-react';
@@ -60,17 +61,6 @@ const AppContent = () => {
 
   const toast = useToast();
 
-  const injectStyles = (entries: LorebookEntry[]) => {
-    const activeStyleEntry = entries.find(e => e.enabled && e.comment.startsWith('样式-'));
-    let styleTag = document.getElementById('theme-injector');
-    if (!styleTag) {
-        styleTag = document.createElement('style');
-        styleTag.id = 'theme-injector';
-        document.head.appendChild(styleTag);
-    }
-    styleTag.textContent = activeStyleEntry ? activeStyleEntry.content : '';
-  };
-
   // 数据初始化与迁移逻辑
   const initializeData = (rawData: any): StatusBarData => {
     // Check if it's new structure (has categories AND item_definitions)
@@ -103,16 +93,8 @@ const AppContent = () => {
             tavernService.saveVariables({ statusBarCharacterData: processedData });
         }
         
-        styleService.injectAllStyles(); // 此处添加1行
+        styleService.injectAllStyles();
         
-        const unsubscribe = tavernService.subscribe((entries) => {
-            injectStyles(entries);
-        });
-
-        const entries = await tavernService.getLorebookEntries();
-        injectStyles(entries);
-
-        return () => unsubscribe();
       } catch (e) {
         console.error(e);
         toast.error("初始化失败");

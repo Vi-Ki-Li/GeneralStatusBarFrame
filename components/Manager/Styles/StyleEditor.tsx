@@ -1,16 +1,20 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { StyleUnit } from '../../../types';
-import { Save, Settings, Code, FileCode, RotateCcw, AlertTriangle } from 'lucide-react';
+// FIX: Replaced non-exported 'StyleUnit' with 'StyleDefinition'.
+import { StyleDefinition } from '../../../types';
+import { Save, Settings, Code, FileCode, RotateCcw, AlertTriangle, Palette, Terminal, Copy } from 'lucide-react';
 import './StyleEditor.css';
 
 interface StyleEditorProps {
-  unit: StyleUnit;
-  onUpdate: (updatedUnit: StyleUnit) => void;
-  onSave: (unitToSave: StyleUnit) => void;
+  // FIX: Use StyleDefinition type.
+  unit: StyleDefinition;
+  onUpdate: (updatedUnit: StyleDefinition) => void;
+  onSave: (unitToSave: StyleDefinition) => void;
 }
 
-export const DEFAULT_TEMPLATES: Record<StyleUnit['dataType'], { html: string, css: string }> = { // 此处开始修改
+// FIX: Use StyleDefinition type.
+export const DEFAULT_TEMPLATES: Record<StyleDefinition['dataType'], { html: string, css: string }> = {
     numeric: {
       html: `
 <div class="numeric-renderer__main-row">
@@ -84,6 +88,30 @@ export const DEFAULT_TEMPLATES: Record<StyleUnit['dataType'], { html: string, cs
   color: var(--text-primary);
   line-height: 1.5;
 }`
+    },
+    theme: {
+        html: '<!-- Theme mode does not use HTML template -->',
+        css: `
+/* 全局变量覆盖 */
+:root {
+  --color-primary: #8b5cf6;
+  --color-secondary: #ec4899;
+  --bg-app: #1e1e2e;
+  --text-primary: #cdd6f4;
+  --glass-bg: rgba(30, 30, 46, 0.7);
+  --radius-xl: 0px; /* 直角风格 */
+}
+
+/* 全局组件样式 */
+.btn {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.glass-panel {
+  border: 1px solid var(--color-primary);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+`
     }
 };
 
@@ -101,17 +129,46 @@ const TemplateConfirmModal = ({ onConfirm, onCancel, type }: { onConfirm: () => 
     </div>
 );
 
+// Snippet Helper Component
+const CssSnippets = ({ onInsert }: { onInsert: (code: string) => void }) => {
+    const snippets = [
+        { label: '主色调', code: 'var(--color-primary)' },
+        { label: '背景色', code: 'var(--bg-app)' },
+        { label: '玻璃背景', code: 'var(--glass-bg)' },
+        { label: 'Flex Center', code: 'display: flex; align-items: center; justify-content: center;' },
+        { label: 'Grid 2Col', code: 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px;' },
+        { label: 'Gradient', code: 'background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));' },
+    ];
+    return (
+        <div className="style-editor__snippets">
+            <span className="style-editor__snippets-title">快速插入:</span>
+            {snippets.map(s => (
+                <button key={s.label} onClick={() => onInsert(s.code)} className="snippet-tag" title={s.code}>
+                    {s.label}
+                </button>
+            ))}
+        </div>
+    );
+};
+
 const StyleEditor: React.FC<StyleEditorProps> = ({ unit, onUpdate, onSave }) => {
   const [name, setName] = useState(unit.name);
   const [dataType, setDataType] = useState(unit.dataType);
   const [css, setCss] = useState(unit.css);
   const [html, setHtml] = useState(unit.html || '');
-  const [activeTab, setActiveTab] = useState<'html' | 'css' | 'settings'>('html');
+  const [activeTab, setActiveTab] = useState<'html' | 'css' | 'settings'>('css'); // Default to CSS for convenience
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingDataType, setPendingDataType] = useState<StyleUnit['dataType'] | null>(null);
+  // FIX: Use StyleDefinition type.
+  const [pendingDataType, setPendingDataType] = useState<StyleDefinition['dataType'] | null>(null);
+
+  // Auto-switch to CSS tab if theme
+  useEffect(() => {
+      if (unit.dataType === 'theme' && activeTab === 'html') {
+          setActiveTab('css');
+      }
+  }, [unit.dataType]);
 
   useEffect(() => {
-    // Live update parent component for preview
     const handler = setTimeout(() => {
         onUpdate({ ...unit, name, dataType, css, html });
     }, 200);
@@ -119,7 +176,8 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ unit, onUpdate, onSave }) => 
   }, [name, dataType, css, html]);
 
   const handleDataTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newType = e.target.value as StyleUnit['dataType'];
+    // FIX: Use StyleDefinition type.
+    const newType = e.target.value as StyleDefinition['dataType'];
     setPendingDataType(newType);
     setShowConfirm(true);
   };
@@ -129,14 +187,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ unit, onUpdate, onSave }) => 
       const template = DEFAULT_TEMPLATES[pendingDataType];
       setCss(template.css);
       setHtml(template.html);
-      setDataType(pendingDataType); // Only change dataType after applying
+      setDataType(pendingDataType);
       setShowConfirm(false);
       setPendingDataType(null);
   };
   
   const cancelTemplateChange = () => {
       if (!pendingDataType) return;
-      setDataType(pendingDataType); // Change type without applying template
+      setDataType(pendingDataType);
       setShowConfirm(false);
       setPendingDataType(null);
   };
@@ -150,25 +208,33 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ unit, onUpdate, onSave }) => 
   const handleSaveClick = () => {
     onSave({ ...unit, name, dataType, css, html });
   };
+  
+  const insertSnippet = (snippet: string) => {
+      if (activeTab === 'css') {
+          setCss(prev => prev + '\n' + snippet);
+      } else if (activeTab === 'html') {
+          setHtml(prev => prev + snippet);
+      }
+  };
+
+  const isTheme = dataType === 'theme';
 
   return (
     <div className="style-editor">
         {showConfirm && <TemplateConfirmModal onConfirm={confirmTemplateChange} onCancel={cancelTemplateChange} type={pendingDataType || ''} />}
 
         <div className="style-editor__header">
-            <input 
-                className="style-editor__name-input"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="样式单元名称"
-            />
+            <div className="style-editor__name-wrapper">
+                <input 
+                    className="style-editor__name-input"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="样式单元名称"
+                />
+                <span className="style-editor__id-hint">{unit.id}</span>
+            </div>
             <div className="style-editor__actions">
-                 <div className="style-editor__tabs">
-                    <button onClick={() => setActiveTab('html')} className={activeTab === 'html' ? 'active' : ''}><FileCode size={14}/> HTML</button>
-                    <button onClick={() => setActiveTab('css')} className={activeTab === 'css' ? 'active' : ''}><Code size={14}/> CSS</button>
-                    <button onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'active' : ''}><Settings size={14}/> 设置</button>
-                 </div>
-                 <button onClick={handleResetToTemplate} className="btn btn--ghost" title="重置为当前类型的默认模板">
+                 <button onClick={handleResetToTemplate} className="btn btn--ghost" title="重置为默认模板">
                      <RotateCcw size={16} />
                  </button>
                  <button onClick={handleSaveClick} className="btn btn--primary">
@@ -177,47 +243,69 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ unit, onUpdate, onSave }) => 
             </div>
         </div>
 
+        <div className="style-editor__tabs-bar">
+             <div className="style-editor__tabs">
+                {!isTheme && (
+                    <button onClick={() => setActiveTab('html')} className={activeTab === 'html' ? 'active' : ''}>
+                        <FileCode size={14}/> 结构 (HTML)
+                    </button>
+                )}
+                <button onClick={() => setActiveTab('css')} className={activeTab === 'css' ? 'active' : ''}>
+                    <Code size={14}/> 样式 (CSS)
+                </button>
+                <button onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'active' : ''}>
+                    <Settings size={14}/> 设置
+                </button>
+             </div>
+             {activeTab !== 'settings' && <CssSnippets onInsert={insertSnippet} />}
+        </div>
+
         <div className="style-editor__content">
-            {activeTab === 'html' && (
-                <textarea
-                    className="style-editor__textarea"
-                    value={html}
-                    onChange={e => setHtml(e.target.value)}
-                    spellCheck="false"
-                    placeholder="在此处输入 HTML 结构..."
-                />
-            )}
-            {activeTab === 'css' && (
-                <textarea
-                    className="style-editor__textarea"
-                    value={css}
-                    onChange={e => setCss(e.target.value)}
-                    spellCheck="false"
-                    placeholder="在此处输入 CSS..."
-                />
-            )}
+            <div className="style-editor__editor-wrapper">
+                {/* Fake line numbers for aesthetics */}
+                <div className="style-editor__line-numbers">
+                    {Array.from({length: 20}).map((_, i) => <span key={i}>{i + 1}</span>)}
+                </div>
+
+                {activeTab === 'html' && !isTheme && (
+                    <textarea
+                        className="style-editor__textarea"
+                        value={html}
+                        onChange={e => setHtml(e.target.value)}
+                        spellCheck="false"
+                        placeholder="<!-- HTML Template -->"
+                    />
+                )}
+                {activeTab === 'css' && (
+                    <textarea
+                        className="style-editor__textarea"
+                        value={css}
+                        onChange={e => setCss(e.target.value)}
+                        spellCheck="false"
+                        placeholder="/* CSS Styles */"
+                    />
+                )}
+            </div>
+            
             {activeTab === 'settings' && (
                 <div className="style-editor__settings animate-fade-in">
                     <div className="form-group">
-                        <label className="form-label">关联数据类型</label>
+                        <label className="form-label"><Terminal size={16}/> 数据源类型</label>
                         <p className="form-description">
-                            选择一个类型，以便在右侧的预览面板中看到最相关的效果。切换时会提示您是否应用该类型的默认模板。
+                            决定了预览区域使用什么Mock数据，以及HTML模板是否可用。
                         </p>
                         <select className="form-input" value={dataType} onChange={handleDataTypeChange}>
-                            <option value="numeric">数值 (Numeric)</option>
-                            <option value="array">标签组 (Array)</option>
-                            <option value="text">文本 (Text)</option>
+                            <option value="numeric">数值组件 (Numeric)</option>
+                            <option value="array">标签组组件 (Array)</option>
+                            <option value="text">文本组件 (Text)</option>
+                            <option value="theme">全局主题 (Theme)</option>
                         </select>
-                    </div>
-                     <div className="form-group">
-                        <label className="form-label">唯一ID (自动生成)</label>
-                        <input className="form-input" value={unit.id} readOnly disabled />
                     </div>
                 </div>
             )}
         </div>
     </div>
   );
-}; // 此处完成修改
+};
 
 export default StyleEditor;

@@ -1,4 +1,5 @@
 
+
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
@@ -27,6 +28,7 @@ export interface ItemDefinition {
     parts: string[];    // e.g. ['current', 'max', 'change', 'reason']
     labels?: string[];  // e.g. ['当前', '最大', '变化', '原因']
   };
+  styleId?: string; // v7.0: 关联的样式定义ID
 }
 
 // 3. 状态栏单个数据条目
@@ -157,11 +159,13 @@ export interface AppOptions {
   worldSnapshotEnabled: boolean;
 }
 
-// 13. 样式单元 (Style Unit) // 此处开始添加7行
-export interface StyleUnit {
+// 13. 样式定义 (Style Definition) - v7.0 Refactor
+export interface StyleDefinition {
   id: string; // "red-hp-bar" - generated from name, unique
   name: string; // "红色血条"
+  // FIX: Renamed 'type' to 'dataType' and updated values to match component logic.
+  dataType: 'numeric' | 'array' | 'text' | 'theme';
   css: string;
-  html?: string; // Optional custom HTML structure
-  dataType: 'numeric' | 'array' | 'text'; // For previewing
-} // 此处完成添加
+  html?: string; // Optional custom HTML structure, only for component types
+  mockDataKey?: string; // Key from item_definitions to use for previewing
+}

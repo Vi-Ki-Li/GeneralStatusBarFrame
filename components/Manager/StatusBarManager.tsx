@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../types';
 import ManagerModal from './ManagerModal';
@@ -39,7 +40,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
       case 'DEFINITIONS':
         return <DefinitionList data={data} onUpdate={onUpdate} />;
       case 'STYLES':
-        return <StyleManager />;
+        return <StyleManager isMobile={isMobile} />;
       case 'LAYOUT':
         return <LayoutComposer data={data} onUpdate={onUpdate} />;
       case 'SYSTEM':

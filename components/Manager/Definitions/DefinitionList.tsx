@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader } from 'lucide-react';
+import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft } from 'lucide-react';
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
 import * as LucideIcons from 'lucide-react';
@@ -17,6 +17,7 @@ interface DefinitionListProps {
 const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   const toast = useToast();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories'); // 此处添加1行
 
   const [editingItemDef, setEditingItemDef] = useState<ItemDefinition | null>(null);
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
@@ -38,6 +39,11 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   
   const selectedCategory = selectedCategoryKey ? data.categories[selectedCategoryKey] : null;
 
+  const handleSelectCategory = (key: string | null) => { // 此处开始添加4行
+    setSelectedCategoryKey(key);
+    setMobileView('items');
+  };
+  
   const handleSaveCategory = (def: CategoryDefinition) => {
     const newData = { ...data, categories: { ...data.categories, [def.key]: def } };
     onUpdate(newData);
@@ -84,7 +90,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
     }
   };
 
-  const handleInjectAll = async () => { // 此处开始修改
+  const handleInjectAll = async () => {
     const definitionsToInject = selectedCategoryKey === null 
       ? itemDefinitions 
       : filteredItems;
@@ -116,7 +122,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
     } else {
         toast.info("所有规则均无需更新");
     }
-  }; // 此处完成修改
+  };
 
   const InlineConfirm = ({ onConfirm, onCancel, context }: { onConfirm: () => void, onCancel: () => void, context?: string }) => (
     <div className={`inline-confirm ${context ? `inline-confirm--${context}` : ''} animate-fade-in`}>
@@ -126,21 +132,21 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
     </div>
   );
 
-  const injectButtonText = isInjectingAll // 此处开始添加5行
+  const injectButtonText = isInjectingAll
     ? '同步中...' 
     : selectedCategory 
       ? `注入 "${selectedCategory.name}"` 
-      : '全部注入/同步'; // 此处完成添加
+      : '全部注入/同步';
 
   return (
     <div className="def-studio">
-      <div className="def-studio__sidebar">
+      <div className={`def-studio__sidebar ${mobileView === 'items' ? 'mobile-hidden' : ''}`}>
           <div className="def-studio__sidebar-header">
               <Layers size={18} />
               <h3>分类</h3>
           </div>
           <div className="def-studio__cat-list">
-              <div onClick={() => setSelectedCategoryKey(null)} className={`def-studio__cat-item-wrapper ${selectedCategoryKey === null ? 'active' : ''}`}>
+              <div onClick={() => handleSelectCategory(null)} className={`def-studio__cat-item-wrapper ${selectedCategoryKey === null ? 'active' : ''}`}>
                   <div className="def-studio__cat-item">
                       <ChevronsRight size={16} />
                       <span>所有分类</span>
@@ -151,7 +157,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
                   const Icon = (LucideIcons as any)[cat.icon] || LucideIcons.CircleHelp;
                   return (
                       <div key={cat.key} className={`def-studio__cat-item-wrapper ${selectedCategoryKey === cat.key ? 'active' : ''}`}>
-                          <div className="def-studio__cat-item" onClick={() => setSelectedCategoryKey(cat.key)}>
+                          <div className="def-studio__cat-item" onClick={() => handleSelectCategory(cat.key)}>
                               <Icon size={16} />
                               <span>{cat.name}</span>
                           </div>
@@ -176,8 +182,12 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
           </div>
       </div>
       
-      <div className="def-studio__main">
+      <div className={`def-studio__main ${mobileView === 'categories' ? 'mobile-hidden' : ''}`}>
           <div className="def-studio__main-header">
+              <button className="def-studio__back-btn" onClick={() => setMobileView('categories')}>
+                  <ChevronLeft size={16} />
+                  返回分类
+              </button>
               <div>
                   <h2 className="def-studio__main-title">
                       {selectedCategory ? selectedCategory.name : '所有条目规则'}

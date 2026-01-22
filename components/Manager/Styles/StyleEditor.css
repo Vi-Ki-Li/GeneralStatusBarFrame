@@ -3,97 +3,165 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: #1e1e1e; /* Dark editor background */
+  color: #d4d4d4;
 }
 
 .style-editor__header {
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--chip-border);
+  padding: 10px 16px;
+  background: #252526;
+  border-bottom: 1px solid #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
 }
 
+.style-editor__name-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
 .style-editor__name-input {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
+  font-size: 1rem;
+  font-weight: 600;
   border: none;
   background: transparent;
-  color: var(--text-primary);
+  color: #fff;
   outline: none;
-  padding: 4px;
-  border-radius: var(--radius-sm);
+  padding: 0;
 }
 .style-editor__name-input:focus {
-  background: var(--chip-bg);
+  border-bottom: 1px solid var(--color-primary);
+}
+
+.style-editor__id-hint {
+  font-size: 0.75rem;
+  color: #666;
+  font-family: monospace;
 }
 
 .style-editor__actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: 8px;
+}
+
+.style-editor__tabs-bar {
+  background: #252526;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
 }
 
 .style-editor__tabs {
   display: flex;
-  background: var(--bar-bg);
-  border-radius: var(--radius-md);
-  padding: 4px;
+  gap: 2px;
 }
+
 .style-editor__tabs button {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 10px 14px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-sm);
   cursor: pointer;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: var(--font-weight-medium);
+  color: #969696;
+  font-size: 0.85rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  border-top: 2px solid transparent;
 }
 .style-editor__tabs button.active {
-  background: var(--bg-app);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  background: #1e1e1e;
+  color: #fff;
+  border-top-color: var(--color-primary);
+}
+.style-editor__tabs button:hover:not(.active) {
+  background: #2a2d2e;
+  color: #fff;
+}
+
+.style-editor__snippets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.style-editor__snippets-title {
+  font-size: 0.7rem; color: #666; text-transform: uppercase;
+}
+.snippet-tag {
+  background: #333;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.snippet-tag:hover {
+  border-color: var(--color-primary);
+  color: #fff;
 }
 
 .style-editor__content {
   flex: 1;
   overflow: hidden;
   position: relative;
+  display: flex;
+}
+
+.style-editor__editor-wrapper {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+.style-editor__line-numbers {
+  width: 40px;
+  background: #1e1e1e;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 16px 8px 0 0;
+  color: #555;
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  user-select: none;
+  overflow: hidden;
 }
 
 .style-editor__textarea {
-  width: 100%;
+  flex: 1;
   height: 100%;
   border: none;
-  background: var(--bg-app);
-  padding: var(--spacing-lg);
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: var(--text-primary);
+  background: #1e1e1e;
+  padding: 16px;
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  color: #d4d4d4;
   resize: none;
   outline: none;
-  line-height: 1.6;
+  line-height: 1.5;
+  white-space: pre;
 }
 
 .style-editor__settings {
-  padding: var(--spacing-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
+  width: 100%;
+  padding: 20px;
+  background: var(--bg-app);
+  color: var(--text-primary);
 }
 
-/* Re-using some form styles from DefinitionDrawer */
-.form-group { display: flex; flex-direction: column; gap: 8px; }
-.form-label { font-size: 0.85rem; font-weight: var(--font-weight-semibold); color: var(--text-secondary); }
-.form-description { font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.5; }
-.form-input { 
-    padding: 10px; border-radius: 8px; border: 1px solid var(--chip-border); 
-    background: var(--bg-app); color: var(--text-primary); outline: none; transition: 0.2s;
-    font-size: 0.95rem;
+.style-editor__settings .form-input {
+  background: var(--bar-bg);
+  border-color: var(--chip-border);
 }
-.form-input:focus { border-color: var(--color-primary); }
-.form-input:disabled { opacity: 0.7; background: var(--bar-bg); }
