@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ItemDefinition, ItemDefinitionPart, CategoryDefinition } from '../../../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ItemDefinition, ItemDefinitionPart, CategoryDefinition, StyleDefinition } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
+import { styleService } from '../../../services/styleService';
 import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { generateLorebookContent } from '../../../utils/lorebookInjector';
@@ -35,34 +36,74 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   const [structureParts, setStructureParts] = useState<StructurePart[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [styles, setStyles] = useState<StyleDefinition[]>([]);
 
   useEffect(() => {
-    if (definition) {
-      setFormData({ 
-          ...definition, 
-          separator: definition.separator || '|', 
-          partSeparator: definition.partSeparator || '@', 
-          name: definition.name || '', 
-          icon: definition.icon || '' 
-      });
-      
-      // FIX: Correctly set structureParts from ItemDefinitionPart[]
-      if (definition.structure?.parts) {
-          setStructureParts(definition.structure.parts);
+    if (isOpen) {
+      setStyles(styleService.getStyleDefinitions());
+      if (definition) {
+        setFormData({ 
+            ...definition, 
+            separator: definition.separator || '|', 
+            partSeparator: definition.partSeparator || '@', 
+            name: definition.name || '', 
+            icon: definition.icon || '' 
+        });
+        
+        // FIX: Correctly set structureParts from ItemDefinitionPart[]
+        if (definition.structure?.parts) {
+            setStructureParts(definition.structure.parts);
+        } else {
+            setStructureParts([]);
+        }
+        setIsNew(false);
       } else {
-          setStructureParts([]);
+        setFormData({ 
+            key: '', name: '', icon: '', type: 'text', 
+            defaultCategory: preselectedCategory || 'Other', 
+            description: '', separator: '|', partSeparator: '@' 
+        });
+        setStructureParts([]);
+        setIsNew(true);
       }
-      setIsNew(false);
-    } else {
-      setFormData({ 
-          key: '', name: '', icon: '', type: 'text', 
-          defaultCategory: preselectedCategory || 'Other', 
-          description: '', separator: '|', partSeparator: '@' 
-      });
-      setStructureParts([]);
-      setIsNew(true);
     }
   }, [definition, isOpen, preselectedCategory]);
+
+  // 当渲染类型变化时，自动验证并重置不兼容的样式
+  useEffect(() => {
+    if (!formData.styleId) return;
+
+    const isStyleCompatible = (styleId: string, itemType: ItemDefinition['type']): boolean => {
+        const style = styles.find(s => s.id === styleId);
+        if (!style) return false;
+
+        switch (itemType) {
+            case 'numeric': return style.dataType === 'numeric';
+            case 'array':
+            case 'list-of-objects': return style.dataType === 'array';
+            case 'text': return style.dataType === 'text';
+            default: return false;
+        }
+    };
+
+    if (!isStyleCompatible(formData.styleId, formData.type)) {
+      // 如果不兼容，则静默重置为 undefined
+      setFormData(prev => ({ ...prev, styleId: undefined }));
+    }
+  }, [formData.type, formData.styleId, styles]);
+
+
+  const compatibleStyles = useMemo(() => {
+    let compatibleType: StyleDefinition['dataType'] | null = null;
+    switch (formData.type) {
+        case 'numeric': compatibleType = 'numeric'; break;
+        case 'array':
+        case 'list-of-objects': compatibleType = 'array'; break;
+        case 'text': compatibleType = 'text'; break;
+    }
+    if (!compatibleType) return [];
+    return styles.filter(s => s.dataType === compatibleType);
+  }, [styles, formData.type]);
 
   const handleChange = (field: keyof ItemDefinition, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -79,6 +120,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     const toSave = { ...formData };
     if (!toSave.name) delete toSave.name;
     if (!toSave.icon) delete toSave.icon;
+    if (!toSave.styleId) delete toSave.styleId;
 
     if (toSave.type !== 'list-of-objects') { 
         delete toSave.partSeparator;
@@ -255,6 +297,23 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                     </div>
                 </div>
                 )}
+            </div>
+            
+            <div className="form-group">
+                <label className="form-label">默认渲染样式</label>
+                <select 
+                    className="form-input" 
+                    value={formData.styleId || ''}
+                    onChange={e => {
+                      const selectedValue = e.target.value;
+                      handleChange('styleId', selectedValue === '' ? undefined : selectedValue);
+                    }}
+                >
+                    <option value="">默认样式</option>
+                    {compatibleStyles.map(style => (
+                        <option key={style.id} value={style.id}>{style.name}</option>
+                    ))}
+                </select>
             </div>
             
             {formData.type === 'list-of-objects' && ( 
