@@ -1,10 +1,16 @@
+
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+interface SortableItemRenderProps {
+    listeners: ReturnType<typeof useSortable>['listeners'];
+    isDragging: boolean;
+}
+
 interface SortableItemProps {
   id: string;
-  children: (dragListeners: any, isDragging: boolean) => React.ReactNode;
+  children: (props: SortableItemRenderProps) => React.ReactNode;
 }
 
 export const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
@@ -22,12 +28,13 @@ export const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
     transition,
     opacity: isDragging ? 0.5 : 1,
     position: 'relative' as const,
-    zIndex: isDragging ? 1000 : 'auto',
+    zIndex: isDragging ? 999 : 1,
+    touchAction: 'none'
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      {children(listeners, isDragging)}
+      {children({ listeners, isDragging })}
     </div>
   );
 };

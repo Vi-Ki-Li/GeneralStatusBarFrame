@@ -23,8 +23,9 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   const [confirmDeleteCatKey, setConfirmDeleteCatKey] = useState<string | null>(null);
   const [confirmDeleteItemKey, setConfirmDeleteItemKey] = useState<string | null>(null);
 
-  const categories = Object.values(data.categories || {}).sort((a, b) => a.order - b.order);
-  const itemDefinitions = Object.values(data.item_definitions || {}).sort((a, b) => a.key.localeCompare(b.key));
+  // FIX: Added explicit types for sort callback arguments to resolve type inference issues.
+  const categories = Object.values(data.categories || {}).sort((a: CategoryDefinition, b: CategoryDefinition) => a.order - b.order);
+  const itemDefinitions = Object.values(data.item_definitions || {}).sort((a: ItemDefinition, b: ItemDefinition) => a.key.localeCompare(b.key));
 
   const handleSaveCategory = (def: CategoryDefinition) => {
     const newData = { ...data, categories: { ...data.categories, [def.key]: def } };

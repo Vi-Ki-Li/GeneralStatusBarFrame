@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
-import { Trash2, Plus, X, Lock, LockOpen, GripVertical, ChevronDown, Check, Edit2 } from 'lucide-react';
+import { Trash2, Plus, X, Lock, LockOpen, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
 import './ItemEditorRow.css';
 
 interface ItemEditorRowProps { 
@@ -15,7 +15,8 @@ interface ItemEditorRowProps {
   isLast: boolean;
   onChange: (newItem: StatusBarItem) => void;
   onDelete: () => void;
-  dragListeners?: any;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   isOverlay?: boolean; 
 }
 
@@ -23,7 +24,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   allDefinitions = [], 
   existingKeysInCategory = [], 
   item, uiType, definition, index, isFirst, isLast, 
-  onChange, onDelete, dragListeners, isOverlay = false
+  onChange, onDelete, onMoveUp, onMoveDown, isOverlay = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const isMobile = window.innerWidth <= 768;
@@ -87,7 +88,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
 
   const handleSuggestionClick = (def: ItemDefinition) => { 
       let newValues: string[];
-      // Init values based on structure length if available
       if (def.structure?.parts) {
           newValues = new Array(def.structure.parts.length).fill('');
           if (def.structure.parts.includes('max')) {
@@ -113,7 +113,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   const handleValueChange = (index: number, val: string) => {
     const values = [...(item.values || [])];
     values[index] = val;
-    // Ensure padding
     for (let i = 0; i <= index; i++) {
         if (values[i] === undefined) values[i] = '';
     }
@@ -139,9 +138,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
     readOnly: isOverlay 
   };
 
-  // --- v6.8: Completely Dynamic Input Rendering ---
   const renderDynamicInputs = () => {
-    // Default fallback structure if not defined
     const parts = definition?.structure?.parts || ['current', 'max', 'change', 'reason', 'description'];
     const labels = definition?.structure?.labels || ['当前', '最大', '变化', '原因', '描述'];
     const values = item.values || [];
@@ -218,13 +215,6 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       return (
         <div className="item-editor-row item-editor-row--collapsed">
             <div 
-               {...dragListeners}
-               className="item-editor-row__drag-handle item-editor-row__drag-handle--mobile"
-            >
-               <GripVertical size={20} />
-            </div>
-            
-            <div 
                 className="item-editor-row__summary"
                 onClick={() => setIsEditing(true)}
             >
@@ -267,12 +257,13 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
       )}
 
       {!isMobile && (
-        <div 
-            className="item-editor-row__drag-handle" 
-            {...dragListeners}
-            style={{ cursor: isOverlay ? 'grabbing' : 'grab', touchAction: 'none' }}
-        >
-            <GripVertical size={18} />
+        <div className="item-editor-row__move-actions">
+            <button onClick={onMoveUp} disabled={isFirst} className="item-editor-row__move-btn" title="上移">
+                <ChevronUp size={16} />
+            </button>
+            <button onClick={onMoveDown} disabled={isLast} className="item-editor-row__move-btn" title="下移">
+                <ChevronDown size={16} />
+            </button>
         </div>
       )}
 

@@ -1,7 +1,8 @@
 
+
 .item-editor-row {
   display: grid;
-  grid-template-columns: 32px 140px 1fr 40px;
+  grid-template-columns: 40px 140px 1fr 40px;
   gap: var(--spacing-md);
   align-items: start;
   padding: var(--spacing-md);
@@ -18,7 +19,7 @@
   background: var(--glass-bg);
   box-shadow: 0 10px 20px rgba(0,0,0,0.2);
   border-color: var(--color-primary);
-  z-index: 1000;
+  z-index: 99999 !important; /* Force high z-index to stay above modal */
   cursor: grabbing;
 }
 
@@ -27,15 +28,37 @@
   border-color: rgba(245, 158, 11, 0.3);
 }
 
-.item-editor-row__drag-handle {
+.item-editor-row__move-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+  padding-top: 4px;
+}
+
+.item-editor-row__move-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  cursor: grab;
-  color: var(--text-tertiary);
-  touch-action: none;
-  padding-top: 6px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.item-editor-row__move-btn:hover:not(:disabled) {
+  background: var(--chip-bg);
+  color: var(--text-primary);
+}
+
+.item-editor-row__move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .item-editor-row__key-section {
@@ -238,10 +261,9 @@
   border: 1px solid var(--chip-border);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-sm);
-  grid-template-columns: auto 1fr; /* Override grid */
+  grid-template-columns: 1fr; /* Override grid */
 }
-.item-editor-row__drag-handle--mobile { padding: 0 var(--spacing-sm); height: auto; }
-.item-editor-row__summary { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) 0; }
+.item-editor-row__summary { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md); }
 .item-editor-row__summary-main { font-size: 0.9rem; color: var(--text-primary); display: flex; flex-direction: column; overflow: hidden; }
 .item-editor-row__summary-name { font-weight: 600; color: var(--text-primary); }
 .item-editor-row__summary-key { font-size: 0.75rem; color: var(--text-tertiary); }
