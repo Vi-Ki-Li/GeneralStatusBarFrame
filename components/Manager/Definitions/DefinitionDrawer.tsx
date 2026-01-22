@@ -5,6 +5,7 @@ import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
 import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { generateLorebookContent } from '../../../utils/lorebookInjector'; // 此处添加1行
 import './DefinitionDrawer.css';
 
 interface DefinitionDrawerProps {
@@ -173,27 +174,21 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       setStructureParts(template);
   };
 
-  const getPreviewString = () => {
-    const { key, defaultCategory, separator } = formData;
-    const catKey = categories[defaultCategory]?.key || defaultCategory;
-    const sep = separator || '|';
-    
-    let valueExample = '';
+  const getPreviewContent = () => { // 此处开始添加15行
+    // Construct a temporary definition object from the current form state
+    const tempDef: ItemDefinition = { ...formData };
     if (structureParts.length > 0) {
-        valueExample = structureParts.map(p => {
-            const k = p.key.toLowerCase();
-            if (k === 'current' || k === 'value') return '80';
-            if (k === 'max') return '100';
-            if (k === 'change') return '-5';
-            if (k === 'reason') return '原因';
-            return `[${p.label || p.key}]`;
-        }).join(sep);
+        tempDef.structure = {
+            parts: structureParts.map(p => p.key.trim()).filter(Boolean),
+            labels: structureParts.map(p => p.label.trim())
+        };
     } else {
-        valueExample = formData.type === 'numeric' ? '100' : '文本内容';
+        delete tempDef.structure;
     }
-
-    return `[${catKey ? '角色^' + catKey : '分类'}|${key}::${valueExample}]`;
-  };
+    
+    // Call the authoritative function
+    return generateLorebookContent(tempDef, categories);
+  }; // 此处完成添加
 
   if (!isOpen) return null;
 
@@ -308,7 +303,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 
             <div className="form-group">
                 <label className="form-label icon-label"><Eye size={14} /> 格式预览</label>
-                <div className="format-preview">{getPreviewString()}</div>
+                <pre className="format-preview">{getPreviewContent()}</pre>
             </div>
 
             <div className="form-group">

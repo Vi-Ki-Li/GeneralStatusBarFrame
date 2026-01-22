@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud } from 'lucide-react';
+import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader } from 'lucide-react'; // 此处添加1行
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
 import * as LucideIcons from 'lucide-react';
@@ -24,6 +24,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   const [isCatDrawerOpen, setIsCatDrawerOpen] = useState(false);
   const [confirmDeleteCatKey, setConfirmDeleteCatKey] = useState<string | null>(null);
   const [confirmDeleteItemKey, setConfirmDeleteItemKey] = useState<string | null>(null);
+  const [isInjectingAll, setIsInjectingAll] = useState(false); // 此处添加1行
 
   const categories = Object.values(data.categories || {}).sort((a: CategoryDefinition, b: CategoryDefinition) => a.order - b.order);
   const itemDefinitions = Object.values(data.item_definitions || {}).sort((a: ItemDefinition, b: ItemDefinition) => a.key.localeCompare(b.key));
@@ -82,6 +83,27 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
             break;
     }
   };
+
+  const handleInjectAll = async () => { // 此处开始添加22行
+    setIsInjectingAll(true);
+    const result = await tavernService.injectMultipleDefinitions(itemDefinitions, data.categories);
+    setIsInjectingAll(false);
+    
+    const descriptions = [
+        result.created > 0 ? `新增 ${result.created}` : '',
+        result.updated > 0 ? `更新 ${result.updated}` : '',
+        result.no_change > 0 ? `无变化 ${result.no_change}` : '',
+        result.errors > 0 ? `失败 ${result.errors}` : '',
+    ].filter(Boolean).join(', ');
+
+    if (result.errors > 0) {
+        toast.error("批量注入完成，但有错误", { description: descriptions });
+    } else if (result.created > 0 || result.updated > 0) {
+        toast.success("批量同步完成", { description: descriptions });
+    } else {
+        toast.info("所有规则均无需更新");
+    }
+  }; // 此处完成添加
 
   const InlineConfirm = ({ onConfirm, onCancel, context }: { onConfirm: () => void, onCancel: () => void, context?: string }) => (
     <div className={`inline-confirm ${context ? `inline-confirm--${context}` : ''} animate-fade-in`}>
@@ -147,12 +169,18 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
                       {filteredItems.length} 个条目
                   </p>
               </div>
-              <button 
-                className="btn btn--primary" 
-                onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}
-              >
-                  <Plus size={16} /> 新建条目规则
-              </button>
+              <div className="def-studio__header-actions">
+                  <button onClick={handleInjectAll} className="btn btn--ghost" disabled={isInjectingAll}>
+                      {isInjectingAll ? <Loader size={16} className="spinner" /> : <UploadCloud size={16} />}
+                      {isInjectingAll ? '同步中...' : '全部注入/同步'}
+                  </button>
+                  <button 
+                    className="btn btn--primary" 
+                    onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}
+                  >
+                      <Plus size={16} /> 新建条目规则
+                  </button>
+              </div>
           </div>
 
           <div className="def-studio__main-content">

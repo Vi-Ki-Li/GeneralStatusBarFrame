@@ -156,6 +156,37 @@ class MockTavernService {
       return { status: 'error', updatedEntry: null, error: e.message };
     }
   }
+
+  async injectMultipleDefinitions( // 此处开始添加26行
+    definitions: ItemDefinition[],
+    categories: { [key: string]: CategoryDefinition }
+  ): Promise<{ created: number; updated: number; no_change: number; errors: number; }> {
+    const summary = { created: 0, updated: 0, no_change: 0, errors: 0 };
+    let tempLorebook = [...this.lorebook];
+
+    for (const definition of definitions) {
+      try {
+        const content = generateLorebookContent(definition, categories);
+        const result = findAndUpdateLorebookEntry(tempLorebook, definition, content);
+        
+        tempLorebook = result.updatedEntries;
+        
+        switch (result.status) {
+          case 'created': summary.created++; break;
+          case 'updated': summary.updated++; break;
+          case 'no_change': summary.no_change++; break;
+        }
+      } catch (e) {
+        console.error(`[MockService] Batch injection failed for ${definition.key}:`, e);
+        summary.errors++;
+      }
+    }
+
+    this.lorebook = tempLorebook;
+    this.notifyListeners();
+    
+    return Promise.resolve(summary);
+  } // 此处完成添加
 }
 
 export const tavernService = new MockTavernService();

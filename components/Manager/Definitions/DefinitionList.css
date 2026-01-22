@@ -1,4 +1,3 @@
-
 /* --- Main Studio Layout --- */
 .def-studio {
   display: flex;
@@ -193,6 +192,23 @@
   background: var(--glass-bg);
   flex-shrink: 0;
 }
+
+.def-studio__header-actions { /* 此处开始添加16行 */
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* 此处完成添加 */
 .def-studio__main-title { 
   font-size: 1.2rem; 
   font-weight: var(--font-weight-semibold); 
