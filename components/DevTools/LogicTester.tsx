@@ -30,23 +30,20 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     }
   }, [initialData]);
 
-  // Updated Test Case for v6.8 Core (Definition-Driven Custom Structure)
+  // Updated Test Case for v7.2+ (Reinforce List of Objects)
   const [inputText, setInputText] = useState<string>(
-`// 1. 标准数值更新 (Definition: HP uses '|')
+`// 1. 标准数值更新 (体力: 80/100)
 [Eria^CV|体力::80|100|-5|中毒]
 
-// 2. 自定义结构测试 (Mana: current|max|regen)
-// 注意：需在 LogicTester 初始化时注入 Mana 定义
-[Eria^CV|Mana::10|100|5]
+// 2. 简单数组 (道具)
+[User^CR|道具物品::治疗药水@魔法面包]
 
-// 3. 状态更新 (English Keys)
-[User^CP|Status::Excited]
+// 3. 简单对象列表 (技能: 名称@等级)
+[Eria^CR|技能::奥术飞弹@5|护盾术@1]
 
-// 4. 元数据控制 (角色退场)
-[Eria^Meta|Present::false]
-
-// 5. 对象列表测试 (List of Objects)
-[Eria^CR|技能::奥术飞弹@5|护盾术@1]`
+// 4. 复杂对象列表 (装备: 名称@类型@效果)
+// 注意：需在 LogicTester 初始化时动态注入“装备”定义
+[Eria^CR|装备::龙鳞甲@胸甲@火焰抗性+20|精灵之靴@鞋子@敏捷+5]`
   );
   
   const [sourceId, setSourceId] = useState<number>(11);
@@ -58,18 +55,18 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     // 注入临时定义以便测试 (Dynamic Injection for Test)
     const testDefinitions = { 
         ...currentData.item_definitions,
-        'Mana': {
-            key: 'Mana',
-            name: '魔法值 (Custom)',
-            type: 'numeric',
-            defaultCategory: 'CV',
+        '装备': {
+            key: '装备',
+            name: '装备 (测试)',
+            type: 'list-of-objects',
+            defaultCategory: 'CR',
             separator: '|',
-            // FIX: Corrected structure to match ItemDefinitionPart type.
+            partSeparator: '@',
             structure: { 
                 parts: [
-                    { key: 'current', label: '当前' },
-                    { key: 'max', label: '最大' },
-                    { key: 'regen', label: '回复' }
+                    { key: 'name', label: '名称' },
+                    { key: 'type', label: '类型' },
+                    { key: 'effect', label: '效果' }
                 ]
             }
         } as ItemDefinition
