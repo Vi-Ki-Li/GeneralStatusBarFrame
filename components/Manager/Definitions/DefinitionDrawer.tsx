@@ -14,6 +14,7 @@ interface DefinitionDrawerProps {
   onClose: () => void;
   onSave: (def: ItemDefinition) => void;
   existingKeys: string[];
+  preselectedCategory?: string | null; // 此处添加1行
 }
 
 interface StructurePart {
@@ -22,7 +23,7 @@ interface StructurePart {
 }
 
 const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({ 
-  definition, categories, isOpen, onClose, onSave, existingKeys 
+  definition, categories, isOpen, onClose, onSave, existingKeys, preselectedCategory
 }) => {
   const toast = useToast();
   
@@ -58,11 +59,15 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
       }
       setIsNew(false);
     } else {
-      setFormData({ key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|' });
+      setFormData({ 
+          key: '', name: '', icon: '', type: 'text', 
+          defaultCategory: preselectedCategory || 'Other', 
+          description: '', separator: '|' 
+      }); // 此处修改1行
       setStructureParts([]);
       setIsNew(true);
     }
-  }, [definition, isOpen]);
+  }, [definition, isOpen, preselectedCategory]); // 此处修改1行
 
   const handleChange = (field: keyof ItemDefinition, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
