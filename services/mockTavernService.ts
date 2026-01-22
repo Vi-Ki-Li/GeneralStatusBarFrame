@@ -1,7 +1,8 @@
 
-import { LorebookEntry, StatusBarData } from '../types';
+import { LorebookEntry, StatusBarData, ItemDefinition, CategoryDefinition } from '../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
+import { generateLorebookContent, findAndUpdateLorebookEntry } from '../utils/lorebookInjector';
 
 // 构建 Mock 数据 (模拟解析后的状态 - Flat Structure)
 const MOCK_DATA_V6: StatusBarData = {
@@ -85,14 +86,14 @@ type EntriesListener = (entries: LorebookEntry[]) => void;
 class MockTavernService {
   private lorebook: LorebookEntry[] = [ 
     // 注入用户提供的 JSON 条目 (仅作为 Content 参考，实际解析依赖 variables)
-    { "uid":5,"comment":"[ST|时间]","content":"[ST|时间::{年月日}@{星期}@{时间}]\n# 规则: 主视角角色当前所在地的具体时间，根据剧情合理推进时间，格式为 年月日@星期@时分。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":6,"comment":"[ST|当前地点]","content":"[ST|当前地点::{当前地点}]\n# 规则: 主视角角色当前所在具体地点。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":7,"comment":"[ST|天气]","content":"[ST|天气::{天气}]\n# 规则: 简述主视角角色当前所在地的天气状况及温度。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":9,"comment":"[CP|名字]","content":"[角色名^CP|名字::{名字}]\n# 规则: 当前场景中每一个可交互角色（以及<user>）的名称，若不明确则以<user>认知中/目测/假设/合理推测的对方的名字/称呼为准。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":11,"comment":"[CP|身高]","content":"[角色名^CP|身高::Ncm]\n# 规则: 角色的身高，单位为厘米(cm)，若不明确则以<user>认知中/目测/假设/合理推测的对方的身高为准。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":22,"comment":"[CV|疼痛]","content":"[角色名^CV|疼痛::N1|100|±N2|{变化原因}|{疼痛描述}]\n# 规则: N1当前疼痛值(0-100)，N2变化值，附原因及描述；超过80剧痛。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":23,"comment":"[CV|体力]","content":"[角色名^CV|体力::N1|100|±N2|{变化原因}|{体力描述}]\n# 规则: N1当前体力值(0-100)，N2变化值，附原因及描述。","enabled":true,"position":3, key: [], keysecondary: [] },
-    { "uid":84,"comment":"[WP|剧情发展]","content":"[WP|剧情发展::{剧情发展选项1}|{剧情发展选项2}|...]\n# 规则: 提供5个简短精炼、不重复、符合剧情及人设、玩家视角、延续当前剧情的选项，用|分隔。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":5,"comment":"时间","content":"[ST|时间::{年月日}@{星期}@{时间}]\n# 规则: 主视角角色当前所在地的具体时间，根据剧情合理推进时间，格式为 年月日@星期@时分。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":6,"comment":"当前地点","content":"[ST|当前地点::{当前地点}]\n# 规则: 主视角角色当前所在具体地点。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":7,"comment":"天气","content":"[ST|天气::{天气}]\n# 规则: 简述主视角角色当前所在地的天气状况及温度。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":9,"comment":"名字","content":"[角色名^CP|名字::{名字}]\n# 规则: 当前场景中每一个可交互角色（以及<user>）的名称，若不明确则以<user>认知中/目测/假设/合理推测的对方的名字/称呼为准。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":11,"comment":"身高(cm)","content":"[角色名^CP|身高::Ncm]\n# 规则: 角色的身高，单位为厘米(cm)，若不明确则以<user>认知中/目测/假设/合理推测的对方的身高为准。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":22,"comment":"疼痛","content":"[角色名^CV|疼痛::N1|100|±N2|{变化原因}|{疼痛描述}]\n# 规则: N1当前疼痛值(0-100)，N2变化值，附原因及描述；超过80剧痛。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":23,"comment":"体力","content":"[角色名^CV|体力::N1|100|±N2|{变化原因}|{体力描述}]\n# 规则: N1当前体力值(0-100)，N2变化值，附原因及描述。","enabled":true,"position":3, key: [], keysecondary: [] },
+    { "uid":84,"comment":"剧情发展","content":"[WP|剧情发展::{剧情发展选项1}|{剧情发展选项2}|...]\n# 规则: 提供5个简短精炼、不重复、符合剧情及人设、玩家视角、延续当前剧情的选项，用|分隔。","enabled":true,"position":3, key: [], keysecondary: [] },
     { "uid":1001, "comment": "样式-默认", "content": "/* 默认样式占位 */", "enabled": true, "position": 0, key: [], keysecondary: [] }
   ]; 
   private variables: { statusBarCharacterData?: StatusBarData } = {
@@ -136,6 +137,24 @@ class MockTavernService {
   async updateWorldbookEntry(bookName: string, entryName: string, content: string): Promise<void> {
     console.log(`[MockService] Update Worldbook: ${entryName}`);
     return Promise.resolve();
+  }
+
+  async injectDefinition(
+    definition: ItemDefinition,
+    categories: { [key: string]: CategoryDefinition }
+  ): Promise<{ status: 'created' | 'updated' | 'error' | 'no_change', updatedEntry: LorebookEntry | null, error?: string }> {
+    try {
+      const content = generateLorebookContent(definition, categories);
+      const result = findAndUpdateLorebookEntry(this.lorebook, definition, content);
+      
+      this.lorebook = result.updatedEntries;
+      this.notifyListeners();
+      
+      return { status: result.status, updatedEntry: result.updatedEntry };
+    } catch (e: any) {
+      console.error('[MockService] Injection failed:', e);
+      return { status: 'error', updatedEntry: null, error: e.message };
+    }
   }
 }
 

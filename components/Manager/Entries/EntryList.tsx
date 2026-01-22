@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { LorebookEntry } from '../../../types';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder } from 'lucide-react';
+import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder, ChevronDown } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../../../services/definitionRegistry';
 import './EntryList.css';
 
@@ -15,6 +15,7 @@ const EntryList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [expandedUids, setExpandedUids] = useState<Set<number>>(new Set());
   const toast = useToast();
 
   useEffect(() => { loadEntries(); }, []);
@@ -35,6 +36,18 @@ const EntryList: React.FC = () => {
   const handleToggleEntry = (uid: number) => {
     setEntries(prev => prev.map(entry => entry.uid === uid ? { ...entry, enabled: !entry.enabled } : entry));
     setHasChanges(true);
+  };
+
+  const handleToggleExpand = (uid: number) => {
+    setExpandedUids(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(uid)) {
+            newSet.delete(uid);
+        } else {
+            newSet.add(uid);
+        }
+        return newSet;
+    });
   };
 
   const handleApply = async () => {
@@ -65,9 +78,12 @@ const EntryList: React.FC = () => {
     const filtered = entries.filter(e => e.comment.toLowerCase().includes(filterText.toLowerCase()));
 
     filtered.forEach(entry => {
-        const match = entry.comment.match(/\[(\w+)\|/);
+        // 修正：根据 content 而不是 comment 进行分类
+        const match = entry.content.match(/\[(?:[^\]\^]+\^)?(\w+)\|/);
         let category = 'Other';
-        if (match) category = match[1];
+        if (match && match[1]) {
+            category = match[1];
+        }
         if (!groups[category]) groups[category] = [];
         groups[category].push(entry);
     });
@@ -75,7 +91,11 @@ const EntryList: React.FC = () => {
   };
 
   const grouped = getGroupedEntries();
-  const sortedCategories = Object.keys(grouped).sort();
+  const sortedCategories = Object.keys(grouped).sort((a,b) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      return a.localeCompare(b);
+  });
 
   return (
     <div className="entry-list">
@@ -95,18 +115,39 @@ const EntryList: React.FC = () => {
       </div>
 
       <div className="entry-list__content">
-        {loading ? <div>Loading...</div> : Object.keys(grouped).map(cat => (
+        {loading ? <div>Loading...</div> : sortedCategories.map(cat => (
             <div key={cat} className="entry-list__category-group">
                 <div className="entry-list__category-title">
                     <Folder size={16} /> {getCategoryName(cat)} ({grouped[cat].length})
                 </div>
                 <div className="entry-list__grid">
-                    {grouped[cat].map(entry => (
-                        <div key={entry.uid} onClick={() => handleToggleEntry(entry.uid)} className={`entry-list__item glass-panel ${entry.enabled ? 'entry-list__item--enabled' : ''}`}>
-                            <div className="entry-list__checkbox">{entry.enabled && <Check size={12} />}</div>
-                            <span>{entry.comment}</span>
-                        </div>
-                    ))}
+                    {grouped[cat].map(entry => {
+                        const isExpanded = expandedUids.has(entry.uid);
+                        return (
+                            <div key={entry.uid} className={`entry-card glass-panel ${entry.enabled ? 'entry-card--enabled' : ''}`}>
+                                <div className="entry-card__header">
+                                    <div className="entry-card__main-info" onClick={() => handleToggleEntry(entry.uid)} title="切换启用状态">
+                                        <div className="entry-card__checkbox">{entry.enabled && <Check size={12} />}</div>
+                                        <span className="entry-card__title">{entry.comment}</span>
+                                    </div>
+                                    <button className="entry-card__expand-toggle" onClick={() => handleToggleExpand(entry.uid)} title={isExpanded ? "折叠" : "展开"}>
+                                        <ChevronDown size={16} className={isExpanded ? 'expanded' : ''} />
+                                    </button>
+                                </div>
+                                <div className="entry-card__content-wrapper" onClick={() => handleToggleExpand(entry.uid)}>
+                                    {isExpanded ? (
+                                        <div className="entry-card__content-full animate-fade-in">
+                                            <pre><code>{entry.content}</code></pre>
+                                        </div>
+                                    ) : (
+                                        <div className="entry-card__content-preview">
+                                            {entry.content.split('\n')[0]}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
         ))}

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ItemDefinition, CategoryDefinition } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
-import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate } from 'lucide-react';
+import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import './DefinitionDrawer.css';
 
@@ -13,8 +13,9 @@ interface DefinitionDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (def: ItemDefinition) => void;
+  onInject: (def: ItemDefinition) => Promise<any>;
   existingKeys: string[];
-  preselectedCategory?: string | null; // 此处添加1行
+  preselectedCategory?: string | null;
 }
 
 interface StructurePart {
@@ -23,7 +24,7 @@ interface StructurePart {
 }
 
 const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({ 
-  definition, categories, isOpen, onClose, onSave, existingKeys, preselectedCategory
+  definition, categories, isOpen, onClose, onSave, onInject, existingKeys, preselectedCategory
 }) => {
   const toast = useToast();
   
@@ -31,7 +32,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     key: '', name: '', icon: '', type: 'text', defaultCategory: 'Other', description: '', separator: '|'
   });
   
-  // Local state for structure builder
   const [structureParts, setStructureParts] = useState<StructurePart[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -45,7 +45,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
           icon: definition.icon || '' 
       });
       
-      // Parse existing structure
       if (definition.structure?.parts) {
           const parts = definition.structure.parts;
           const labels = definition.structure.labels || [];
@@ -63,40 +62,54 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
           key: '', name: '', icon: '', type: 'text', 
           defaultCategory: preselectedCategory || 'Other', 
           description: '', separator: '|' 
-      }); // 此处修改1行
+      });
       setStructureParts([]);
       setIsNew(true);
     }
-  }, [definition, isOpen, preselectedCategory]); // 此处修改1行
+  }, [definition, isOpen, preselectedCategory]);
 
   const handleChange = (field: keyof ItemDefinition, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  const handleSave = () => {
+  
+  const prepareSaveData = (): ItemDefinition | null => {
     if (!formData.key.trim()) {
-      toast.error("必须填写唯一键 (Key)"); return;
+      toast.error("必须填写唯一键 (Key)"); return null;
     }
     if (isNew && existingKeys.includes(formData.key)) {
-      toast.error("该 Key 已存在，请使用唯一的 Key"); return;
+      toast.error("该 Key 已存在，请使用唯一的 Key"); return null;
     }
     
     const toSave = { ...formData };
     if (!toSave.name) delete toSave.name;
     if (!toSave.icon) delete toSave.icon;
 
-    // Process Structure
     if (structureParts.length > 0) {
         toSave.structure = {
-            parts: structureParts.map(p => p.key),
-            labels: structureParts.map(p => p.label)
+            parts: structureParts.map(p => p.key.trim()).filter(Boolean),
+            labels: structureParts.map(p => p.label.trim())
         };
     } else {
         delete toSave.structure;
     }
+    return toSave;
+  };
 
-    onSave(toSave);
-    onClose();
+  const handleSave = () => {
+    const dataToSave = prepareSaveData();
+    if (dataToSave) {
+        onSave(dataToSave);
+        onClose();
+    }
+  };
+
+  const handleSaveAndInject = async () => {
+    const dataToSave = prepareSaveData();
+    if (dataToSave) {
+        onSave(dataToSave);
+        await onInject(dataToSave);
+        onClose();
+    }
   };
 
   // --- Structure Editor Logic ---
@@ -153,7 +166,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
               handleChange('type', 'numeric');
               break;
           default:
-              template = []; // Clear
+              template = [];
               handleChange('type', 'text');
               break;
       }
@@ -184,7 +197,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  // FIX: Added explicit types for sort callback arguments to resolve type inference issues.
   const categoryList = Object.values(categories).sort((a: CategoryDefinition, b: CategoryDefinition) => a.order - b.order);
   const IconDisplay = formData.icon && (LucideIcons as any)[formData.icon] ? (LucideIcons as any)[formData.icon] : null;
 
@@ -198,7 +210,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
         </div>
 
         <div className="drawer__content">
-            {/* --- Basic Info --- */}
             <div className="form-group-grid">
                 <div className="form-group">
                     <label className="form-label">Key (唯一键)</label>
@@ -249,7 +260,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                 </div>
             )}
 
-            {/* --- Structure Builder --- */}
             <div className="form-group structure-builder">
                 <div className="structure-builder__header">
                     <label className="form-label">数据结构定义</label>
@@ -309,7 +319,12 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 
         <div className="drawer__footer">
             <button onClick={onClose} className="btn btn--ghost">取消</button>
-            <button onClick={handleSave} className="btn btn--primary"><Save size={16} /> 保存定义</button>
+            <div className="drawer__footer-actions">
+                <button onClick={handleSave} className="btn btn--ghost"><Save size={16} /> 仅保存</button>
+                <button onClick={handleSaveAndInject} className="btn btn--primary">
+                    <UploadCloud size={16} /> 保存并注入
+                </button>
+            </div>
         </div>
       </div>
     </>

@@ -2,10 +2,11 @@
 import React, { useState, useMemo } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud } from 'lucide-react';
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
 import * as LucideIcons from 'lucide-react';
+import { tavernService } from '../../../services/mockTavernService';
 import './DefinitionList.css';
 
 interface DefinitionListProps {
@@ -62,6 +63,24 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
     onUpdate(newData);
     toast.info(`条目 "${key}" 已删除`);
     setConfirmDeleteItemKey(null);
+  };
+  
+  const handleInject = async (def: ItemDefinition) => {
+    const result = await tavernService.injectDefinition(def, data.categories);
+    switch (result.status) {
+        case 'created':
+            toast.success(`规则 "${def.key}" 已成功注入`, { description: '新的世界书条目已创建' });
+            break;
+        case 'updated':
+            toast.success(`规则 "${def.key}" 已同步更新`);
+            break;
+        case 'no_change':
+            toast.info(`规则 "${def.key}" 无需更新`);
+            break;
+        case 'error':
+            toast.error(`注入 "${def.key}" 失败`);
+            break;
+    }
   };
 
   const InlineConfirm = ({ onConfirm, onCancel, context }: { onConfirm: () => void, onCancel: () => void, context?: string }) => (
@@ -155,6 +174,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
                                               <InlineConfirm onConfirm={() => executeDeleteItemDef(def.key)} onCancel={() => setConfirmDeleteItemKey(null)} />
                                           ) : (
                                               <>
+                                                  <button onClick={() => handleInject(def)} className="btn btn--ghost" title="注入/同步到世界书"><UploadCloud size={16} /></button>
                                                   <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="btn btn--ghost"><Edit2 size={16} /></button>
                                                   <button onClick={() => setConfirmDeleteItemKey(def.key)} className="btn btn--ghost btn--delete"><Trash2 size={16} /></button>
                                               </>
@@ -189,7 +209,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
           </div>
       </div>
 
-      <DefinitionDrawer isOpen={isItemDrawerOpen} onClose={() => setIsItemDrawerOpen(false)} definition={editingItemDef} categories={data.categories} onSave={handleSaveItemDef} existingKeys={itemDefinitions.map(d => d.key)} preselectedCategory={selectedCategoryKey} />
+      <DefinitionDrawer isOpen={isItemDrawerOpen} onClose={() => setIsItemDrawerOpen(false)} definition={editingItemDef} categories={data.categories} onSave={handleSaveItemDef} onInject={handleInject} existingKeys={itemDefinitions.map(d => d.key)} preselectedCategory={selectedCategoryKey} />
       <CategoryDrawer isOpen={isCatDrawerOpen} onClose={() => setIsCatDrawerOpen(false)} category={editingCatDef} onSave={handleSaveCategory} existingKeys={categories.map(d => d.key)} />
     </div>
   );
