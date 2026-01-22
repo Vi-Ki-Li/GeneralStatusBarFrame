@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBarData, StatusBarItem } from '../../types';
+import { StatusBarData, StatusBarItem, StyleDefinition } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
 import { resolveDisplayName } from '../../utils/idManager';
 import StatusSection from './StatusSection';
@@ -8,15 +8,16 @@ import NumericRenderer from './Renderers/NumericRenderer';
 import ArrayRenderer from './Renderers/ArrayRenderer';
 import TextRenderer from './Renderers/TextRenderer';
 import ObjectListRenderer from './Renderers/ObjectListRenderer';
-import StyledItemRenderer from './Renderers/StyledItemRenderer'; // 此处添加1行
+import StyledItemRenderer from './Renderers/StyledItemRenderer';
 import { useToast } from '../Toast/ToastContext';
 import './StatusBar.css';
 
 interface StatusBarProps {
   data: StatusBarData;
+  styleOverride?: StyleDefinition | null;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
   const toast = useToast();
 
   const getSortedCategories = (categoryKeys: string[]) => {
@@ -66,7 +67,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
         }
     };
 
-    let rendererComponent; // 此处开始修改
+    let rendererComponent;
 
     switch (def.type) {
       case 'numeric': rendererComponent = <NumericRenderer {...commonProps} />; break;
@@ -76,10 +77,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     }
 
     return (
-      <StyledItemRenderer item={item} definition={def}>
+      <StyledItemRenderer 
+        item={item} 
+        definition={def}
+        styleOverride={styleOverride}
+      >
         {rendererComponent}
       </StyledItemRenderer>
-    ); // 此处完成修改
+    );
   };
 
   const renderSection = (items: StatusBarItem[], categoryKey: string, defaultExpanded = true) => {

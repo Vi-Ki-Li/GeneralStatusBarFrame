@@ -55,23 +55,48 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
         `
     },
     {
-        name: '主题-赛博朋克',
+        name: '赛博朋克',
         dataType: 'theme',
         css: `
-body {
-  --color-primary: #00f6ff;
-  --color-secondary: #ff00ff;
-  --glass-bg: rgba(10, 20, 35, 0.6);
-  --glass-border: rgba(0, 246, 255, 0.2);
-  --text-primary: #f0f8ff;
-  --text-secondary: #8aacc4;
+:root {
+  /* --- LIGHT MODE (White-Hat Hacker) --- */
+  --color-primary: #00b8d4;      /* Sharp Cyan */
+  --color-secondary: #f000b8;     /* Vivid Magenta */
+  --color-accent: #7e22ce;       /* Purple */
+  --bg-app: #eef2f9;             /* Off-white */
+  --text-primary: #0f172a;        /* Dark Slate */
+  --text-secondary: #64748b;      /* Muted Slate */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 184, 212, 0.3);
+  --bar-bg: rgba(0, 20, 40, 0.05);
+  --chip-border: rgba(0, 20, 40, 0.1);
 }
+
 body.dark-mode {
-  --bg-app: #050a10;
-  --glass-bg: rgba(10, 20, 35, 0.75);
+  /* --- DARK MODE (Neon Noir) --- */
+  --color-primary: #00f6ff;      /* Neon Cyan */
+  --color-secondary: #ff00ff;     /* Neon Magenta */
+  --color-accent: #9333ea;       /* Neon Purple */
+  --bg-app: #0c0a18;             /* Deep Purple/Black */
+  --text-primary: #e2e8f0;        /* Light Grey */
+  --text-secondary: #94a3b8;      /* Slate */
+  --glass-bg: rgba(23, 18, 43, 0.6); /* Tinted Glass */
+  --glass-border: rgba(0, 246, 255, 0.2);
+  --bar-bg: rgba(255, 255, 255, 0.1);
+  --chip-border: rgba(255, 255, 255, 0.1);
 }
+
+/* --- Shared Effects --- */
 .btn--primary {
-  box-shadow: 0 0 15px rgba(0, 246, 255, 0.4);
+  text-shadow: 0 0 5px rgba(255,255,255,0.3);
+}
+
+body.dark-mode .btn--primary {
+  box-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-secondary);
+}
+
+body.dark-mode .status-bar {
+  text-shadow: 0 0 2px var(--text-secondary);
 }
         `
     }
@@ -138,6 +163,16 @@ class StyleService {
     
     saveStyleDefinition(definition: StyleDefinition): StyleDefinition {
         const definitions = this.getStyleDefinitions();
+        
+        // Find existing '主题-赛博朋克' and replace it if names match and ID is new
+        const isDefaultCyberpunk = definition.name === '赛博朋克' && !definition.id;
+        if (isDefaultCyberpunk) {
+            const existingDefaultIndex = definitions.findIndex(d => d.name === '赛博朋克');
+            if (existingDefaultIndex > -1) {
+                const existingId = definitions[existingDefaultIndex].id;
+                definition.id = existingId;
+            }
+        }
         
         if (!definition.id) {
             definition.id = uuidv4();

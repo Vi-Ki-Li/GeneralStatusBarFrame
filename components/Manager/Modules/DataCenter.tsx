@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { StatusBarData, StatusBarItem } from '../../../types';
+import { StatusBarData, StatusBarItem, ItemDefinition } from '../../../types';
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
 import { resolveDisplayName } from '../../../utils/idManager';
 import { syncMetaFromData } from '../../../utils/dataMerger';
@@ -8,6 +8,8 @@ import { useToast } from '../../Toast/ToastContext';
 import CharacterListSidebar from '../CharacterListSidebar';
 import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
+import DefinitionDrawer from '../Definitions/DefinitionDrawer';
+import { tavernService } from '../../../services/mockTavernService';
 import { Plus, Save, RotateCcw, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
@@ -25,10 +27,12 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
   const [selectedId, setSelectedId] = useState<string>('SHARED');
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
+  const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
   
   const toast = useToast();
 
-  // 核心修复：在初始化时一次性补全所有缺失的 UUID，防止子组件死循环
   useEffect(() => {
     const patchedData: StatusBarData = _.cloneDeep(data);
     let patched = false;
@@ -52,12 +56,10 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
         });
     }
 
-    // 如果发现有修补，立即更新本地状态（但不标记为未保存，因为这是系统级修正）
     if (patched) {
         console.log('[DataCenter] Global UUID patch applied');
         setLocalData(patchedData);
     } else {
-        // 如果没有外部更新且没有修补，保持同步
         if (!hasUnsavedChanges) {
              setLocalData(data);
         }
@@ -160,6 +162,42 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
     handleLocalUpdate(newData);
   };
 
+  const handleEditDefinition = (itemKey: string) => {
+    const def = localData.item_definitions[itemKey];
+    if (def) {
+      setEditingDefinition(def);
+      setIsDefDrawerOpen(true);
+    } else {
+      toast.warning(`未找到定义: ${itemKey}`);
+    }
+  };
+
+  const handleSaveDefinition = (updatedDef: ItemDefinition) => {
+    const newData = _.cloneDeep(localData);
+    newData.item_definitions[updatedDef.key] = updatedDef;
+    handleLocalUpdate(newData);
+    toast.success(`定义 "${updatedDef.key}" 已暂存`);
+  };
+
+  const handleInjectDefinition = async (def: ItemDefinition) => {
+    const result = await tavernService.injectDefinition(def, localData.categories);
+    switch (result.status) {
+        case 'created':
+            toast.success(`规则 "${def.key}" 已注入`, { description: '新世界书条目已创建' });
+            break;
+        case 'updated':
+            toast.success(`规则 "${def.key}" 已同步`);
+            break;
+        case 'no_change':
+            toast.info(`规则 "${def.key}" 无需更新`);
+            break;
+        case 'error':
+            toast.error(`注入 "${def.key}" 失败`);
+            break;
+    }
+  };
+
+
   const getCategoriesToRender = () => {
     const allKeys = Object.keys(localData.categories || {});
     const sorted = allKeys.sort((a, b) => localData.categories[a].order - localData.categories[b].order);
@@ -216,6 +254,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
                         itemDefinitions={localData.item_definitions}
                         items={getCurrentItems(catKey)}
                         onUpdateItems={(newItems) => handleUpdateItems(catKey, newItems)}
+                        onEditDefinition={handleEditDefinition}
                     />
                 ))}
                 <div className="data-center__editor-spacer" />
@@ -262,6 +301,16 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
                 </div>
             </div>
         )}
+
+        <DefinitionDrawer 
+            isOpen={isDefDrawerOpen}
+            onClose={() => setIsDefDrawerOpen(false)}
+            definition={editingDefinition}
+            categories={localData.categories}
+            onSave={handleSaveDefinition}
+            onInject={handleInjectDefinition}
+            existingKeys={Object.keys(localData.item_definitions)}
+        />
     </div>
   );
 };

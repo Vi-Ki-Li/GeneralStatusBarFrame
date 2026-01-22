@@ -87,6 +87,10 @@
   pointer-events: auto;
 }
 
+.theme-item__actions .btn--ghost { /* 此处添加3行 */
+  padding: 4px; height: 24px; width: 24px;
+}
+
 .theme-item__apply-btn {
   display: flex;
   align-items: center;

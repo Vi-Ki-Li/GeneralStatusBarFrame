@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StatusBarItem, ItemDefinition } from '../../../types';
-import { Trash2, Plus, X, Lock, LockOpen, ChevronUp, ChevronDown, Check, Edit2 } from 'lucide-react';
+import { Trash2, Plus, X, Lock, LockOpen, ChevronUp, ChevronDown, Check, Edit2, Settings } from 'lucide-react';
 import './ItemEditorRow.css';
 import _ from 'lodash';
 
@@ -17,6 +17,7 @@ interface ItemEditorRowProps {
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onEditDefinition: (itemKey: string) => void;
   isOverlay?: boolean; 
 }
 
@@ -24,7 +25,7 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
   allDefinitions = [], 
   existingKeysInCategory = [], 
   item, uiType, definition, index, isFirst, isLast, 
-  onChange, onDelete, onMoveUp, onMoveDown, isOverlay = false
+  onChange, onDelete, onMoveUp, onMoveDown, onEditDefinition, isOverlay = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const isMobile = window.innerWidth <= 768;
@@ -317,6 +318,9 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
           <div className="item-editor-row__header--mobile">
               <span className="item-editor-row__title--mobile">编辑条目</span>
               <div className="item-editor-row__actions--mobile">
+                  <button onClick={() => onEditDefinition && onEditDefinition(item.key)} className="item-editor-row__action-btn" title="编辑定义">
+                      <Settings size={18} />
+                  </button>
                   <button onClick={toggleLock} className="item-editor-row__action-btn">
                       {item.user_modified ? <Lock size={18} className="item-editor-row__lock-icon--active" /> : <LockOpen size={18} className="item-editor-row__lock-icon" />}
                   </button>
@@ -374,10 +378,14 @@ const ItemEditorRow: React.FC<ItemEditorRowProps> = ({
             </div>
         )} 
         {!isMobile && !isOverlay && (
-            <button onClick={toggleLock} className="item-editor-row__lock-toggle">
-            {item.user_modified ? <Lock size={12} /> : <LockOpen size={12} />}
-            <span>{item.user_modified ? '已锁定' : '自动更新'}</span>
-            </button>
+            <div className="item-editor-row__key-actions">
+                <button onClick={toggleLock} className="item-editor-row__lock-toggle" title={item.user_modified ? '已锁定 (AI无法修改)' : '自动更新 (AI可修改)'}>
+                    {item.user_modified ? <Lock size={12} /> : <LockOpen size={12} />}
+                </button>
+                <button onClick={() => onEditDefinition && onEditDefinition(item.key)} className="item-editor-row__def-edit-btn" title="编辑定义">
+                    <Settings size={12} />
+                </button>
+            </div>
         )}
       </div>
 

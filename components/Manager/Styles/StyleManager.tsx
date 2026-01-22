@@ -16,6 +16,7 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const [editingStyle, setEditingStyle] = useState<StyleDefinition | null>(null);
     const [deletingStyle, setDeletingStyle] = useState<StyleDefinition | null>(null);
     const [mockData, setMockData] = useState<StatusBarData | null>(null);
+    const [previewingStyle, setPreviewingStyle] = useState<StyleDefinition | null>(null);
 
     const toast = useToast();
 
@@ -146,7 +147,12 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                             <div key={groupKey} className="style-atelier__group">
                                 <h4 className="style-atelier__group-title">{groupLabels[groupKey as keyof typeof groupLabels]}</h4>
                                 {groupedStyleUnits[groupKey as keyof typeof groupedStyleUnits].map(style => (
-                                    <div key={style.id} className="style-atelier__item-wrapper">
+                                    <div 
+                                        key={style.id} 
+                                        className="style-atelier__item-wrapper"
+                                        onMouseEnter={() => setPreviewingStyle(style)}
+                                        onMouseLeave={() => setPreviewingStyle(null)}
+                                    >
                                         <div className="style-atelier__item-main">
                                             <span className="style-atelier__item-name">{style.name}</span>
                                         </div>
@@ -174,7 +180,7 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
                 <div className="style-atelier__preview-canvas">
                     {mockData ? (
-                        <StatusBar data={mockData} />
+                        <StatusBar data={mockData} styleOverride={previewingStyle} />
                     ) : (
                         <div className="style-atelier__placeholder">加载预览...</div>
                     )}

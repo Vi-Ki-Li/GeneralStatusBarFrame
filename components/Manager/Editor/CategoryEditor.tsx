@@ -13,10 +13,11 @@ interface CategoryEditorProps {
   itemDefinitions: { [key: string]: ItemDefinition };
   items: StatusBarItem[];
   onUpdateItems: (newItems: StatusBarItem[]) => void;
+  onEditDefinition: (itemKey: string) => void;
 }
 
 const CategoryEditor: React.FC<CategoryEditorProps> = ({ 
-  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems 
+  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems, onEditDefinition 
 }) => {
   const IconComponent = categoryDef.icon && (LucideIcons as any)[categoryDef.icon] 
     ? (LucideIcons as any)[categoryDef.icon] 
@@ -87,6 +88,7 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
                     onDelete={() => handleDeleteItem(idx)}
                     onMoveUp={() => handleMoveItem(idx, 'up')}
                     onMoveDown={() => handleMoveItem(idx, 'down')}
+                    onEditDefinition={onEditDefinition}
                 />
             );
         })}
