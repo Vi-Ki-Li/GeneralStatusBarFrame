@@ -1,1 +1,171 @@
-// Placeholder
+/* --- Wrapper & Overlay --- */
+.style-editor-wrapper {
+  position: fixed; /* Changed from absolute to be relative to window */
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10001; /* Higher than manager modal (9999) */
+  pointer-events: none;
+}
+.style-editor-wrapper.open {
+  pointer-events: auto;
+}
+.style-editor__overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.style-editor-wrapper.open .style-editor__overlay {
+  opacity: 1;
+}
+
+/* --- Panel --- */
+.style-editor__panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 90%;
+  max-width: 900px;
+  height: 80vh;
+  transform: translate(-50%, -50%) scale(0.95);
+  opacity: 0;
+  transition: all 0.3s var(--ease-out-back);
+  display: flex;
+  flex-direction: column;
+}
+.style-editor-wrapper.open .style-editor__panel {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* --- Header --- */
+.style-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--chip-border);
+  flex-shrink: 0;
+}
+.style-editor__title { font-size: 1.1rem; font-weight: var(--font-weight-semibold); }
+.style-editor__close-btn { background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; }
+
+/* --- Main Layout --- */
+.style-editor__main-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  overflow: hidden;
+}
+
+/* --- Left Pane (Editor) --- */
+.style-editor__left-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  border-right: 1px solid var(--chip-border);
+}
+
+.style-editor__form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.style-editor__label {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.style-editor__input, .style-editor__textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--chip-border);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: var(--transition-fast);
+}
+.style-editor__input:focus, .style-editor__textarea:focus {
+  border-color: var(--color-primary);
+}
+.style-editor__textarea {
+  font-family: monospace;
+  resize: vertical;
+}
+.style-editor__textarea--html { min-height: 80px; }
+.style-editor__textarea--css { flex: 1; min-height: 120px; }
+
+/* --- Right Pane (Preview) --- */
+.style-editor__right-pane {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+  background: rgba(0,0,0,0.03);
+}
+.style-editor__preview-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--chip-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  background: var(--bg-app);
+  overflow: hidden;
+}
+
+.style-editor__preview-wrapper {
+  width: 100%;
+  max-width: 320px;
+}
+
+.style-editor__preview-placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* --- Footer --- */
+.style-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--chip-border);
+  flex-shrink: 0;
+  background: var(--glass-bg);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .style-editor__panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 90vh;
+    max-width: none;
+    transform: translateY(100%);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+  .style-editor-wrapper.open .style-editor__panel {
+    transform: translateY(0);
+  }
+  .style-editor__main-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50% 1fr;
+  }
+  .style-editor__left-pane {
+    border-right: none;
+    border-bottom: 1px solid var(--chip-border);
+  }
+}

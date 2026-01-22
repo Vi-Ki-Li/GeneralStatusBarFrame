@@ -1,1 +1,186 @@
-// Placeholder
+import React, { useState, useEffect, useMemo } from 'react';
+import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
+import { useToast } from '../../Toast/ToastContext';
+import { X, Save, Code, Settings } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
+import NumericRenderer from '../../StatusBar/Renderers/NumericRenderer';
+import ArrayRenderer from '../../StatusBar/Renderers/ArrayRenderer';
+import TextRenderer from '../../StatusBar/Renderers/TextRenderer';
+import ObjectListRenderer from '../../StatusBar/Renderers/ObjectListRenderer';
+import './StyleEditor.css';
+
+// 独立的、真实的实时预览组件
+const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style }) => {
+    // 创建稳定的模拟数据
+    const { mockItem, mockDefinition } = useMemo(() => {
+        const item: StatusBarItem = {
+            key: 'mock_key',
+            _uuid: `mock_${uuidv4()}`,
+            values: [],
+            category: 'mock_cat',
+            source_id: 0,
+            user_modified: false
+        };
+
+        const definition: ItemDefinition = {
+            key: 'mock_key',
+            type: 'text', // default
+            name: '预览项目'
+        };
+
+        switch (style.dataType) {
+            case 'numeric':
+                item.values = ['75', '100'];
+                definition.type = 'numeric';
+                break;
+            case 'array':
+                item.values = ['标签 A', '标签 B', '标签 C'];
+                definition.type = 'array';
+                break;
+            case 'list-of-objects':
+                item.values = [{ name: '对象A', desc: '描述1' }, { name: '对象B', desc: '描述2' }];
+                definition.type = 'list-of-objects';
+                definition.structure = {
+                    parts: [{ key: 'name', label: '名称' }, { key: 'desc', label: '描述' }]
+                };
+                break;
+            case 'text':
+                item.values = ['这是一段示例文本。'];
+                definition.type = 'text';
+                break;
+        }
+        return { mockItem: item, mockDefinition: definition };
+    }, [style.dataType]);
+
+    const renderPreviewContent = () => {
+        const props = { item: mockItem, definition: mockDefinition, label: mockDefinition.name };
+        switch (style.dataType) {
+            case 'numeric': return <NumericRenderer {...props} />;
+            case 'array': return <ArrayRenderer {...props} />;
+            case 'list-of-objects': return <ObjectListRenderer {...props} />;
+            case 'text': return <TextRenderer {...props} />;
+            default: return <div className="style-editor__preview-placeholder">选择一个数据类型以预览</div>;
+        }
+    };
+
+    return (
+        <div className="style-editor__preview-wrapper">
+            <StyledItemRenderer item={mockItem} definition={mockDefinition} liveCssOverride={style.css}>
+                {renderPreviewContent()}
+            </StyledItemRenderer>
+        </div>
+    );
+};
+
+
+interface StyleEditorProps {
+  isOpen: boolean;
+  onClose: () => void;
+  styleToEdit: StyleDefinition | null;
+  onSave: (style: StyleDefinition) => void;
+  allDefinitions: ItemDefinition[];
+}
+
+const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions }) => {
+  const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
+  const toast = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(styleToEdit || { name: '', dataType: 'numeric', css: '', html: '' });
+    }
+  }, [isOpen, styleToEdit]);
+  
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  const handleChange = (field: keyof StyleDefinition, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = () => {
+    if (!formData.name?.trim()) {
+      toast.error("样式名称不能为空");
+      return;
+    }
+    onSave(formData as StyleDefinition);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="style-editor-wrapper open">
+        <div className="style-editor__overlay" onClick={onClose} />
+        <div className="style-editor__panel glass-panel">
+            <div className="style-editor__header">
+                <h3 className="style-editor__title">{styleToEdit ? '编辑样式单元' : '新建样式单元'}</h3>
+                <button onClick={onClose} className="style-editor__close-btn"><X size={20} /></button>
+            </div>
+
+            <div className="style-editor__main-layout">
+                <div className="style-editor__left-pane">
+                    <div className="style-editor__form-group">
+                        <label className="style-editor__label"><Settings size={14}/> 配置</label>
+                        <input
+                            className="style-editor__input"
+                            placeholder="样式名称 (e.g. 渐变生命条)"
+                            value={formData.name || ''}
+                            onChange={(e) => handleChange('name', e.target.value)}
+                        />
+                        <select
+                            className="style-editor__input"
+                            value={formData.dataType || 'numeric'}
+                            onChange={(e) => handleChange('dataType', e.target.value as StyleDefinition['dataType'])}
+                        >
+                            <option value="numeric">数值 (Numeric)</option>
+                            <option value="array">标签组 (Array)</option>
+                            <option value="list-of-objects">对象列表 (List of Objects)</option>
+                            <option value="text">文本 (Text)</option>
+                            <option value="theme">主题 (Theme)</option>
+                        </select>
+                    </div>
+
+                    <div className="style-editor__form-group">
+                        <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选, 暂未实现)</label>
+                        <textarea
+                            className="style-editor__textarea style-editor__textarea--html"
+                            placeholder="使用 {{placeholder}} 语法..."
+                            value={formData.html || ''}
+                            onChange={(e) => handleChange('html', e.target.value)}
+                            disabled={true}
+                        />
+                    </div>
+                    
+                    <div className="style-editor__form-group">
+                        <label className="style-editor__label"><Code size={14}/> CSS 代码</label>
+                        <textarea
+                            className="style-editor__textarea style-editor__textarea--css"
+                            placeholder={`.numeric-renderer__progress-fill {\n  background: red;\n}`}
+                            value={formData.css || ''}
+                            onChange={(e) => handleChange('css', e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="style-editor__right-pane">
+                    <div className="style-editor__preview-container">
+                       <RealtimePreview style={formData} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="style-editor__footer">
+                <button onClick={onClose} className="btn btn--ghost">取消</button>
+                <button onClick={handleSave} className="btn btn--primary"><Save size={16}/> 保存样式</button>
+            </div>
+        </div>
+    </div>
+  );
+};
+
+export default StyleEditor;

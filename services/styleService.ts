@@ -1,5 +1,4 @@
 import { StyleDefinition } from '../types';
-import { slugify } from '../utils/slugify';
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'th_style_definitions_v1';
@@ -88,7 +87,7 @@ class StyleService {
             if (!stored) {
                 const stylesWithIds = DEFAULT_STYLES.map(style => ({
                     ...style,
-                    id: uuidv4() // 此处修改1行
+                    id: uuidv4()
                 }));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(stylesWithIds));
             }
@@ -107,7 +106,7 @@ class StyleService {
             let needsSave = false;
             const healedStyles = styles.map(style => {
                 if ((!style.id || style.id.trim() === '') && style.name) {
-                    style.id = uuidv4(); // 此处修改1行
+                    style.id = uuidv4();
                     needsSave = true;
                 }
                 return style;
@@ -142,7 +141,7 @@ class StyleService {
         const definitions = this.getStyleDefinitions();
         
         if (!definition.id) {
-            definition.id = uuidv4(); // 此处修改1行
+            definition.id = uuidv4();
         }
         
         const index = definitions.findIndex(u => u.id === definition.id);

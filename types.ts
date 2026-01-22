@@ -150,7 +150,7 @@ export interface SnapshotMeta {
 }
 
 // 12. 配置预设 (v8.0 Refactor)
-export interface Preset { // 此处开始修改
+export interface Preset {
   id: string; // Unique ID for the preset
   name: string;
   timestamp: number;
@@ -158,7 +158,7 @@ export interface Preset { // 此处开始修改
   styleOverrides: {
     [itemKey: string]: string; // Key: ItemDefinition.key, Value: StyleDefinition.id
   };
-} // 此处完成修改
+}
 
 export interface AppOptions {
   darkMode: boolean;
@@ -168,10 +168,9 @@ export interface AppOptions {
 
 // 13. 样式定义 (Style Definition) - v7.0 Refactor
 export interface StyleDefinition {
-  id: string; // "red-hp-bar" - generated from name, unique
+  id: string; // Unique ID, e.g., UUID
   name: string; // "红色血条"
-  // FIX: Renamed 'type' to 'dataType' and updated values to match component logic.
-  dataType: 'numeric' | 'array' | 'text' | 'theme';
+  dataType: 'numeric' | 'array' | 'list-of-objects' | 'text' | 'theme'; // 此处修改1行
   css: string;
   html?: string; // Optional custom HTML structure, only for component types
   mockDataKey?: string; // Key from item_definitions to use for previewing

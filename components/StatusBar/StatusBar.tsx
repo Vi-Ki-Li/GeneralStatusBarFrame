@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem } from '../../types';
 import { getCategoryDefinition, getItemDefinition } from '../../services/definitionRegistry';
@@ -9,7 +7,8 @@ import CharacterTabs from './CharacterTabs';
 import NumericRenderer from './Renderers/NumericRenderer';
 import ArrayRenderer from './Renderers/ArrayRenderer';
 import TextRenderer from './Renderers/TextRenderer';
-import ObjectListRenderer from './Renderers/ObjectListRenderer'; // 此处添加1行
+import ObjectListRenderer from './Renderers/ObjectListRenderer';
+import StyledItemRenderer from './Renderers/StyledItemRenderer'; // 此处添加1行
 import { useToast } from '../Toast/ToastContext';
 import './StatusBar.css';
 
@@ -55,24 +54,32 @@ const StatusBar: React.FC<StatusBarProps> = ({ data }) => {
     const label = def.name || item.key;
     
     const commonProps = {
-        key: item.key,
+        key: item._uuid, // Use UUID for key
         item: item,
         label: label,
         icon: def.icon,
         definition: def,
-        onInteract: (item: StatusBarItem, val?: string) => {
-            const text = val || item.values.join(', ');
-            console.log(`[Interaction] ${item.key}: ${text}`);
+        onInteract: (interactItem: StatusBarItem, val?: string) => {
+            const text = val || (Array.isArray(interactItem.values) ? interactItem.values.join(', ') : '');
+            console.log(`[Interaction] ${interactItem.key}: ${text}`);
             toast.info(`引用: ${text}`);
         }
     };
 
+    let rendererComponent; // 此处开始修改
+
     switch (def.type) {
-      case 'numeric': return <NumericRenderer {...commonProps} />;
-      case 'array': return <ArrayRenderer {...commonProps} />;
-      case 'list-of-objects': return <ObjectListRenderer {...commonProps} />; // 此处添加1行
-      default: return <TextRenderer {...commonProps} />;
+      case 'numeric': rendererComponent = <NumericRenderer {...commonProps} />; break;
+      case 'array': rendererComponent = <ArrayRenderer {...commonProps} />; break;
+      case 'list-of-objects': rendererComponent = <ObjectListRenderer {...commonProps} />; break;
+      default: rendererComponent = <TextRenderer {...commonProps} />;
     }
+
+    return (
+      <StyledItemRenderer item={item} definition={def}>
+        {rendererComponent}
+      </StyledItemRenderer>
+    ); // 此处完成修改
   };
 
   const renderSection = (items: StatusBarItem[], categoryKey: string, defaultExpanded = true) => {
