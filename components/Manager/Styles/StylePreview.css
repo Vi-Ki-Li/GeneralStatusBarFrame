@@ -1,0 +1,80 @@
+
+.style-preview {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.style-preview__header {
+  margin-bottom: var(--spacing-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.style-preview__canvas {
+  flex: 1;
+  background: var(--bg-app);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--chip-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.style-preview__item-wrapper {
+  width: 100%;
+}
+
+/* --- Default Renderer Styles for Preview --- */
+/* These styles will be overridden by user's CSS */
+.progress-container {
+    width: 100%;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+}
+.progress-fill {
+    height: 100%;
+    width: 75%;
+    background: #4caf50;
+    border-radius: 5px;
+}
+.label {
+    font-size: 14px; color: #666;
+}
+.value {
+    font-size: 16px; font-weight: bold;
+}
+.tag-chip {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 2px;
+}
+.text-value {
+    color: #333;
+}
+
+
+.style-preview__info {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--bar-bg);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+}
+
+.style-preview__info code {
+    font-family: monospace;
+    background: var(--chip-bg);
+    padding: 2px 4px;
+    border-radius: 4px;
+}

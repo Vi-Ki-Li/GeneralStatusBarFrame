@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { tavernService } from './services/mockTavernService';
+import { styleService } from './services/styleService'; // 此处添加1行
 import { StatusBarData, SnapshotMeta, LorebookEntry } from './types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './services/definitionRegistry';
 import { Moon, Sun, LayoutDashboard, Wrench, FastForward, Menu, X } from 'lucide-react';
@@ -100,6 +102,8 @@ const AppContent = () => {
         if (vars.statusBarCharacterData !== processedData) {
             tavernService.saveVariables({ statusBarCharacterData: processedData });
         }
+        
+        styleService.injectAllStyles(); // 此处添加1行
         
         const unsubscribe = tavernService.subscribe((entries) => {
             injectStyles(entries);

@@ -156,3 +156,12 @@ export interface AppOptions {
   defaultExpanded: boolean;
   worldSnapshotEnabled: boolean;
 }
+
+// 13. 样式单元 (Style Unit) // 此处开始添加7行
+export interface StyleUnit {
+  id: string; // "red-hp-bar" - generated from name, unique
+  name: string; // "红色血条"
+  css: string;
+  html?: string; // Optional custom HTML structure
+  dataType: 'numeric' | 'array' | 'text'; // For previewing
+} // 此处完成添加

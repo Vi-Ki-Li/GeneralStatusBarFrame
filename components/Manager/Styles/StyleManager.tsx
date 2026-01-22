@@ -1,185 +1,185 @@
-import React, { useEffect, useState } from 'react';
-import { LorebookEntry } from '../../../types';
-import { tavernService } from '../../../services/mockTavernService';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleUnit } from '../../../types';
+import { styleService } from '../../../services/styleService';
+import { slugify } from '../../../utils/slugify';
 import { useToast } from '../../Toast/ToastContext';
-import { Paintbrush, Plus, Edit3, Trash2, CheckCircle2, Circle } from 'lucide-react';
-import StyleEditor from './StyleEditor';
+import { Paintbrush, Plus, Trash2, Search, List, Check, X as XIcon, AlertTriangle } from 'lucide-react';
+import StyleEditor, { DEFAULT_TEMPLATES } from './StyleEditor';
+import StylePreview from './StylePreview';
+import { v4 as uuidv4 } from 'uuid';
 import './StyleManager.css';
 
-const DEFAULT_CSS_TEMPLATE = `/* 自定义样式 */
-.status-bar-container {
-  /* 示例：修改背景色 */
-  /* background-color: rgba(255, 255, 255, 0.9); */
-}
-
-/* 示例：修改文字颜色 */
-.status-label {
-  /* color: #333; */
-}
-`;
-
 const StyleManager: React.FC = () => {
-  const [styles, setStyles] = useState<LorebookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeEditorUid, setActiveEditorUid] = useState<number | null>(null);
-  const [confirmDeleteUid, setConfirmDeleteUid] = useState<number | null>(null);
-  
-  const toast = useToast();
+    const [styleUnits, setStyleUnits] = useState<StyleUnit[]>([]);
+    const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
+    const [filter, setFilter] = useState('');
+    const [unitToDelete, setUnitToDelete] = useState<StyleUnit | null>(null);
 
-  useEffect(() => { loadStyles(); }, []);
+    const toast = useToast();
 
-  const loadStyles = async () => {
-    setLoading(true);
-    try {
-      const allEntries = await tavernService.getLorebookEntries();
-      const styleEntries = allEntries.filter(e => e.comment.startsWith('样式-'));
-      setStyles(styleEntries);
-    } catch (e) { toast.error("加载样式失败"); } 
-    finally { setLoading(false); }
-  };
+    useEffect(() => {
+        const units = styleService.getStyleUnits();
+        setStyleUnits(units);
+        if (units.length > 0 && !activeUnitId) {
+            setActiveUnitId(units[0].id);
+        }
+    }, []);
 
-  const handleToggleStyle = async (targetUid: number, currentState: boolean) => {
-    try {
-        const allEntries = await tavernService.getLorebookEntries();
-        const updatedEntries = allEntries.map(entry => {
-            if (!entry.comment.startsWith('样式-')) return entry;
-            if (entry.uid === targetUid) {
-                return { ...entry, enabled: !currentState };
-            } else {
-                return !currentState ? { ...entry, enabled: false } : entry;
-            }
-        });
+    const handleCreateNew = () => { // 此处开始修改
+        const newName = "新样式单元";
+        let newId = slugify(newName);
+        let counter = 1;
+        while (styleUnits.some(u => u.id === newId)) {
+            newId = `${slugify(newName)}-${counter++}`;
+        }
 
-        await tavernService.setLorebookEntries(updatedEntries);
-        
-        const newStyles = updatedEntries.filter(e => e.comment.startsWith('样式-'));
-        setStyles(newStyles);
-        
-        if (!currentState) toast.success("已启用样式");
-    } catch (e) { toast.error("切换样式失败"); }
-  };
-
-  const handleCreateStyle = async () => {
-    try {
-        const allEntries = await tavernService.getLorebookEntries();
-        const maxUid = Math.max(...allEntries.map(e => e.uid), 0);
-        const newUid = maxUid + 1;
-        const timestamp = new Date().getTime().toString().slice(-4);
-
-        const newEntry: LorebookEntry = {
-            uid: newUid, key: [], keysecondary: [], comment: `样式-新主题_${timestamp}`,
-            content: DEFAULT_CSS_TEMPLATE, enabled: false, position: newUid
+        const defaultTemplate = DEFAULT_TEMPLATES['numeric'];
+        const newUnit: StyleUnit = {
+            id: newId,
+            name: newName,
+            css: defaultTemplate.css,
+            html: defaultTemplate.html,
+            dataType: 'numeric'
         };
 
-        await tavernService.setLorebookEntries([...allEntries, newEntry]);
-        await loadStyles();
-        toast.success("新样式已创建");
-        setActiveEditorUid(newUid);
-    } catch (e) { toast.error("创建失败"); }
-  };
+        const newUnits = [...styleUnits, newUnit];
+        setStyleUnits(newUnits);
+        styleService.saveStyleUnits(newUnits);
+        setActiveUnitId(newUnit.id);
+        toast.success(`已创建 "${newName}"`);
+    }; // 此处完成修改
 
-  const handleDeleteStyle = async (uid: number) => {
-      try {
-          const allEntries = await tavernService.getLorebookEntries();
-          const updated = allEntries.filter(e => e.uid !== uid);
-          await tavernService.setLorebookEntries(updated);
-          await loadStyles();
-          toast.success("样式已删除");
-          setConfirmDeleteUid(null);
-      } catch (e) { toast.error("删除失败"); }
-  };
+    const handleSelectUnit = (id: string) => {
+        setActiveUnitId(id);
+    };
 
-  const handleSaveStyle = async (name: string, content: string) => {
-      if (!activeEditorUid) return;
-      try {
-          const allEntries = await tavernService.getLorebookEntries();
-          const updated = allEntries.map(e => 
-              e.uid === activeEditorUid ? { ...e, comment: name, content: content } : e
-          );
-          
-          await tavernService.setLorebookEntries(updated);
-          await loadStyles();
-          setActiveEditorUid(null);
-          toast.success("样式已保存");
-      } catch (e) { toast.error("保存失败"); }
-  };
+    const handleUpdateUnit = useCallback((updatedUnit: StyleUnit) => {
+        setStyleUnits(prevUnits => {
+            const newUnits = prevUnits.map(u => u.id === updatedUnit.id ? updatedUnit : u);
+            return newUnits;
+        });
+    }, []);
+    
+    const handleSave = (unitToSave: StyleUnit) => {
+        // When saving, ensure the ID is derived from the latest name
+        const finalId = slugify(unitToSave.name);
+        if (unitToSave.id !== finalId && styleUnits.some(u => u.id === finalId)) {
+            toast.error("名称生成的ID已存在", { description: `请尝试一个不同的名称。`});
+            return;
+        }
 
-  if (activeEditorUid) {
-      const activeEntry = styles.find(s => s.uid === activeEditorUid);
-      if (!activeEntry) {
-          setActiveEditorUid(null);
-          return null;
-      }
-      return (
-          <div className="style-manager__editor-view">
-              <StyleEditor 
-                entry={activeEntry} 
-                onSave={handleSaveStyle} 
-                onCancel={() => setActiveEditorUid(null)} 
-              />
-          </div>
-      );
-  }
+        // If ID changed, we need to update the list properly
+        const oldId = unitToSave.id;
+        unitToSave.id = finalId;
 
-  return (
-    <div className="style-manager">
-        <div className="style-manager__header glass-panel">
-            <div>
-                <h3 className="style-manager__title"><Paintbrush size={20} /> 样式管理器</h3>
-                <p className="style-manager__subtitle">管理世界书中的 CSS 样式条目。同时只能启用一个样式。</p>
-            </div>
-            <button className="btn btn--primary" onClick={handleCreateStyle}>
-                <Plus size={16} /> 新建样式
-            </button>
-        </div>
+        styleService.deleteStyleUnit(oldId); // Remove old one
+        styleService.saveStyleUnit(unitToSave); // Save new one
 
-        <div className="style-manager__list-container">
-            {loading ? (
-                <div className="style-manager__message">加载中...</div>
-            ) : (
-                styles.length === 0 ? (
-                    <div className="style-manager__message">暂无自定义样式</div>
-                ) : (
-                    <div className="style-manager__list">
-                        {styles.map(style => (
-                            <div key={style.uid} className={`style-item glass-panel ${style.enabled ? 'style-item--enabled' : ''}`}>
-                                <div className="style-item__main">
-                                    <button 
-                                        onClick={() => handleToggleStyle(style.uid, style.enabled)}
-                                        className="style-item__toggle"
-                                        title={style.enabled ? "点击禁用" : "点击启用"}
-                                    >
-                                        {style.enabled ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-                                    </button>
-                                    <div>
-                                        <div className="style-item__name">{style.comment}</div>
-                                        <div className="style-item__uid">UID: {style.uid}</div>
-                                    </div>
-                                </div>
-                                <div className="style-item__actions">
-                                    <button className="btn btn--ghost" onClick={() => setActiveEditorUid(style.uid)} title="编辑代码">
-                                        <Edit3 size={18} />
-                                    </button>
-                                    {confirmDeleteUid === style.uid ? (
-                                        <div className="style-item__confirm-delete">
-                                            <span>确认?</span>
-                                            <button onClick={() => handleDeleteStyle(style.uid)}>是</button>
-                                            <button onClick={() => setConfirmDeleteUid(null)}>否</button>
-                                        </div>
-                                    ) : (
-                                        <button className="btn btn--ghost btn--delete" onClick={() => setConfirmDeleteUid(style.uid)} title="删除样式">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+        // Update local state
+        const newUnits = styleUnits.map(u => u.id === oldId ? unitToSave : u);
+        setStyleUnits(newUnits);
+        setActiveUnitId(unitToSave.id); // Make sure active ID is the new one
+        
+        toast.success(`样式 "${unitToSave.name}" 已保存`);
+    };
+
+    const requestDelete = (unit: StyleUnit, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setUnitToDelete(unit);
+    };
+
+    const confirmDelete = () => {
+        if (!unitToDelete) return;
+        styleService.deleteStyleUnit(unitToDelete.id);
+        const newUnits = styleUnits.filter(u => u.id !== unitToDelete.id);
+        setStyleUnits(newUnits);
+        if (activeUnitId === unitToDelete.id) {
+            setActiveUnitId(newUnits.length > 0 ? newUnits[0].id : null);
+        }
+        toast.info(`样式 "${unitToDelete.name}" 已删除`);
+        setUnitToDelete(null);
+    };
+
+    const activeUnit = styleUnits.find(u => u.id === activeUnitId);
+
+    const filteredUnits = styleUnits.filter(u => u.name.toLowerCase().includes(filter.toLowerCase()));
+
+    return (
+        <div className="style-atelier">
+            <div className="style-atelier__sidebar">
+                <div className="style-atelier__sidebar-header">
+                    <div className="style-atelier__title">
+                        <Paintbrush size={18} />
+                        <h3>样式单元</h3>
                     </div>
-                )
+                    <button onClick={handleCreateNew} className="style-atelier__add-btn" title="新建样式单元">
+                        <Plus size={16} />
+                    </button>
+                </div>
+                <div className="style-atelier__search-wrapper">
+                    <Search size={14} className="style-atelier__search-icon" />
+                    <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="搜索..." />
+                </div>
+                <div className="style-atelier__unit-list">
+                    {filteredUnits.length > 0 ? filteredUnits.map(unit => (
+                        <div 
+                            key={unit.id} 
+                            onClick={() => handleSelectUnit(unit.id)}
+                            className={`style-atelier__unit-item ${activeUnitId === unit.id ? 'active' : ''}`}
+                        >
+                            <span className="style-atelier__unit-name">{unit.name}</span>
+                            <button onClick={(e) => requestDelete(unit, e)} className="style-atelier__unit-delete-btn">
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    )) : (
+                        <div className="style-atelier__empty-list">
+                            <List size={24}/>
+                            <span>无样式单元</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {activeUnit ? (
+                <>
+                    <div className="style-atelier__main">
+                        <StyleEditor key={activeUnit.id} unit={activeUnit} onUpdate={handleUpdateUnit} onSave={handleSave} />
+                    </div>
+                    <div className="style-atelier__preview">
+                        <StylePreview unit={activeUnit} />
+                    </div>
+                </>
+            ) : (
+                <div className="style-atelier__empty-state">
+                     <Paintbrush size={48} />
+                     <h2>样式工坊</h2>
+                     <p>创建可复用的样式单元来定义你的状态栏外观。</p>
+                     <button className="btn btn--primary" onClick={handleCreateNew}>
+                         <Plus size={16} /> 创建第一个样式
+                     </button>
+                </div>
+            )}
+
+            {unitToDelete && (
+                 <div className="style-atelier__delete-confirm-overlay">
+                    <div className="style-atelier__delete-confirm-modal glass-panel">
+                        <div className="style-atelier__delete-header">
+                            <AlertTriangle size={24} /><h3>确认删除</h3>
+                        </div>
+                        <p>您确定要删除样式单元 "<strong>{unitToDelete.name}</strong>" 吗？此操作不可撤销。</p>
+                        <div className="style-atelier__delete-actions">
+                            <button className="btn btn--ghost" onClick={() => setUnitToDelete(null)}>取消</button>
+                            <button className="btn btn--danger" onClick={confirmDelete}>
+                                <Trash2 size={16} /> 删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
-    </div>
-  );
+    );
 };
 
 export default StyleManager;
