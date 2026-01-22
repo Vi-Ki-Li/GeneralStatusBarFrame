@@ -1,28 +1,67 @@
 
-.layout-composer-placeholder {
+.layout-composer {
+  padding: var(--spacing-xl);
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.layout-composer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.draggable-category-card {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  /* 其他 transform, transition, z-index 等样式由 dnd-kit 内联设置 */
+}
+
+.draggable-category-card__content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    overflow: hidden;
+}
+
+.draggable-category-card__icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.draggable-category-card__info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.draggable-category-card__name {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draggable-category-card__key {
+  font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  padding: var(--spacing-xl);
+  font-family: monospace;
 }
 
-.layout-composer-placeholder svg {
-  color: var(--color-warning);
-  opacity: 0.7;
-  margin-bottom: var(--spacing-lg);
+.draggable-category-card__handle {
+  padding: var(--spacing-sm);
+  color: var(--text-tertiary);
+  cursor: grab;
+  touch-action: none; /* 确保拖拽手柄可拖动 */
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
 }
 
-.layout-composer-placeholder h3 {
-  font-size: var(--font-size-xl);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.layout-composer-placeholder p {
-  max-width: 400px;
-  line-height: 1.6;
+.draggable-category-card__handle:hover {
+    background: var(--bar-bg);
+    color: var(--text-primary);
 }

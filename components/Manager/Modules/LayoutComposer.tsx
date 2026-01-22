@@ -1,26 +1,86 @@
 
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { StatusBarData, CategoryDefinition } from '../../../types';
+import DraggableCategoryCard from './DraggableCategoryCard';
 import './LayoutComposer.css';
-// FIX: Import StatusBarData to define component props.
-import { StatusBarData } from '../../../types';
 
-// FIX: Define props for the component to accept `data` and `onUpdate`.
 interface LayoutComposerProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
 }
 
-const LayoutComposer: React.FC<LayoutComposerProps> = () => {
+const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
+  const [categories, setCategories] = useState<CategoryDefinition[]>([]);
+
+  // 从 props 同步并排序分类
+  useEffect(() => {
+    const sorted = Object.values(data.categories || {}).sort(
+      (a, b) => a.order - b.order
+    );
+    setCategories(sorted);
+  }, [data.categories]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      // 要求鼠标移动10像素后才激活拖拽，防止误操作
+      activationConstraint: {
+        distance: 10,
+      },
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setCategories((items) => {
+        const oldIndex = items.findIndex(item => item.key === active.id);
+        const newIndex = items.findIndex(item => item.key === over.id);
+        
+        const newSortedItems = arrayMove(items, oldIndex, newIndex);
+
+        // 更新 order 属性并持久化
+        const updatedCategoriesMap = { ...data.categories };
+        newSortedItems.forEach((cat, index) => {
+            updatedCategoriesMap[cat.key] = { ...cat, order: index };
+        });
+
+        onUpdate({ ...data, categories: updatedCategoriesMap });
+        
+        // 返回新数组以更新本地状态，实现即时UI反馈
+        return newSortedItems;
+      });
+    }
+  }
+
   return (
-    <div className="layout-composer-placeholder">
-      <AlertTriangle size={48} />
-      <h3>功能降级</h3>
-      <p>
-        由于拖拽功能存在兼容性问题，布局编排器暂时禁用。
-        <br />
-        我们将在后续版本中修复并重新启用此功能。
-      </p>
+    <div className="layout-composer">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={categories.map(c => c.key)} strategy={rectSortingStrategy}>
+          <div className="layout-composer__grid">
+            {categories.map((cat) => (
+              <DraggableCategoryCard key={cat.key} category={cat} />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };
