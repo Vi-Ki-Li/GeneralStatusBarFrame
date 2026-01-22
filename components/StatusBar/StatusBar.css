@@ -17,3 +17,11 @@
 .status-bar__shared-block--bottom {
   margin-top: var(--spacing-xl);
 }
+
+/* --- Drag & Drop Styles --- */
+.droppable-active > div > .status-item-row {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: 2px;
+  background-color: rgba(99, 102, 241, 0.1);
+  border-radius: var(--radius-md);
+}

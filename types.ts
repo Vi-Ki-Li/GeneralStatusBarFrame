@@ -170,7 +170,7 @@ export interface AppOptions {
 export interface StyleDefinition {
   id: string; // Unique ID, e.g., UUID
   name: string; // "红色血条"
-  dataType: 'numeric' | 'array' | 'list-of-objects' | 'text' | 'theme'; // 此处修改1行
+  dataType: 'numeric' | 'array' | 'list-of-objects' | 'text' | 'theme';
   css: string;
   html?: string; // Optional custom HTML structure, only for component types
   mockDataKey?: string; // Key from item_definitions to use for previewing

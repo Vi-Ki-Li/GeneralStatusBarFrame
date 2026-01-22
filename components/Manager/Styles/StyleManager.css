@@ -3,6 +3,7 @@
   height: 100%;
   overflow: hidden;
   background: var(--bg-app);
+  position: relative; /* 此处添加1行 */
 }
 
 /* --- Sidebar Styles --- */
@@ -87,7 +88,7 @@
   pointer-events: auto;
 }
 
-.theme-item__actions .btn--ghost { /* 此处添加3行 */
+.theme-item__actions .btn--ghost {
   padding: 4px; height: 24px; width: 24px;
 }
 
@@ -138,6 +139,7 @@
   border-radius: var(--radius-md);
   transition: var(--transition-fast);
   padding: var(--spacing-sm) var(--spacing-sm);
+  cursor: grab;
 }
 
 .style-atelier__item-wrapper:hover {
@@ -235,6 +237,20 @@
   padding: var(--spacing-lg);
 }
 
+/* --- Drag Overlay --- */
+.style-atelier__drag-overlay {
+  background: var(--color-primary);
+  color: white;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  font-size: 0.9rem;
+}
+
 /* --- Deletion Modal --- */
 .style-atelier__delete-overlay {
   position: absolute;
@@ -270,4 +286,38 @@
 }
 .style-atelier__placeholder {
     /* For loading state or empty states */
+}
+
+/* --- Action Bar --- */ /* 此处开始添加29行 */
+.style-atelier__action-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-top: 1px solid var(--chip-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+  z-index: 10;
+  border-radius: 0 0 var(--radius-xl) 0; /* Match parent */
+}
+
+.style-atelier__action-bar-prompt {
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-warning);
+}
+
+.style-atelier__action-bar-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+@keyframes pulse {
+  50% { opacity: 0.8; box-shadow: 0 6px 16px rgba(99, 102, 241, 0.6); }
+}
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
