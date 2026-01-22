@@ -133,6 +133,32 @@
   font-style: italic;
 }
 
+.style-editor__theme-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--spacing-md);
+  color: var(--text-tertiary);
+}
+
+.style-editor__theme-preview-placeholder svg {
+  opacity: 0.5;
+  color: var(--color-primary);
+}
+
+.style-editor__theme-preview-placeholder h4 {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.style-editor__theme-preview-placeholder p {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 250px;
+}
+
 /* --- Footer --- */
 .style-editor__footer {
   display: flex;

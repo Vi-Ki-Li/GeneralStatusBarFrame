@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings } from 'lucide-react';
+import { X, Save, Code, Settings, Palette } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import NumericRenderer from '../../StatusBar/Renderers/NumericRenderer';
@@ -160,7 +160,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         <label className="style-editor__label"><Code size={14}/> CSS 代码</label>
                         <textarea
                             className="style-editor__textarea style-editor__textarea--css"
-                            placeholder={`.numeric-renderer__progress-fill {\n  background: red;\n}`}
+                            placeholder={formData.dataType === 'theme' ? 'body { --color-primary: red; }' : '.numeric-renderer__progress-fill {\n  background: red;\n}'}
                             value={formData.css || ''}
                             onChange={(e) => handleChange('css', e.target.value)}
                         />
@@ -169,7 +169,18 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
 
                 <div className="style-editor__right-pane">
                     <div className="style-editor__preview-container">
-                       <RealtimePreview style={formData} />
+                       {formData.dataType === 'theme' ? (
+                           <div className="style-editor__theme-preview-placeholder">
+                               <Palette size={32} />
+                               <h4>全局主题预览</h4>
+                               <p>
+                                   全局主题将直接应用于整个应用。<br/>
+                                   请在主界面点击“应用”按钮查看效果。
+                               </p>
+                           </div>
+                       ) : (
+                           <RealtimePreview style={formData} />
+                       )}
                     </div>
                 </div>
             </div>

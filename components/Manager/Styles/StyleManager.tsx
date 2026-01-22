@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush } from 'lucide-react';
+import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader } from 'lucide-react';
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar'; // For preview
 import { tavernService } from '../../../services/mockTavernService'; // For mock data
@@ -11,6 +11,7 @@ import './StyleManager.css';
 
 const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const [styles, setStyles] = useState<StyleDefinition[]>([]);
+    const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingStyle, setEditingStyle] = useState<StyleDefinition | null>(null);
     const [deletingStyle, setDeletingStyle] = useState<StyleDefinition | null>(null);
@@ -20,7 +21,7 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
 
     useEffect(() => {
         loadStyles();
-        // Load mock data for the preview
+        setActiveThemeId(styleService.getActiveThemeId());
         const vars = tavernService.getVariables();
         setMockData(vars.statusBarCharacterData);
     }, []);
@@ -49,6 +50,10 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
             try {
                 styleService.deleteStyleDefinition(deletingStyle.id);
                 loadStyles();
+                // If the deleted style was the active theme, the service handles clearing it. Update local state.
+                if (activeThemeId === deletingStyle.id) {
+                    setActiveThemeId(null);
+                }
                 toast.info(`样式 "${deletingStyle.name}" 已删除`);
                 setDeletingStyle(null);
             } catch (e) {
@@ -57,38 +62,90 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         }
     };
 
-    const groupedStyles = useMemo(() => {
-        return styles.reduce((acc, style) => {
-            const type = style.dataType || 'other';
+    const handleApplyTheme = (themeId: string) => {
+        if (activeThemeId === themeId) {
+            styleService.clearActiveTheme();
+            setActiveThemeId(null);
+            toast.info("主题已取消应用");
+        } else {
+            styleService.applyTheme(themeId);
+            setActiveThemeId(themeId);
+            toast.success("主题已应用");
+        }
+    };
+
+    const { themes, styleUnits } = useMemo(() => {
+        const themes: StyleDefinition[] = [];
+        const units: StyleDefinition[] = [];
+        styles.forEach(style => {
+            if (style.dataType === 'theme') {
+                themes.push(style);
+            } else {
+                units.push(style);
+            }
+        });
+        return { themes, styleUnits: units };
+    }, [styles]);
+
+    const groupedStyleUnits = useMemo(() => {
+        return styleUnits.reduce((acc, style) => {
+            let type = style.dataType || 'other';
+            if (type === 'list-of-objects') {
+                type = 'array'; // Group list-of-objects with array
+            }
             if (!acc[type]) acc[type] = [];
             acc[type].push(style);
             return acc;
         }, {} as Record<string, StyleDefinition[]>);
-    }, [styles]);
+    }, [styleUnits]);
 
-    const groupOrder: (keyof typeof groupedStyles)[] = ['numeric', 'array', 'text', 'theme', 'other'];
+    const groupOrder = ['numeric', 'array', 'text', 'other'];
     const groupLabels = {
         numeric: '数值样式',
-        array: '标签组样式',
+        array: '标签组 / 对象列表',
         text: '文本样式',
-        theme: '全局主题',
         other: '其他',
     };
 
     return (
         <div className="style-atelier">
-            {/* --- Left Sidebar: Style List --- */}
             <div className="style-atelier__sidebar">
                 <div className="style-atelier__sidebar-header">
                     <Palette size={18}/>
-                    <h3>样式单元</h3>
+                    <h3>样式库</h3>
                 </div>
                 <div className="style-atelier__style-list">
+                    <div className="style-atelier__group style-atelier__theme-section">
+                        <h4 className="style-atelier__group-title">全局主题</h4>
+                        {themes.map(theme => {
+                            const isActive = activeThemeId === theme.id;
+                            return (
+                                <div key={theme.id} className={`theme-item ${isActive ? 'active' : ''}`}>
+                                    <div className="theme-item__info">
+                                        <Palette size={14} />
+                                        <span className="theme-item__name">{theme.name}</span>
+                                    </div>
+                                    <div className="theme-item__actions">
+                                        <button onClick={() => { setEditingStyle(theme); setIsEditorOpen(true); }} className="btn btn--ghost" title="编辑"><Edit2 size={14}/></button>
+                                        <button onClick={(e) => requestDelete(theme, e)} className="btn btn--ghost btn--delete" title="删除"><Trash2 size={14}/></button>
+                                        <button 
+                                            onClick={() => handleApplyTheme(theme.id)} 
+                                            className={`theme-item__apply-btn ${isActive ? 'active' : ''}`}
+                                        >
+                                            <Check size={14}/>
+                                            <span>{isActive ? '已应用' : '应用'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
                     {groupOrder.map(groupKey => (
-                        groupedStyles[groupKey] && (
+                        groupedStyleUnits[groupKey as keyof typeof groupedStyleUnits] && (
                             <div key={groupKey} className="style-atelier__group">
                                 <h4 className="style-atelier__group-title">{groupLabels[groupKey as keyof typeof groupLabels]}</h4>
-                                {groupedStyles[groupKey].map(style => (
+                                {groupedStyleUnits[groupKey as keyof typeof groupedStyleUnits].map(style => (
                                     <div key={style.id} className="style-atelier__item-wrapper">
                                         <div className="style-atelier__item-main">
                                             <span className="style-atelier__item-name">{style.name}</span>
@@ -110,7 +167,6 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
             </div>
 
-            {/* --- Right Main Area: Holistic Preview --- */}
             <div className="style-atelier__main-preview">
                 <div className="style-atelier__preview-header">
                     <Paintbrush size={16}/>
@@ -125,7 +181,6 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
             </div>
 
-            {/* --- Deletion Confirmation Modal --- */}
             {deletingStyle && (
                 <div className="style-atelier__delete-overlay">
                     <div className="style-atelier__delete-modal glass-panel">
@@ -141,7 +196,6 @@ const StyleManager: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
                 </div>
             )}
 
-            {/* --- Editor Modal --- */}
             <StyleEditor
                 isOpen={isEditorOpen}
                 onClose={() => setIsEditorOpen(false)}

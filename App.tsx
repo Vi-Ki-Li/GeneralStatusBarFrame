@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useRef } from 'react';
 import { tavernService } from './services/mockTavernService';
 import { styleService } from './services/styleService';
@@ -93,7 +91,7 @@ const AppContent = () => {
             tavernService.saveVariables({ statusBarCharacterData: processedData });
         }
         
-        styleService.injectAllStyles();
+        styleService.initializeActiveTheme(); // 此处修改1行
         
       } catch (e) {
         console.error(e);

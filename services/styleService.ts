@@ -2,6 +2,8 @@ import { StyleDefinition } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'th_style_definitions_v1';
+const GLOBAL_THEME_STYLE_ID = 'th-global-theme-style';
+const ACTIVE_THEME_ID_KEY = 'th-active-theme-id';
 
 export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     {
@@ -56,7 +58,7 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
         name: '主题-赛博朋克',
         dataType: 'theme',
         css: `
-:root {
+body {
   --color-primary: #00f6ff;
   --color-secondary: #ff00ff;
   --glass-bg: rgba(10, 20, 35, 0.6);
@@ -101,8 +103,6 @@ class StyleService {
             const stored = localStorage.getItem(STORAGE_KEY);
             const styles: StyleDefinition[] = stored ? JSON.parse(stored) : [];
             
-            // --- 数据自愈 (Data Healing) ---
-            // 检查并修复从localStorage加载的可能已损坏的数据 (e.g. id: "")
             let needsSave = false;
             const healedStyles = styles.map(style => {
                 if ((!style.id || style.id.trim() === '') && style.name) {
@@ -127,7 +127,6 @@ class StyleService {
     saveStyleDefinitions(definitions: StyleDefinition[]): void {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(definitions));
-            this.injectAllStyles();
         } catch (e) {
             console.error('[StyleService] Failed to save styles', e);
         }
@@ -155,18 +154,65 @@ class StyleService {
     }
 
     deleteStyleDefinition(id: string): void {
+        if (this.getActiveThemeId() === id) {
+            this.clearActiveTheme();
+        }
         const definitions = this.getStyleDefinitions().filter(u => u.id !== id);
         this.saveStyleDefinitions(definitions);
     }
 
-    injectAllStyles(): void {
-        // Phase 1: Backtrack. Temporarily disabled.
-        console.log('[StyleService] Style injection is temporarily disabled during refactor.');
+    // --- Theme Management ---
+    getActiveThemeId(): string | null {
+        try {
+            return localStorage.getItem(ACTIVE_THEME_ID_KEY);
+        } catch {
+            return null;
+        }
+    }
+
+    applyTheme(themeId: string): void {
+        try {
+            const theme = this.getStyleDefinition(themeId);
+            if (!theme || theme.dataType !== 'theme') {
+                console.warn(`[StyleService] Attempted to apply non-theme style: ${themeId}`);
+                this.clearActiveTheme();
+                return;
+            }
+
+            let styleTag = document.getElementById(GLOBAL_THEME_STYLE_ID);
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = GLOBAL_THEME_STYLE_ID;
+                document.head.appendChild(styleTag);
+            }
+            styleTag.innerHTML = theme.css;
+            localStorage.setItem(ACTIVE_THEME_ID_KEY, themeId);
+        } catch (e) {
+            console.error('[StyleService] Failed to apply theme', e);
+        }
+    }
+
+    clearActiveTheme(): void {
+        try {
+            const styleTag = document.getElementById(GLOBAL_THEME_STYLE_ID);
+            if (styleTag) {
+                styleTag.remove();
+            }
+            localStorage.removeItem(ACTIVE_THEME_ID_KEY);
+        } catch (e) {
+            console.error('[StyleService] Failed to clear theme', e);
+        }
+    }
+    
+    initializeActiveTheme(): void {
+        const activeId = this.getActiveThemeId();
+        if (activeId) {
+            this.applyTheme(activeId);
+        }
     }
     
     getMockStyleUnits(): StyleDefinition[] {
       const allStyles = this.getStyleDefinitions();
-      // FIX: Explicitly type defaultOption to match the return type StyleDefinition[].
       const defaultOption: StyleDefinition = { id: 'style_default', name: '默认样式', dataType: 'numeric', css: '' };
       return [defaultOption, ...allStyles.filter(s => s.dataType !== 'theme')];
     }
