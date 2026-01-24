@@ -104,6 +104,70 @@
 .style-editor__textarea--html { min-height: 80px; }
 .style-editor__textarea--css { flex: 1; min-height: 120px; }
 
+/* --- CSS Docs Section --- */ /* 此处开始添加49行 */
+.style-editor__docs-container {
+  border-top: 1px solid var(--chip-border);
+  padding-top: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+}
+
+.style-editor__docs-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+.style-editor__docs-toggle .icon-selector__arrow {
+  margin-left: auto;
+}
+
+.style-editor__docs-content {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(0,0,0,0.02);
+  border-radius: var(--radius-md);
+  max-height: 150px;
+  overflow-y: auto;
+}
+.style-editor__doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid var(--chip-border);
+}
+.style-editor__doc-item:last-child {
+  border-bottom: none;
+}
+.style-editor__doc-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.style-editor__doc-class {
+  font-family: monospace;
+  color: var(--color-primary);
+}
+.style-editor__doc-desc {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+.style-editor__doc-copy-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+}
+
 /* --- Right Pane (Preview) --- */
 .style-editor__right-pane {
   display: flex;

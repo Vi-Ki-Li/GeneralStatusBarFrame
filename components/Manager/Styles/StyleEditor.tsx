@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette } from 'lucide-react';
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy } from 'lucide-react'; // 此处修改1行
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 // FIX: The `children` prop was removed from StyledItemRenderer, so these are no longer needed here.
@@ -9,6 +9,7 @@ import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 // import ArrayRenderer from '../../StatusBar/Renderers/ArrayRenderer';
 // import TextRenderer from '../../StatusBar/Renderers/TextRenderer';
 // import ObjectListRenderer from '../../StatusBar/Renderers/ObjectListRenderer';
+import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation'; // 此处添加1行
 import './StyleEditor.css';
 
 // 独立的、真实的实时预览组件
@@ -74,6 +75,7 @@ interface StyleEditorProps {
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions }) => {
   const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
+  const [showDocs, setShowDocs] = useState(false); // 此处添加1行
   const toast = useToast();
 
   useEffect(() => {
@@ -101,7 +103,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     onClose();
   };
 
+  const handleCopy = (text: string) => { // 此处开始添加4行
+    navigator.clipboard.writeText(text);
+    toast.success(`已复制: ${text}`);
+  };
+
   if (!isOpen) return null;
+
+  const docEntries = formData.dataType ? STYLE_CLASS_DOCUMENTATION[formData.dataType] : []; // 此处添加1行
 
   return (
     <div className="style-editor-wrapper open">
@@ -155,6 +164,36 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                             onChange={(e) => handleChange('css', e.target.value)}
                         />
                     </div>
+
+                    {/* CSS类名文档区 */}
+                    {formData.dataType !== 'theme' && ( // 此处开始添加31行
+                        <div className="style-editor__docs-container">
+                            <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle">
+                                <HelpCircle size={14} />
+                                <span>可用CSS类名参考</span>
+                                <ChevronRight size={16} className={`icon-selector__arrow ${showDocs ? 'open' : ''}`} />
+                            </button>
+                            {showDocs && (
+                                <div className="style-editor__docs-content animate-fade-in">
+                                    {docEntries && docEntries.length > 0 ? (
+                                        docEntries.map(doc => (
+                                            <div key={doc.className} className="style-editor__doc-item">
+                                                <div className="style-editor__doc-main">
+                                                    <code className="style-editor__doc-class">{doc.className}</code>
+                                                    <p className="style-editor__doc-desc">{doc.description}</p>
+                                                </div>
+                                                <button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制">
+                                                    <ClipboardCopy size={14} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="style-editor__doc-empty">暂无此类名的参考信息。</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="style-editor__right-pane">

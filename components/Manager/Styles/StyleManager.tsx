@@ -1,26 +1,28 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
+import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits'; // 此处添加1行
 import { useToast } from '../../Toast/ToastContext';
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent, DragMoveEvent, DragOverlay } from '@dnd-kit/core';
-import { snapCenterToCursor } from '@dnd-kit/modifiers'; // 此处添加1行
-import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw } from 'lucide-react';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
+import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw, Copy, Eye } from 'lucide-react'; // 此处修改1行
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
 import _ from 'lodash';
 import './StyleManager.css';
 
 // 子组件：可拖拽的样式单元
-const DraggableStyleUnit: React.FC<{
-  style: StyleDefinition;
+const DraggableStyleUnit: React.FC<{ // 此处开始修改22行
+  style: StyleDefinition & { isDefault?: boolean };
   setPreviewingStyle: (style: StyleDefinition | null) => void;
   onEdit: () => void;
+  onCopy: () => void;
   onDelete: (e: React.MouseEvent) => void;
-}> = ({ style, setPreviewingStyle, onEdit, onDelete }) => {
+}> = ({ style, setPreviewingStyle, onEdit, onCopy, onDelete }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: style.id, data: { style } });
 
-  // 当拖拽开始时，原项目仅设置透明度作为占位符
   const styleProp: React.CSSProperties = {
     opacity: isDragging ? 0.4 : 1,
     touchAction: 'none',
@@ -37,7 +39,6 @@ const DraggableStyleUnit: React.FC<{
     >
       <div 
         className="style-atelier__item-wrapper"
-        // 拖拽监听器附加到 wrapper 上，而不是按钮上
         {...listeners}
         {...attributes}
       >
@@ -45,13 +46,20 @@ const DraggableStyleUnit: React.FC<{
           <span className="style-atelier__item-name">{style.name}</span>
         </div>
         <div className="style-atelier__item-actions">
-          <button onPointerDown={onButtonDown} onClick={onEdit} className="btn btn--ghost" title="编辑"><Edit2 size={14}/></button>
-          <button onPointerDown={onButtonDown} onClick={onDelete} className="btn btn--ghost btn--delete" title="删除"><Trash2 size={14}/></button>
+          <button onPointerDown={onButtonDown} onClick={onEdit} className="btn btn--ghost" title={style.isDefault ? "查看" : "编辑"}>
+            {style.isDefault ? <Eye size={14}/> : <Edit2 size={14}/>}
+          </button>
+          <button onPointerDown={onButtonDown} onClick={onCopy} className="btn btn--ghost btn--copy" title="复制">
+            <Copy size={14}/>
+          </button>
+          <button onPointerDown={onButtonDown} onClick={onDelete} className="btn btn--ghost btn--delete" title={style.isDefault ? "默认样式无法删除" : "删除"} disabled={style.isDefault}>
+            <Trash2 size={14}/>
+          </button>
         </div>
       </div>
     </div>
   );
-};
+}; // 此处完成修改
 
 interface StyleManagerProps {
   isMobile: boolean;
@@ -60,7 +68,7 @@ interface StyleManagerProps {
 }
 
 const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate }) => {
-    const [styles, setStyles] = useState<StyleDefinition[]>([]);
+    const [userStyles, setUserStyles] = useState<StyleDefinition[]>([]); // 此处修改1行
     const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingStyle, setEditingStyle] = useState<StyleDefinition | null>(null);
@@ -75,7 +83,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     const toast = useToast();
 
     useEffect(() => {
-        loadStyles();
+        loadUserStyles(); // 此处修改1行
         setActiveThemeId(styleService.getActiveThemeId());
         setStagedData(_.cloneDeep(data)); // Initial sync
     }, [data]);
@@ -90,16 +98,27 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         setHasChanges(!_.isEqual(originalDefs, stagedDefs));
     }, [stagedData, data]);
 
-    const loadStyles = () => {
-        setStyles(styleService.getStyleDefinitions());
+    const loadUserStyles = () => { // 此处修改1行
+        setUserStyles(styleService.getStyleDefinitions()); // 此处修改1行
     };
 
     const handleSaveStyle = (style: StyleDefinition) => {
         try {
             styleService.saveStyleDefinition(style);
-            loadStyles();
+            loadUserStyles(); // 此处修改1行
             toast.success(`样式 "${style.name}" 已保存`);
         } catch (e) { toast.error("保存样式失败"); }
+    };
+
+    const handleCopyStyle = (styleToCopy: StyleDefinition) => { // 此处开始添加9行
+      const newStyle: Partial<StyleDefinition> = {
+        ..._.cloneDeep(styleToCopy),
+        id: undefined, // Let save handler generate new ID
+        name: `${styleToCopy.name}-副本`,
+      };
+      delete (newStyle as any).isDefault;
+      setEditingStyle(newStyle as StyleDefinition);
+      setIsEditorOpen(true);
     };
     
     const handleSaveChanges = () => {
@@ -123,7 +142,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         if (deletingStyle) {
             try {
                 styleService.deleteStyleDefinition(deletingStyle.id);
-                loadStyles();
+                loadUserStyles(); // 此处修改1行
                 if (activeThemeId === deletingStyle.id) setActiveThemeId(null);
                 toast.info(`样式 "${deletingStyle.name}" 已删除`);
                 setDeletingStyle(null);
@@ -163,7 +182,8 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         const styleId = active.id as string;
         const itemDefKey = over.id as string;
     
-        const style = styles.find(s => s.id === styleId);
+        const allStyles = [...DEFAULT_STYLE_UNITS, ...userStyles]; // 此处修改1行
+        const style = allStyles.find(s => s.id === styleId); // 此处修改1行
         const definition = stagedData.item_definitions[itemDefKey];
     
         if (!style || !definition) return;
@@ -190,15 +210,16 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     const { themes, styleUnits } = useMemo(() => {
         const themes: StyleDefinition[] = [];
         const units: StyleDefinition[] = [];
-        styles.forEach(style => {
+        userStyles.forEach(style => { // 此处修改1行
             if (style.dataType === 'theme') themes.push(style);
             else units.push(style);
         });
         return { themes, styleUnits: units };
-    }, [styles]);
+    }, [userStyles]); // 此处修改1行
 
     const groupedStyleUnits = useMemo(() => {
-        return styleUnits.reduce((acc, style) => {
+        const allUnits = [...DEFAULT_STYLE_UNITS, ...styleUnits]; // 此处修改1行
+        return allUnits.reduce((acc, style) => { // 此处修改1行
             const type = style.dataType || 'other';
             if (!acc[type]) acc[type] = [];
             acc[type].push(style);
@@ -252,11 +273,12 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
                                 <div key={groupKey} className="style-atelier__group">
                                     <h4 className="style-atelier__group-title">{groupLabels[groupKey as keyof typeof groupLabels]}</h4>
                                     {groupedStyleUnits[groupKey].map(style => (
-                                        <DraggableStyleUnit
+                                        <DraggableStyleUnit // 此处开始修改6行
                                             key={style.id}
-                                            style={style}
+                                            style={style as StyleDefinition & { isDefault?: boolean }}
                                             setPreviewingStyle={setPreviewingStyle}
                                             onEdit={() => { setEditingStyle(style); setIsEditorOpen(true); }}
+                                            onCopy={() => handleCopyStyle(style)}
                                             onDelete={(e) => requestDelete(style, e)}
                                         />
                                     ))}

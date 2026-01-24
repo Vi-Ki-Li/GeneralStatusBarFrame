@@ -179,8 +179,21 @@
 .style-atelier__item-actions .btn--ghost {
   padding: 4px; height: 24px; width: 24px;
 }
-.style-atelier__item-actions .btn--delete:hover {
-  color: var(--color-danger); background: rgba(239, 68, 68, 0.1);
+.style-atelier__item-actions .btn--ghost:disabled { /* 此处开始添加15行 */
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent !important;
+  color: var(--text-tertiary) !important;
+}
+
+.style-atelier__item-actions .btn--delete:hover:not(:disabled) {
+  color: var(--color-danger); 
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.style-atelier__item-actions .btn--copy:hover {
+  color: var(--color-info);
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .style-atelier__sidebar-footer {
@@ -238,7 +251,7 @@
 }
 
 /* --- Drag Overlay --- */
-.style-atelier__drag-overlay { /* 此处开始添加12行 */
+.style-atelier__drag-overlay {
   background: var(--color-primary);
   color: white;
   padding: 8px 12px;
