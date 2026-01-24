@@ -4,8 +4,9 @@ import { getCategoryDefinition, getItemDefinition } from '../../services/definit
 import { resolveDisplayName } from '../../utils/idManager';
 import StatusSection from './StatusSection';
 import CharacterTabs from './CharacterTabs';
-import StyledItemRenderer from './Renderers/StyledItemRenderer'; // 此处删除3行
+import StyledItemRenderer from './Renderers/StyledItemRenderer';
 import { useToast } from '../Toast/ToastContext';
+import { presetService } from '../../services/presetService'; // 此处添加1行
 import './StatusBar.css';
 
 interface StatusBarProps {
@@ -46,14 +47,31 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
     }
   }, [presentCharIds, activeCharId]);
 
-  const renderItem = (item: StatusBarItem) => { // 此处开始修改
-    const def = getItemDefinition(data.item_definitions, item.key);
+  const renderItem = (item: StatusBarItem) => { // 此处开始修改25行
+    const originalDef = getItemDefinition(data.item_definitions, item.key);
+    let finalDef = originalDef; // 默认使用原始定义
+
+    const activePresetId = data._meta?.activePresetIds?.[0];
+
+    if (activePresetId) {
+      const allPresets = presetService.getPresets();
+      const activePreset = allPresets.find(p => p.id === activePresetId);
+      const overrideStyleId = activePreset?.styleOverrides?.[item.key];
+
+      if (overrideStyleId) {
+        // 如果找到了覆盖规则，创建一个新的 definition 对象
+        finalDef = {
+          ...originalDef,
+          styleId: overrideStyleId === 'style_default' ? undefined : overrideStyleId
+        };
+      }
+    }
     
     return (
       <StyledItemRenderer 
         key={item._uuid}
         item={item} 
-        definition={def}
+        definition={finalDef}
         styleOverride={styleOverride}
         onInteract={(interactItem: StatusBarItem, val?: string) => {
             const text = val || (Array.isArray(interactItem.values) ? interactItem.values.join(', ') : '');
@@ -62,7 +80,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
         }}
       />
     );
-  }; // 此处完成修改
+  };
 
   const renderSection = (items: StatusBarItem[], categoryKey: string, defaultExpanded = true) => {
     if (!items || items.length === 0) return null;
