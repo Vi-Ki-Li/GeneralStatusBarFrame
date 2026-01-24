@@ -6,7 +6,7 @@ import StatusSection from './StatusSection';
 import CharacterTabs from './CharacterTabs';
 import StyledItemRenderer from './Renderers/StyledItemRenderer';
 import { useToast } from '../Toast/ToastContext';
-import { presetService } from '../../services/presetService'; // 此处添加1行
+import { presetService } from '../../services/presetService';
 import './StatusBar.css';
 
 interface StatusBarProps {
@@ -47,9 +47,9 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
     }
   }, [presentCharIds, activeCharId]);
 
-  const renderItem = (item: StatusBarItem) => { // 此处开始修改25行
+  const renderItem = (item: StatusBarItem) => {
     const originalDef = getItemDefinition(data.item_definitions, item.key);
-    let finalDef = originalDef; // 默认使用原始定义
+    let finalDef = originalDef;
 
     const activePresetId = data._meta?.activePresetIds?.[0];
 
@@ -59,11 +59,27 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
       const overrideStyleId = activePreset?.styleOverrides?.[item.key];
 
       if (overrideStyleId) {
-        // 如果找到了覆盖规则，创建一个新的 definition 对象
         finalDef = {
           ...originalDef,
           styleId: overrideStyleId === 'style_default' ? undefined : overrideStyleId
         };
+      }
+    }
+
+    // v8.6: Style Atelier Preview Compatibility Check
+    let finalStyleOverride = styleOverride;
+    if (styleOverride) {
+      const styleType = styleOverride.dataType;
+      const itemType = originalDef.type;
+      
+      let isCompatible = false;
+      if (styleType === 'numeric' && itemType === 'numeric') isCompatible = true;
+      else if (styleType === 'array' && (itemType === 'array' || itemType === 'list-of-objects')) isCompatible = true;
+      else if (styleType === 'list-of-objects' && (itemType === 'array' || itemType === 'list-of-objects')) isCompatible = true;
+      else if (styleType === 'text' && itemType === 'text') isCompatible = true;
+
+      if (!isCompatible) {
+        finalStyleOverride = null;
       }
     }
     
@@ -72,7 +88,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
         key={item._uuid}
         item={item} 
         definition={finalDef}
-        styleOverride={styleOverride}
+        styleOverride={finalStyleOverride}
         onInteract={(interactItem: StatusBarItem, val?: string) => {
             const text = val || (Array.isArray(interactItem.values) ? interactItem.values.join(', ') : '');
             console.log(`[Interaction] ${interactItem.key}: ${text}`);

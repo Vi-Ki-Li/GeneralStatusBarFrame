@@ -1,10 +1,11 @@
-/* --- Base Item Row Styles (Shared) --- */ /* 此处开始添加26行 */
+/* --- Base Item Row Styles (Shared) --- */
 .status-item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-sm) 0;
   border-bottom: 1px solid var(--chip-border);
+  position: relative;
 }
 
 .status-item-row:last-child {
@@ -16,9 +17,11 @@
   color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
   min-width: 80px;
+  padding-right: var(--spacing-md);
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+  flex-shrink: 0;
 }
 
 .status-item-row__icon {
@@ -31,8 +34,9 @@
   opacity: 0.7;
 }
 
-.status-item-row__spacer {
+.status-item-row__content {
   flex: 1;
+  min-width: 0;
 }
 
 .status-bar {
@@ -56,7 +60,7 @@
 }
 
 /* --- Drag & Drop Styles --- */
-.droppable-active > div > .status-item-row {
+.droppable-active > div {
   outline: 2px dashed var(--color-primary);
   outline-offset: 2px;
   background-color: rgba(99, 102, 241, 0.1);

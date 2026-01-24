@@ -9,6 +9,12 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     {
         name: '渐变数值条',
         dataType: 'numeric',
+        html: `
+{{progress_bar_html}}
+<div class="numeric-renderer__value-group">
+  <span class="numeric-renderer__value">{{current}}</span>
+  {{max_html}}
+</div>`,
         css: `
 .numeric-renderer__progress-fill { 
   background: linear-gradient(90deg, var(--color-success), var(--color-info)); 
@@ -24,25 +30,75 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     {
         name: '简约数值 (无进度条)',
         dataType: 'numeric',
+        html: `
+<div class="numeric-renderer__value-group">
+  <span class="numeric-renderer__value">{{current}}</span>
+  {{max_html}}
+</div>`,
         css: `
-.numeric-renderer__progress-container { display: none; }
-.numeric-renderer__value { font-size: 1.1rem; }
-        `
+.status-item-row--numeric .status-item-row__content {
+  justify-content: flex-end;
+}
+.numeric-renderer__value { 
+  font-size: 1.1rem; 
+  font-weight: var(--font-weight-regular);
+}`
+    },
+    {
+        name: '双色调数值条', // 此处开始添加15行
+        dataType: 'numeric',
+        html: `
+{{progress_bar_html}}
+<div class="numeric-renderer__value-group">
+    <span class="numeric-renderer__value">{{current}}</span>
+    {{max_html}}
+</div>`,
+        css: `
+.numeric-renderer__progress-container {
+  background: var(--color-danger);
+  border: 1px solid var(--bar-bg);
+  padding: 2px;
+}
+.numeric-renderer__progress-fill {
+  background: var(--color-success);
+}`
     },
     {
         name: '胶囊标签组',
         dataType: 'array',
+        html: `
+<div class="array-renderer__tags-container">
+  {{tags_html}}
+</div>`,
         css: `
 .array-renderer__tag-chip { 
   border-radius: var(--radius-full); 
   padding: 4px 12px; 
   background: var(--bar-bg);
+}`
+    },
+    {
+        name: '高亮边框标签', // 此处开始添加12行
+        dataType: 'array',
+        html: `
+<div class="array-renderer__tags-container">
+  {{tags_html}}
+</div>`,
+        css: `
+.array-renderer__tag-chip {
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
 }
-        `
+.array-renderer__tag-chip:hover {
+    background: var(--color-primary);
+    color: white;
+}`
     },
     {
         name: '引用块文本',
         dataType: 'text',
+        html: `<div class="text-renderer__value">{{value}}</div>`,
         css: `
 .text-renderer__value { 
     border-left: 3px solid var(--color-primary); 
@@ -51,8 +107,7 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     border-top: none; border-right: none; border-bottom: none;
     font-style: italic;
     color: var(--text-secondary);
-}
-        `
+}`
     },
     {
         name: '赛博朋克',

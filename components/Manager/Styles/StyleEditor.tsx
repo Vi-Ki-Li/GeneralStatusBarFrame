@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy } from 'lucide-react'; // 此处修改1行
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
-// FIX: The `children` prop was removed from StyledItemRenderer, so these are no longer needed here.
-// import NumericRenderer from '../../StatusBar/Renderers/NumericRenderer'; // 此处删除4行
-// import ArrayRenderer from '../../StatusBar/Renderers/ArrayRenderer';
-// import TextRenderer from '../../StatusBar/Renderers/TextRenderer';
-// import ObjectListRenderer from '../../StatusBar/Renderers/ObjectListRenderer';
-import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation'; // 此处添加1行
+import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation';
 import './StyleEditor.css';
 
 // 独立的、真实的实时预览组件
@@ -55,11 +50,14 @@ const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style 
         return { mockItem: item, mockDefinition: definition };
     }, [style.dataType]);
 
-    // FIX: The renderPreviewContent function is no longer needed as StyledItemRenderer
-    // now handles rendering internally. Passing children to it is an error.
-    return ( // 此处开始修改4行
+    return (
         <div className="style-editor__preview-wrapper">
-            <StyledItemRenderer item={mockItem} definition={mockDefinition} liveCssOverride={style.css} />
+            <StyledItemRenderer 
+                item={mockItem} 
+                definition={mockDefinition} 
+                liveCssOverride={style.css}
+                liveHtmlOverride={style.html} 
+            />
         </div>
     );
 };
@@ -75,7 +73,7 @@ interface StyleEditorProps {
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions }) => {
   const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
-  const [showDocs, setShowDocs] = useState(false); // 此处添加1行
+  const [showDocs, setShowDocs] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -103,14 +101,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     onClose();
   };
 
-  const handleCopy = (text: string) => { // 此处开始添加4行
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`已复制: ${text}`);
   };
 
   if (!isOpen) return null;
 
-  const docEntries = formData.dataType ? STYLE_CLASS_DOCUMENTATION[formData.dataType] : []; // 此处添加1行
+  const docEntries = formData.dataType ? STYLE_CLASS_DOCUMENTATION[formData.dataType] : [];
 
   return (
     <div className="style-editor-wrapper open">
@@ -145,13 +143,12 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                     </div>
 
                     <div className="style-editor__form-group">
-                        <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选, 暂未实现)</label>
+                        <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选)</label>
                         <textarea
                             className="style-editor__textarea style-editor__textarea--html"
                             placeholder="使用 {{placeholder}} 语法..."
                             value={formData.html || ''}
                             onChange={(e) => handleChange('html', e.target.value)}
-                            disabled={true}
                         />
                     </div>
                     
@@ -166,7 +163,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                     </div>
 
                     {/* CSS类名文档区 */}
-                    {formData.dataType !== 'theme' && ( // 此处开始添加31行
+                    {formData.dataType !== 'theme' && (
                         <div className="style-editor__docs-container">
                             <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle">
                                 <HelpCircle size={14} />
