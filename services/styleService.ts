@@ -5,156 +5,307 @@ const STORAGE_KEY = 'th_style_definitions_v1';
 const GLOBAL_THEME_STYLE_ID = 'th-global-theme-style';
 const ACTIVE_THEME_ID_KEY = 'th-active-theme-id';
 
+/**
+ * v9.0: Default Styles Library
+ * A rich set of pre-built style units across different themes.
+ * This array is used to seed localStorage for new users.
+ */
 export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
+    // --- 冰川 (Glacier) Theme ---
     {
-        name: '渐变数值条',
+        name: '冰川-数值条',
         dataType: 'numeric',
         html: `
-{{progress_bar_html}}
-<div class="numeric-renderer__value-group">
-  <span class="numeric-renderer__value">{{current}}</span>
-  {{max_html}}
-</div>`,
-        css: `
-.numeric-renderer__progress-fill { 
-  background: linear-gradient(90deg, var(--color-success), var(--color-info)); 
-}
-/* Special states based on percentage */
-.numeric-renderer__progress-fill[data-percentage="low"] { 
-  background: linear-gradient(90deg, var(--color-warning), var(--color-danger)); 
-}
-.numeric-renderer__progress-fill[data-percentage="medium"] { 
-  background: linear-gradient(90deg, var(--color-success), var(--color-warning)); 
-}`,
-    },
-    {
-        name: '简约数值 (无进度条)',
-        dataType: 'numeric',
-        html: `
-<div class="numeric-renderer__value-group">
-  <span class="numeric-renderer__value">{{current}}</span>
-  {{max_html}}
-</div>`,
-        css: `
-.status-item-row--numeric .status-item-row__content {
-  justify-content: flex-end;
-}
-.numeric-renderer__value { 
-  font-size: 1.1rem; 
-  font-weight: var(--font-weight-regular);
-}`
-    },
-    {
-        name: '双色调数值条', // 此处开始添加15行
-        dataType: 'numeric',
-        html: `
-{{progress_bar_html}}
-<div class="numeric-renderer__value-group">
+<div class="glacier-numeric">
+  {{progress_bar_html}}
+  <div class="numeric-renderer__value-group">
     <span class="numeric-renderer__value">{{current}}</span>
     {{max_html}}
+  </div>
 </div>`,
         css: `
-.numeric-renderer__progress-container {
-  background: var(--color-danger);
-  border: 1px solid var(--bar-bg);
-  padding: 2px;
-}
-.numeric-renderer__progress-fill {
-  background: var(--color-success);
-}`
+.glacier-numeric { display: flex; align-items: center; gap: 12px; }
+.numeric-renderer__progress-container { flex: 1; height: 6px; }
+.numeric-renderer__progress-fill { background: var(--color-primary); }`
     },
     {
-        name: '胶囊标签组',
+        name: '冰川-标签组',
         dataType: 'array',
-        html: `
-<div class="array-renderer__tags-container">
-  {{tags_html}}
-</div>`,
+        html: `<div class="array-renderer__tags-container">{{tags_html}}</div>`,
         css: `
 .array-renderer__tag-chip { 
   border-radius: var(--radius-full); 
   padding: 4px 12px; 
   background: var(--bar-bg);
+  color: var(--text-secondary);
+  border-color: transparent;
 }`
     },
     {
-        name: '高亮边框标签', // 此处开始添加12行
-        dataType: 'array',
-        html: `
-<div class="array-renderer__tags-container">
-  {{tags_html}}
-</div>`,
-        css: `
-.array-renderer__tag-chip {
-    background: transparent;
-    border: 1px solid var(--color-primary);
-    color: var(--color-primary);
-}
-.array-renderer__tag-chip:hover {
-    background: var(--color-primary);
-    color: white;
-}`
-    },
-    {
-        name: '引用块文本',
+        name: '冰川-信息卡',
         dataType: 'text',
         html: `<div class="text-renderer__value">{{value}}</div>`,
         css: `
-.text-renderer__value { 
-    border-left: 3px solid var(--color-primary); 
-    padding-left: var(--spacing-md);
-    background: transparent;
-    border-top: none; border-right: none; border-bottom: none;
-    font-style: italic;
-    color: var(--text-secondary);
+.text-renderer__value {
+  padding: 10px;
+  border-left: 3px solid var(--color-primary);
+  background: var(--chip-bg);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }`
     },
     {
-        name: '赛博朋克',
+        name: '冰川-数据网格',
+        dataType: 'list-of-objects',
+        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        css: `
+.object-card {
+  border: 1px solid var(--chip-border);
+  background: transparent;
+}`
+    },
+    {
+        name: '主题-冰川',
         dataType: 'theme',
         css: `
+/* 冰川-亮色模式 */
 :root {
-  /* --- LIGHT MODE (White-Hat Hacker) --- */
-  --color-primary: #00b8d4;      /* Sharp Cyan */
-  --color-secondary: #f000b8;     /* Vivid Magenta */
-  --color-accent: #7e22ce;       /* Purple */
-  --bg-app: #eef2f9;             /* Off-white */
-  --text-primary: #0f172a;        /* Dark Slate */
-  --text-secondary: #64748b;      /* Muted Slate */
+  --color-primary: #3b82f6; /* Blue 500 */
+  --color-secondary: #14b8a6; /* Teal 500 */
+  --bg-app: #f1f5f9; /* Slate 100 */
+  --text-primary: #1e293b; /* Slate 800 */
+  --text-secondary: #64748b; /* Slate 500 */
   --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 184, 212, 0.3);
-  --bar-bg: rgba(0, 20, 40, 0.05);
-  --chip-border: rgba(0, 20, 40, 0.1);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --bar-bg: #e2e8f0; /* Slate 200 */
+  --chip-bg: #e2e8f0;
+  --chip-border: #cbd5e1; /* Slate 300 */
 }
 
+/* 冰川-暗色模式 */
 body.dark-mode {
-  /* --- DARK MODE (Neon Noir) --- */
-  --color-primary: #00f6ff;      /* Neon Cyan */
-  --color-secondary: #ff00ff;     /* Neon Magenta */
-  --color-accent: #9333ea;       /* Neon Purple */
-  --bg-app: #0c0a18;             /* Deep Purple/Black */
-  --text-primary: #e2e8f0;        /* Light Grey */
-  --text-secondary: #94a3b8;      /* Slate */
-  --glass-bg: rgba(23, 18, 43, 0.6); /* Tinted Glass */
-  --glass-border: rgba(0, 246, 255, 0.2);
-  --bar-bg: rgba(255, 255, 255, 0.1);
-  --chip-border: rgba(255, 255, 255, 0.1);
+  --color-primary: #60a5fa; /* Blue 400 */
+  --color-secondary: #2dd4bf; /* Teal 400 */
+  --bg-app: #0f172a; /* Slate 900 */
+  --text-primary: #f1f5f9; /* Slate 100 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --bar-bg: #334155; /* Slate 700 */
+  --chip-bg: #1e293b;
+  --chip-border: #334155;
+}`
+    },
+    
+    // --- 奥术 (Arcane) Theme ---
+    {
+        name: '奥术-能量水晶',
+        dataType: 'numeric',
+        html: `
+{{progress_bar_html}}
+<div class="numeric-renderer__value-group">
+  <span class="numeric-renderer__value">{{current}}</span>
+  {{max_html}}
+</div>`,
+        css: `
+.numeric-renderer__progress-container {
+  border-radius: 4px;
+  background: #2a2252;
+  border: 1px solid #7c3aed;
+  box-shadow: 0 0 8px #a78bfa, inset 0 0 5px rgba(0,0,0,0.5);
+  padding: 2px;
+}
+.numeric-renderer__progress-fill {
+  background: linear-gradient(90deg, #c4b5fd, #a78bfa);
+  box-shadow: 0 0 5px #c4b5fd;
+  border-radius: 2px;
+}
+.numeric-renderer__value { color: #e9d5ff; }
+`
+    },
+    {
+        name: '奥术-符文石',
+        dataType: 'array',
+        html: `<div class="array-renderer__tags-container">{{tags_html}}</div>`,
+        css: `
+.array-renderer__tag-chip { 
+  background: linear-gradient(145deg, #4c1d95, #3730a3);
+  color: #e9d5ff;
+  border: 1px solid #7c3aed;
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+  padding: 4px 14px;
+  text-shadow: 0 0 3px #c4b5fd;
+}`
+    },
+    {
+        name: '奥术-羊皮纸',
+        dataType: 'text',
+        html: `<div class="arcane-text">{{value}}</div>`,
+        css: `
+.arcane-text {
+  font-family: serif;
+  color: #f3e8ff;
+  background: rgba(46, 16, 101, 0.3);
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #7c3aed;
+  text-shadow: 0 0 5px #c4b5fd;
+  line-height: 1.6;
+}`
+    },
+    {
+        name: '奥术-魔法图鉴',
+        dataType: 'list-of-objects',
+        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        css: `
+.object-list-renderer__card-container {
+  grid-template-columns: 1fr; /* Arcane style prefers a list view */
+}
+.object-card {
+  background: linear-gradient(145deg, #4c1d95, #3730a3);
+  border: 1px solid #7c3aed;
+  box-shadow: 0 0 8px #a78bfa;
+  padding: 12px;
+  color: #e9d5ff;
+}
+.object-card__label { color: #a78bfa; }
+.object-card__value { font-weight: 600; text-shadow: 0 0 3px #c4b5fd; }
+`
+    },
+    {
+        name: '主题-奥术',
+        dataType: 'theme',
+        css: `
+/* 奥术-亮色模式 (白魔法) */
+:root {
+  --color-primary: #a855f7; /* Purple 500 */
+  --color-secondary: #facc15; /* Yellow 400 */
+  --bg-app: #f5f3ff; /* Violet 50 */
+  --text-primary: #2e1065; /* Violet 950 */
+  --text-secondary: #6d28d9; /* Violet 700 */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(168, 85, 247, 0.2);
+  --bar-bg: #ede9fe; /* Violet 100 */
+  --chip-border: #ddd6fe; /* Violet 200 */
 }
 
-/* --- Shared Effects --- */
-.btn--primary {
-  text-shadow: 0 0 5px rgba(255,255,255,0.3);
+/* 奥术-暗色模式 (黑魔法) */
+body.dark-mode {
+  --color-primary: #c084fc; /* Purple 400 */
+  --color-secondary: #eab308; /* Yellow 500 */
+  --bg-app: #1e1b4b; /* Indigo 950 */
+  --text-primary: #f5f3ff; /* Violet 50 */
+  --text-secondary: #a78bfa; /* Violet 400 */
+  --glass-bg: rgba(30, 27, 75, 0.6);
+  --glass-border: rgba(192, 132, 252, 0.3);
+  --bar-bg: #4338ca; /* Indigo 700 */
+  --chip-border: #5b21b6; /* Violet 800 */
+}`
+    },
+
+    // --- 终端 (Terminal) Theme ---
+    {
+        name: '终端-加载条',
+        dataType: 'numeric',
+        html: `
+<div class="terminal-numeric">
+  <div class="terminal-numeric-label">> {{name}} [{{current}}/{{max}}]</div>
+  <div class="terminal-numeric-bar-container">
+    <div class="terminal-numeric-bar-fill" style="width: {{percentage}}%"></div>
+  </div>
+</div>`,
+        css: `
+.status-item-row__label { display: none; }
+.status-item-row__content { width: 100%; }
+.terminal-numeric { font-family: monospace; color: var(--color-primary); }
+.terminal-numeric-bar-container { background: var(--bar-bg); padding: 2px; margin-top: 4px; }
+.terminal-numeric-bar-fill {
+  height: 10px;
+  background: var(--color-primary);
+  box-shadow: 0 0 5px var(--color-primary);
+}`
+    },
+    {
+        name: '终端-数据芯片',
+        dataType: 'array',
+        html: `> {{name}}: <div class="array-renderer__tags-container">{{tags_html}}</div>`,
+        css: `
+.status-item-row__label { display: none; }
+.status-item-row__content { font-family: monospace; color: var(--color-primary); }
+.array-renderer__tag-chip {
+  background: var(--color-primary);
+  color: var(--bg-app);
+  border-radius: 0;
+  padding: 2px 6px;
+}`
+    },
+    {
+        name: '终端-日志条目',
+        dataType: 'text',
+        html: `> {{value}}`,
+        css: `
+.status-item-row__content { 
+  font-family: monospace; 
+  color: var(--color-primary); 
+  font-size: 0.9rem;
+  line-height: 1.5;
+}`
+    },
+    {
+        name: '终端-数据包',
+        dataType: 'list-of-objects',
+        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        css: `
+.status-item-row__content { width: 100%; }
+.object-list-renderer__card-container {
+  grid-template-columns: 1fr;
+  font-family: monospace;
+  color: var(--color-primary);
+}
+.object-card {
+  background: var(--bar-bg);
+  padding: 8px;
+  border-left: 2px solid var(--color-primary);
+}
+.object-card__property {
+  font-size: 0.85rem;
+}
+.object-card__label::after { content: ':'; }
+.object-card__value { color: var(--text-primary); }
+`
+    },
+    {
+        name: '主题-终端',
+        dataType: 'theme',
+        css: `
+body {
+  font-family: 'Courier New', Courier, monospace !important;
+}
+/* 终端-亮色模式 (Paper) */
+:root {
+  --color-primary: #0d9488; /* Teal 600 */
+  --color-secondary: #be123c; /* Rose 700 */
+  --bg-app: #fefce8; /* Yellow 50 */
+  --text-primary: #1c1917; /* Stone 900 */
+  --text-secondary: #57534e; /* Stone 600 */
+  --glass-bg: rgba(254, 252, 232, 0.8);
+  --glass-border: transparent;
+  --bar-bg: #d6d3d1; /* Stone 300 */
+  --chip-border: #a8a29e; /* Stone 400 */
 }
 
-body.dark-mode .btn--primary {
-  box-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-secondary);
-}
-
-body.dark-mode .status-bar {
-  text-shadow: 0 0 2px var(--text-secondary);
-}
-        `
-    }
+/* 终端-暗色模式 (Hacker) */
+body.dark-mode {
+  --color-primary: #65f04b; /* Bright Green */
+  --color-secondary: #fde047; /* Yellow 300 */
+  --bg-app: #0c0a09; /* True black */
+  --text-primary: #65f04b;
+  --text-secondary: #22c55e; /* Green 500 */
+  --glass-bg: rgba(18, 18, 18, 0.5);
+  --glass-border: rgba(101, 240, 75, 0.2);
+  --bar-bg: #292524; /* Stone 800 */
+  --chip-border: #44403c; /* Stone 700 */
+}`
+    },
 ];
 
 

@@ -17,7 +17,12 @@ interface StyledItemRendererProps {
 
 // --- Data Context Builder: The heart of the template engine ---
 const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Record<string, any> => {
-    const context: Record<string, any> = {};
+    // v9.1: Inject meta properties first
+    const context: Record<string, any> = {
+        name: definition.name || item.key,
+        key: item.key,
+        category: item.category,
+    };
     const values = item.values || [];
 
     // 1. Map structured parts

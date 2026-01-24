@@ -66,7 +66,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
       }
     }
 
-    // v8.6: Style Atelier Preview Compatibility Check
+    // v9.1: Stricter Compatibility Check
     let finalStyleOverride = styleOverride;
     if (styleOverride) {
       const styleType = styleOverride.dataType;
@@ -74,8 +74,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
       
       let isCompatible = false;
       if (styleType === 'numeric' && itemType === 'numeric') isCompatible = true;
-      else if (styleType === 'array' && (itemType === 'array' || itemType === 'list-of-objects')) isCompatible = true;
-      else if (styleType === 'list-of-objects' && (itemType === 'array' || itemType === 'list-of-objects')) isCompatible = true;
+      else if (styleType === 'array' && itemType === 'array') isCompatible = true;
+      else if (styleType === 'list-of-objects' && itemType === 'list-of-objects') isCompatible = true;
       else if (styleType === 'text' && itemType === 'text') isCompatible = true;
 
       if (!isCompatible) {

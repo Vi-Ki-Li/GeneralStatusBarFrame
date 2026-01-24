@@ -1,15 +1,13 @@
 import { StyleDefinition } from '../types';
 
 /**
- * v8.2: 默认样式单元
- * 将旧的硬编码 Renderer CSS 转化为内置的、可供用户查看和复制的样式模板。
- * isDefault 标志用于在UI上区分它们。
- * v8.3 HTML模板注入：为每个默认样式添加了html模板，以支持新的模板渲染引擎。
+ * v9.0: Default Style Units - Glacier Theme
+ * High-quality, theme-aware default styles for fallback rendering.
  */
 export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; isDefault: true })[] = [
     {
         id: 'default_numeric',
-        name: '默认数值条',
+        name: '默认数值条 (冰川)',
         dataType: 'numeric',
         isDefault: true,
         html: `
@@ -18,19 +16,18 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
   <span class="numeric-renderer__value">{{current}}</span>
   {{max_html}}
   {{change_indicator_html}}
-</div>`,
+</div>
+{{sub_row_html}}`,
         css: `
 .status-item-row--numeric .status-item-row__content {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
 }
 .numeric-renderer__progress-container {
-  flex: 1;
-  height: 8px;
+  width: 100%;
+  height: 6px;
   background: var(--bar-bg);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -42,17 +39,15 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
 }
 .numeric-renderer__value-group {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
-  min-width: 60px;
+  width: 100%;
   justify-content: flex-end;
-}
-.status-item-row--numeric .status-item-row__content > .numeric-renderer__value-group:only-child {
-  margin-left: auto;
 }
 .numeric-renderer__value {
   font-weight: var(--font-weight-semibold);
   font-size: 0.9rem;
+  color: var(--text-primary);
 }
 .numeric-renderer__value-max {
   color: var(--text-tertiary);
@@ -65,66 +60,40 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
   font-weight: var(--font-weight-medium);
 }
 .numeric-renderer__sub-row {
-  display: flex;
-  gap: 6px;
   font-size: 0.75rem;
-  padding-left: 2px;
-  opacity: 0.8;
-  align-items: center;
-}
-.numeric-renderer__description {
   color: var(--text-secondary);
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.numeric-renderer__reason {
-  color: var(--text-tertiary);
+  text-align: right;
+  width: 100%;
 }`
     },
     {
         id: 'default_array',
-        name: '默认标签组',
+        name: '默认标签组 (冰川)',
         dataType: 'array',
         isDefault: true,
         html: `
 <div class="array-renderer__tags-container">
   {{tags_html}}
-</div>
-<span class="array-renderer__count">{{count}} 项</span>`,
+</div>`,
         css: `
-.status-item-row--array .status-item-row__content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.array-renderer__count {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-}
 .array-renderer__tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  justify-content: flex-end;
   flex: 1;
 }
 .array-renderer__tag-chip {
-  display: inline-flex;
-  align-items: center;
   padding: 4px 10px;
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   background: var(--chip-bg);
   border: 1px solid var(--chip-border);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   transition: var(--transition-fast);
   cursor: pointer;
 }
 .array-renderer__tag-chip:hover {
-  transform: translateY(-1px);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
@@ -136,7 +105,7 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
     },
     {
         id: 'default_text',
-        name: '默认文本',
+        name: '默认文本 (冰川)',
         dataType: 'text',
         isDefault: true,
         html: `<div class="text-renderer__value">{{value}}</div>`,
@@ -150,18 +119,16 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
 }
 .status-item-row--text-block .status-item-row__label {
   margin-bottom: 4px;
-  width: 100%;
 }
 .text-renderer__value {
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
-  cursor: pointer;
-  transition: color 0.2s;
   width: 100%;
+  transition: color 0.2s;
 }
 .text-renderer__value:hover {
-  color: var(--color-primary) !important;
+  color: var(--text-primary);
 }
 .status-item-row--text-inline .text-renderer__value {
   text-align: right;
@@ -171,34 +138,22 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
   background: var(--chip-bg);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
-  border: 1px solid var(--chip-border);
+  border-left: 3px solid var(--color-primary);
 }`
     },
     {
         id: 'default_object_list',
-        name: '默认对象列表',
+        name: '默认对象列表 (冰川)',
         dataType: 'list-of-objects',
         isDefault: true,
-        html: `
-<div class="object-list-renderer__header-content">
-  <span class="object-list-renderer__count">{{count}} 项</span>
-</div>
-<div class="object-list-renderer__card-container">
-  {{cards_html}}
-</div>`,
+        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
         css: `
 .status-item-row--list-of-objects {
   flex-direction: column;
   align-items: flex-start;
 }
-.status-item-row--list-of-objects .status-item-row__label {
-  margin-bottom: 8px;
-}
 .status-item-row--list-of-objects .status-item-row__content {
   width: 100%;
-}
-.object-list-renderer__header-content {
-  display: none; /* Count is now part of the label */
 }
 .object-list-renderer__card-container {
   display: grid;
@@ -214,7 +169,6 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
   display: flex;
   flex-direction: column;
   gap: 6px;
-  cursor: pointer;
   transition: var(--transition-fast);
 }
 .object-card:hover {
