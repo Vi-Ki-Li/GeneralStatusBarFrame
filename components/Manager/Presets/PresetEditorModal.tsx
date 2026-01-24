@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Preset, ItemDefinition, StyleDefinition } from '../../../types';
-import { styleService } from '../../../services/styleService';
 import { useToast } from '../../Toast/ToastContext';
 import { X, Save, Search, Box } from 'lucide-react';
 import './PresetEditorModal.css';
@@ -11,10 +10,11 @@ interface PresetEditorModalProps {
   onSave: (preset: Preset) => void;
   presetToEdit: Preset | null;
   allDefinitions: ItemDefinition[];
+  allStyles: StyleDefinition[];
 }
 
 const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
-  isOpen, onClose, onSave, presetToEdit, allDefinitions
+  isOpen, onClose, onSave, presetToEdit, allDefinitions, allStyles
 }) => {
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
@@ -22,7 +22,6 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
   const [styleOverrides, setStyleOverrides] = useState<{ [key: string]: string }>({});
   
   const toast = useToast();
-  const mockStyles = useMemo(() => styleService.getMockStyleUnits(), []);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,6 +57,24 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
       (def.name && def.name.toLowerCase().includes(lowerSearch))
     );
   }, [search, allDefinitions]);
+
+  const getCompatibleStylesForDef = (definition: ItemDefinition): StyleDefinition[] => {
+    const defaultOption: StyleDefinition = { id: 'style_default', name: '默认样式', dataType: 'numeric', css: '' };
+    if (!allStyles) return [defaultOption];
+    
+    let compatibleDataType: StyleDefinition['dataType'] | null = null;
+    switch (definition.type) {
+        case 'numeric': compatibleDataType = 'numeric'; break;
+        case 'array': compatibleDataType = 'array'; break;
+        case 'list-of-objects': compatibleDataType = 'list-of-objects'; break;
+        case 'text': compatibleDataType = 'text'; break;
+    }
+    
+    if (!compatibleDataType) return [defaultOption];
+    
+    const filtered = allStyles.filter(s => s.dataType === compatibleDataType);
+    return [defaultOption, ...filtered];
+  };
 
   const handleToggleItem = (key: string) => {
     setSelectedItemKeys(prev => {
@@ -136,6 +153,7 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
           <div className="preset-editor__def-list">
             {filteredDefinitions.map(def => {
               const isSelected = selectedItemKeys.has(def.key);
+              const compatibleStyles = getCompatibleStylesForDef(def);
               return (
                 <div key={def.key} className={`preset-editor__def-item ${isSelected ? 'selected' : ''}`}>
                   <div className="preset-editor__def-item-main" onClick={() => handleToggleItem(def.key)}>
@@ -152,7 +170,7 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                          onChange={e => handleOverrideChange(def.key, e.target.value)}
                          className="preset-editor__style-select"
                        >
-                         {mockStyles.map(style => (
+                         {compatibleStyles.map(style => (
                            <option key={style.id} value={style.id}>{style.name}</option>
                          ))}
                        </select>

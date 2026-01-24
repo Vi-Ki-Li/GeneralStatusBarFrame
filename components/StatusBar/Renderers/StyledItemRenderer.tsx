@@ -1,24 +1,34 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react'; // 此处修改1行
 import { StatusBarItem, ItemDefinition, StyleDefinition } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import { useDroppable } from '@dnd-kit/core';
+import NumericRenderer from './NumericRenderer';
+import ArrayRenderer from './ArrayRenderer';
+import TextRenderer from './TextRenderer';
+import ObjectListRenderer from './ObjectListRenderer';
 
 interface StyledItemRendererProps {
   item: StatusBarItem;
   definition: ItemDefinition;
-  children: React.ReactNode;
   liveCssOverride?: string; // For StyleEditor's live preview
   styleOverride?: StyleDefinition | null; // For hover preview in StyleManager
+  onInteract?: (item: StatusBarItem, value?: string) => void;
 }
 
 const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({ 
-  item, definition, children, liveCssOverride, styleOverride 
+  item, definition, liveCssOverride, styleOverride, onInteract
 }) => {
   const uniqueId = useMemo(() => `styled-item-${item._uuid}`, [item._uuid]);
 
   const { isOver, setNodeRef, active } = useDroppable({
     id: definition.key,
   });
+
+  useEffect(() => { // 此处开始添加5行
+    if (active) { // 只在有拖拽活动时打印，避免刷屏
+        console.log(`[Droppable: ${definition.key}] isOver: ${isOver}, active drag item:`, active.data.current?.style?.name);
+    }
+  }, [isOver, active, definition.key]);
 
   const isCompatibleDrag = useMemo(() => {
     if (!active || !active.data.current) return false;
@@ -81,12 +91,31 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
     return scopedCss;
   }, [uniqueId, liveCssOverride, styleOverride, definition]);
   
+  const renderContent = () => {
+    const label = definition.name || item.key;
+    
+    const commonProps = {
+        item: item,
+        label: label,
+        icon: definition.icon,
+        definition: definition,
+        onInteract: onInteract
+    };
+
+    switch (definition.type) {
+      case 'numeric': return <NumericRenderer {...commonProps} />;
+      case 'array': return <ArrayRenderer {...commonProps} />;
+      case 'list-of-objects': return <ObjectListRenderer {...commonProps} />;
+      default: return <TextRenderer {...commonProps} />;
+    }
+  };
+
   const dropzoneClass = isOver && isCompatibleDrag ? 'droppable-active' : '';
 
   return (
     <div id={uniqueId} ref={setNodeRef} className={dropzoneClass}>
       {cssToInject && <style>{cssToInject}</style>}
-      {children}
+      {renderContent()}
     </div>
   );
 };

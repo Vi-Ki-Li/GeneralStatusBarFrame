@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import { useToast } from '../../Toast/ToastContext';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent, DragMoveEvent, DragOverlay } from '@dnd-kit/core';
 import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw } from 'lucide-react';
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
@@ -18,18 +19,27 @@ const DraggableStyleUnit: React.FC<{
 }> = ({ style, setPreviewingStyle, onEdit, onDelete }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: style.id, data: { style } });
 
+  // 当拖拽开始时，原项目仅设置透明度作为占位符
+  const styleProp: React.CSSProperties = {
+    opacity: isDragging ? 0.4 : 1,
+    touchAction: 'none',
+  };
+
   const onButtonDown = (e: React.PointerEvent) => e.stopPropagation();
 
   return (
     <div
       ref={setNodeRef}
-      style={{ opacity: isDragging ? 0.5 : 1, touchAction: 'none' }}
-      {...listeners}
-      {...attributes}
+      style={styleProp}
       onMouseEnter={() => !isDragging && setPreviewingStyle(style)}
       onMouseLeave={() => setPreviewingStyle(null)}
     >
-      <div className="style-atelier__item-wrapper">
+      <div 
+        className="style-atelier__item-wrapper"
+        // 拖拽监听器附加到 wrapper 上，而不是按钮上
+        {...listeners}
+        {...attributes}
+      >
         <div className="style-atelier__item-main">
           <span className="style-atelier__item-name">{style.name}</span>
         </div>
@@ -135,10 +145,16 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
     const handleDragStart = (event: DragStartEvent) => {
-        setDraggingStyle(event.active.data.current?.style as StyleDefinition);
+      console.log('[DragStart] Drag started! Active ID:', event.active.id); // 此处修改1行
+      setDraggingStyle(event.active.data.current?.style as StyleDefinition);
+    };
+
+    const handleDragMove = (event: DragMoveEvent) => {
+        // console.log('[DragMove] Moving by:', event.delta); // Removed to reduce console noise
     };
     
     const handleDragEnd = (event: DragEndEvent) => {
+        console.log('[DragEnd] Drag ended! Active ID:', event.active.id, 'Over ID:', event.over?.id); // 此处修改1行
         setDraggingStyle(null);
         const { active, over } = event;
     
@@ -155,7 +171,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         let isCompatible = false;
         if (style.dataType === 'numeric' && definition.type === 'numeric') isCompatible = true;
         else if (style.dataType === 'array' && definition.type === 'array') isCompatible = true;
-        else if (style.dataType === 'list-of-objects' && definition.type === 'list-of-objects') isCompatible = true;
+        else if (style.dataType === 'list-of-objects' && (definition.type === 'array' || definition.type === 'list-of-objects')) isCompatible = true; // 兼容
         else if (style.dataType === 'text' && definition.type === 'text') isCompatible = true;
     
         if (!isCompatible) {
@@ -200,7 +216,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     };
 
     return (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
             <div className="style-atelier">
                 <div className="style-atelier__sidebar">
                     <div className="style-atelier__sidebar-header">
@@ -303,11 +319,12 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
 
                 <StyleEditor isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} onSave={handleSaveStyle} styleToEdit={editingStyle} allDefinitions={stagedData ? Object.values(stagedData.item_definitions) : []} />
             </div>
+            
             <DragOverlay>
                 {draggingStyle ? (
                     <div className="style-atelier__drag-overlay">
                         <Palette size={14} />
-                        {draggingStyle.name}
+                        <span>{draggingStyle.name}</span>
                     </div>
                 ) : null}
             </DragOverlay>

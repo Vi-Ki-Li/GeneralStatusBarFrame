@@ -3,7 +3,7 @@
   height: 100%;
   overflow: hidden;
   background: var(--bg-app);
-  position: relative; /* 此处添加1行 */
+  position: relative;
 }
 
 /* --- Sidebar Styles --- */
@@ -238,7 +238,7 @@
 }
 
 /* --- Drag Overlay --- */
-.style-atelier__drag-overlay {
+.style-atelier__drag-overlay { /* 此处开始添加12行 */
   background: var(--color-primary);
   color: white;
   padding: 8px 12px;
@@ -249,6 +249,7 @@
   gap: var(--spacing-sm);
   font-weight: var(--font-weight-medium);
   font-size: 0.9rem;
+  pointer-events: none;
 }
 
 /* --- Deletion Modal --- */
@@ -288,7 +289,7 @@
     /* For loading state or empty states */
 }
 
-/* --- Action Bar --- */ /* 此处开始添加29行 */
+/* --- Action Bar --- */
 .style-atelier__action-bar {
   position: absolute;
   bottom: 0;

@@ -4,10 +4,11 @@ import { useToast } from '../../Toast/ToastContext';
 import { X, Save, Code, Settings, Palette } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
-import NumericRenderer from '../../StatusBar/Renderers/NumericRenderer';
-import ArrayRenderer from '../../StatusBar/Renderers/ArrayRenderer';
-import TextRenderer from '../../StatusBar/Renderers/TextRenderer';
-import ObjectListRenderer from '../../StatusBar/Renderers/ObjectListRenderer';
+// FIX: The `children` prop was removed from StyledItemRenderer, so these are no longer needed here.
+// import NumericRenderer from '../../StatusBar/Renderers/NumericRenderer'; // 此处删除4行
+// import ArrayRenderer from '../../StatusBar/Renderers/ArrayRenderer';
+// import TextRenderer from '../../StatusBar/Renderers/TextRenderer';
+// import ObjectListRenderer from '../../StatusBar/Renderers/ObjectListRenderer';
 import './StyleEditor.css';
 
 // 独立的、真实的实时预览组件
@@ -53,22 +54,11 @@ const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style 
         return { mockItem: item, mockDefinition: definition };
     }, [style.dataType]);
 
-    const renderPreviewContent = () => {
-        const props = { item: mockItem, definition: mockDefinition, label: mockDefinition.name };
-        switch (style.dataType) {
-            case 'numeric': return <NumericRenderer {...props} />;
-            case 'array': return <ArrayRenderer {...props} />;
-            case 'list-of-objects': return <ObjectListRenderer {...props} />;
-            case 'text': return <TextRenderer {...props} />;
-            default: return <div className="style-editor__preview-placeholder">选择一个数据类型以预览</div>;
-        }
-    };
-
-    return (
+    // FIX: The renderPreviewContent function is no longer needed as StyledItemRenderer
+    // now handles rendering internally. Passing children to it is an error.
+    return ( // 此处开始修改4行
         <div className="style-editor__preview-wrapper">
-            <StyledItemRenderer item={mockItem} definition={mockDefinition} liveCssOverride={style.css}>
-                {renderPreviewContent()}
-            </StyledItemRenderer>
+            <StyledItemRenderer item={mockItem} definition={mockDefinition} liveCssOverride={style.css} />
         </div>
     );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Preset, StatusBarData, ItemDefinition } from '../../../types';
+import { Preset, StatusBarData, ItemDefinition, StyleDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
@@ -10,9 +10,10 @@ import './PresetList.css';
 interface PresetListProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
+  allStyles: StyleDefinition[];
 }
 
-const PresetList: React.FC<PresetListProps> = ({ data, onUpdate }) => {
+const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) => {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
@@ -62,7 +63,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate }) => {
     }
   };
 
-  const handleApplyPreset = async (preset: Preset, e: React.MouseEvent) => { // 此处修改1行
+  const handleApplyPreset = async (preset: Preset, e: React.MouseEvent) => {
     e.stopPropagation();
     setApplyingPresetId(preset.id);
     try {
@@ -219,6 +220,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate }) => {
         onSave={handleSavePreset} 
         presetToEdit={editingPreset}
         allDefinitions={allDefinitions}
+        allStyles={allStyles}
       />
     </div>
   );

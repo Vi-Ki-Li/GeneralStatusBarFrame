@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../../types';
+import { styleService } from '../../../services/styleService';
 import SnapshotSettings from '../SnapshotSettings';
 import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
@@ -9,7 +10,7 @@ import './SystemConfig.css';
 
 interface SystemConfigProps {
   data: StatusBarData;
-  onUpdate: (newData: StatusBarData) => void; // 此处添加1行
+  onUpdate: (newData: StatusBarData) => void;
   snapshotEnabled: boolean;
   onToggleSnapshot: (enabled: boolean) => void;
   snapshotMeta: SnapshotMeta | null;
@@ -18,9 +19,10 @@ interface SystemConfigProps {
 type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'HELP';
 
 const SystemConfig: React.FC<SystemConfigProps> = ({ 
-  data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta // 此处修改1行
+  data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta
 }) => {
   const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); // Default to presets
+  const allStyles = styleService.getStyleDefinitions();
 
   const tabs: { id: SystemTab; label: string; icon: React.ElementType }[] = [
     { id: 'SNAPSHOT', label: '动态快照', icon: Camera },
@@ -56,7 +58,7 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
             meta={snapshotMeta} 
           />
         )}
-        {activeTab === 'PRESETS' && <PresetList data={data} onUpdate={onUpdate} />}
+        {activeTab === 'PRESETS' && <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} />}
         {activeTab === 'ENTRIES' && <EntryList />}
         {activeTab === 'HELP' && <HelpGuide />}
       </div>
