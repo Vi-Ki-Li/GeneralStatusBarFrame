@@ -1,5 +1,4 @@
-/* --- Shared Item Row Styles --- */
-@import url('./NumericRenderer.css');
+/* 此处删除1行 */
 
 /* --- Array Renderer Specific --- */
 .status-item-row--array {

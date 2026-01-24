@@ -9,6 +9,7 @@ export interface CategoryDefinition {
   name: string;     // "角色档案"
   icon: string;     // Lucide icon name
   order: number;    // 排序权重
+  scope?: 'shared' | 'character'; // 此处添加1行
   layout_mode?: 'list' | 'grid' | 'tags'; // v6.1 布局模式
   grid_columns?: number; // v6.1 网格列数 (1-4)
 }

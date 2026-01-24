@@ -10,6 +10,7 @@
   color: var(--text-primary);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-base);
+  position: relative; /* 此处添加1行 */
 }
 
 .category-editor__header-icon {
@@ -24,6 +25,21 @@
   font-size: 0.8rem;
   color: var(--text-tertiary);
   font-weight: var(--font-weight-regular);
+}
+
+.category-editor__edit-btn { /* 此处开始添加12行 */
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.category-editor__header:hover .category-editor__edit-btn {
+  opacity: 1;
 }
 
 .category-editor__item-list {

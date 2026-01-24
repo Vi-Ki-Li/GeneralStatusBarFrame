@@ -1,23 +1,20 @@
-
-
-
 import { CategoryDefinition, ItemDefinition, StatusBarData } from '../types';
 
 /**
  * 默认分类列表
  */
 export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
-  { key: 'ST', name: '场景与时间', icon: 'Clock', order: 0, layout_mode: 'list' },
-  { key: 'CP', name: '角色档案', icon: 'Contact', order: 1, layout_mode: 'grid', grid_columns: 2 },
-  { key: 'CV', name: '角色状态值', icon: 'Activity', order: 2, layout_mode: 'grid', grid_columns: 2 },
-  { key: 'CR', name: '资源与装备', icon: 'Coins', order: 3, layout_mode: 'list' },
-  { key: 'RP', name: '角色关系', icon: 'HeartHandshake', order: 4, layout_mode: 'grid', grid_columns: 2 },
-  { key: 'CS', name: '状态描述', icon: 'Tag', order: 5, layout_mode: 'list' },
-  { key: 'AE', name: '行为事件', icon: 'ListTodo', order: 6, layout_mode: 'list' },
-  { key: 'WP', name: '世界剧情', icon: 'Globe', order: 7, layout_mode: 'list' },
-  { key: 'MI', name: '元信息', icon: 'BrainCircuit', order: 8, layout_mode: 'list' },
-  { key: 'Meta', name: '系统控制', icon: 'Cpu', order: 90 },
-  { key: 'Other', name: '其他', icon: 'MoreHorizontal', order: 99 },
+  { key: 'ST', name: '场景与时间', icon: 'Clock', order: 0, scope: 'shared', layout_mode: 'list' }, // 此处修改1行
+  { key: 'CP', name: '角色档案', icon: 'Contact', order: 1, scope: 'character', layout_mode: 'grid', grid_columns: 2 }, // 此处修改1行
+  { key: 'CV', name: '角色状态值', icon: 'Activity', order: 2, scope: 'character', layout_mode: 'grid', grid_columns: 2 }, // 此处修改1行
+  { key: 'CR', name: '资源与装备', icon: 'Coins', order: 3, scope: 'character', layout_mode: 'list' }, // 此处修改1行
+  { key: 'RP', name: '角色关系', icon: 'HeartHandshake', order: 4, scope: 'character', layout_mode: 'grid', grid_columns: 2 }, // 此处修改1行
+  { key: 'CS', name: '状态描述', icon: 'Tag', order: 5, scope: 'character', layout_mode: 'list' }, // 此处修改1行
+  { key: 'AE', name: '行为事件', icon: 'ListTodo', order: 6, scope: 'character', layout_mode: 'list' }, // 此处修改1行
+  { key: 'WP', name: '世界剧情', icon: 'Globe', order: 7, scope: 'shared', layout_mode: 'list' }, // 此处修改1行
+  { key: 'MI', name: '元信息', icon: 'BrainCircuit', order: 8, scope: 'shared', layout_mode: 'list' }, // 此处修改1行
+  { key: 'Meta', name: '系统控制', icon: 'Cpu', order: 90, scope: 'character' }, // 此处修改1行
+  { key: 'Other', name: '其他', icon: 'MoreHorizontal', order: 99, scope: 'character' }, // 此处修改1行
 ];
 
 /**

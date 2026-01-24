@@ -1,41 +1,4 @@
-
-/* --- Base Item Row Styles (Shared) --- */
-.status-item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--chip-border);
-}
-
-.status-item-row:last-child {
-  border-bottom: none;
-}
-
-.status-item-row__label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-  min-width: 80px;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.status-item-row__icon {
-  opacity: 0.7;
-}
-
-.status-item-row__lock-icon {
-  display: flex;
-  color: var(--color-warning);
-  opacity: 0.7;
-}
-
-.status-item-row__spacer {
-  flex: 1;
-}
-
+/* 此处删除25行 */
 /* --- Numeric Renderer Specific --- */
 .status-item-row--numeric {
   cursor: pointer;

@@ -20,17 +20,22 @@ const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
   const toast = useToast();
   
   const [formData, setFormData] = useState<CategoryDefinition>({
-    key: '', name: '', icon: 'CircleHelp', order: 99, layout_mode: 'list', grid_columns: 2
+    key: '', name: '', icon: 'CircleHelp', order: 99, layout_mode: 'list', grid_columns: 2, scope: 'character'
   });
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   useEffect(() => {
     if (category) {
-      setFormData({ ...category, layout_mode: category.layout_mode || 'list', grid_columns: category.grid_columns || 2 });
+      setFormData({ 
+        ...category, 
+        layout_mode: category.layout_mode || 'list', 
+        grid_columns: category.grid_columns || 2,
+        scope: category.scope || 'character' // 保证旧数据兼容性
+      });
       setIsNew(false);
     } else {
-      setFormData({ key: '', name: '', icon: 'CircleHelp', order: 99, layout_mode: 'list', grid_columns: 2 });
+      setFormData({ key: '', name: '', icon: 'CircleHelp', order: 99, layout_mode: 'list', grid_columns: 2, scope: 'character' });
       setIsNew(true);
     }
   }, [category, isOpen]);
@@ -43,6 +48,19 @@ const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
     if (!formData.key.trim()) { toast.error("必须填写唯一键 (Key)"); return; }
     if (isNew && existingKeys.includes(formData.key)) { toast.error("该 Key 已存在，请使用唯一的 Key"); return; }
     if (!formData.name.trim()) { toast.error("必须填写显示名称"); return; }
+
+    // 【重要】作用域变更警告
+    const originalScope = category?.scope || 'character';
+    if (originalScope === 'character' && formData.scope === 'shared') {
+        toast.warning('作用域已变更为“共享”', {
+            description: `分类 "${formData.name}" 中已存在的角色数据将被隐藏。此操作可逆。`
+        });
+    } else if (originalScope === 'shared' && formData.scope === 'character') { // 此处开始添加4行
+        toast.warning('作用域已变更为“角色”', {
+            description: `分类 "${formData.name}" 中已存在的共享数据将被隐藏。此操作可逆。`
+        });
+    }
+
     onSave(formData);
     onClose();
   };
@@ -69,6 +87,14 @@ const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
             <div className="form-group">
                 <label className="form-label">显示名称 (Name)</label>
                 <input className="form-input" value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="e.g. 角色状态" />
+            </div>
+            
+            <div className="form-group">
+                <label className="form-label">作用域 (Scope)</label>
+                <select className="form-input" value={formData.scope || 'character'} onChange={e => handleChange('scope', e.target.value)}>
+                    <option value="character">角色数据 (Character)</option>
+                    <option value="shared">共享数据 (Shared)</option>
+                </select>
             </div>
 
             <div className="form-group">

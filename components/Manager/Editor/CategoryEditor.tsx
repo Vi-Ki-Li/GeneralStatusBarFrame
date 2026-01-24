@@ -2,7 +2,7 @@ import React from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
 import * as LucideIcons from 'lucide-react';
-import { PlusCircle, CircleHelp } from 'lucide-react';
+import { PlusCircle, CircleHelp, Settings } from 'lucide-react'; // 此处修改1行
 import { getItemDefinition } from '../../../services/definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
 import './CategoryEditor.css';
@@ -14,10 +14,11 @@ interface CategoryEditorProps {
   items: StatusBarItem[];
   onUpdateItems: (newItems: StatusBarItem[]) => void;
   onEditDefinition: (itemKey: string) => void;
+  onEditCategory: (categoryKey: string) => void; // 此处添加1行
 }
 
 const CategoryEditor: React.FC<CategoryEditorProps> = ({ 
-  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems, onEditDefinition 
+  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems, onEditDefinition, onEditCategory // 此处修改1行
 }) => {
   const IconComponent = categoryDef.icon && (LucideIcons as any)[categoryDef.icon] 
     ? (LucideIcons as any)[categoryDef.icon] 
@@ -65,6 +66,9 @@ const CategoryEditor: React.FC<CategoryEditorProps> = ({
         <IconComponent size={18} className="category-editor__header-icon" />
         <span className="category-editor__header-name">{categoryDef.name}</span>
         <span className="category-editor__header-key">({categoryKey})</span>
+        <button onClick={() => onEditCategory(categoryKey)} className="category-editor__edit-btn" title="编辑此分类">
+          <Settings size={14} />
+        </button>
       </div>
 
       <div className="category-editor__item-list">

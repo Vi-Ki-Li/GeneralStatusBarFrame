@@ -1,5 +1,4 @@
-/* Import shared styles for consistency */
-@import url('./NumericRenderer.css');
+/* 此处删除1行 */
 
 .status-item-row--object-list {
   display: block; /* Override flex from base class */

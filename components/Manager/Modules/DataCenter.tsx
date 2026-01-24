@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { StatusBarData, StatusBarItem, ItemDefinition } from '../../../types';
+import { StatusBarData, StatusBarItem, ItemDefinition, CategoryDefinition } from '../../../types'; // 此处修改1行
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
 import { resolveDisplayName } from '../../../utils/idManager';
 import { syncMetaFromData } from '../../../utils/dataMerger';
@@ -9,6 +9,7 @@ import CharacterListSidebar from '../CharacterListSidebar';
 import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import DefinitionDrawer from '../Definitions/DefinitionDrawer';
+import CategoryDrawer from '../Definitions/CategoryDrawer'; // 此处添加1行
 import { tavernService } from '../../../services/mockTavernService';
 import { Plus, Save, RotateCcw, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +31,8 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null); // 此处添加1行
+  const [isCatDrawerOpen, setIsCatDrawerOpen] = useState(false); // 此处添加1行
   
   const toast = useToast();
 
@@ -178,6 +181,21 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
     handleLocalUpdate(newData);
     toast.success(`定义 "${updatedDef.key}" 已暂存`);
   };
+  
+  const handleEditCategory = (categoryKey: string) => { // 此处开始添加5行
+    const catDef = localData.categories[categoryKey];
+    if (catDef) {
+      setEditingCategory(catDef);
+      setIsCatDrawerOpen(true);
+    }
+  };
+
+  const handleSaveCategory = (updatedCat: CategoryDefinition) => { // 此处开始添加5行
+    const newData = _.cloneDeep(localData);
+    newData.categories[updatedCat.key] = updatedCat;
+    handleLocalUpdate(newData);
+    toast.success(`分类 "${updatedCat.name}" 已暂存`);
+  };
 
   const handleInjectDefinition = async (def: ItemDefinition) => {
     const result = await tavernService.injectDefinition(def, localData.categories);
@@ -198,11 +216,13 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
   };
 
 
-  const getCategoriesToRender = () => {
-    const allKeys = Object.keys(localData.categories || {});
-    const sorted = allKeys.sort((a, b) => localData.categories[a].order - localData.categories[b].order);
-    if (selectedId === 'SHARED') return ['ST', 'WP', 'MI'];
-    return sorted.filter(c => !['ST', 'WP', 'MI'].includes(c));
+  const getCategoriesToRender = () => { // 此处开始修改6行
+    const allCategories = Object.values(localData.categories || {});
+    const sorted = allCategories.sort((a, b) => a.order - b.order);
+    if (selectedId === 'SHARED') {
+      return sorted.filter(c => c.scope === 'shared').map(c => c.key);
+    }
+    return sorted.filter(c => c.scope === 'character' || !c.scope).map(c => c.key);
   };
 
   const getCurrentItems = (category: string): StatusBarItem[] => {
@@ -255,6 +275,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
                         items={getCurrentItems(catKey)}
                         onUpdateItems={(newItems) => handleUpdateItems(catKey, newItems)}
                         onEditDefinition={handleEditDefinition}
+                        onEditCategory={handleEditCategory} // 此处添加1行
                     />
                 ))}
                 <div className="data-center__editor-spacer" />
@@ -310,6 +331,13 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
             onSave={handleSaveDefinition}
             onInject={handleInjectDefinition}
             existingKeys={Object.keys(localData.item_definitions)}
+        />
+        <CategoryDrawer // 此处开始添加7行
+            isOpen={isCatDrawerOpen}
+            onClose={() => setIsCatDrawerOpen(false)}
+            category={editingCategory}
+            onSave={handleSaveCategory}
+            existingKeys={Object.keys(localData.categories)}
         />
     </div>
   );
