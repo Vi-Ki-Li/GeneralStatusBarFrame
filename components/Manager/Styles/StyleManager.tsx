@@ -4,6 +4,7 @@ import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import { useToast } from '../../Toast/ToastContext';
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent, DragMoveEvent, DragOverlay } from '@dnd-kit/core';
+import { snapCenterToCursor } from '@dnd-kit/modifiers'; // 此处添加1行
 import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw } from 'lucide-react';
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
@@ -130,11 +131,12 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         }
     };
 
+    // 新增：处理应用主题的逻辑
     const handleApplyTheme = (themeId: string) => {
         if (activeThemeId === themeId) {
             styleService.clearActiveTheme();
             setActiveThemeId(null);
-            toast.info("主题已取消应用");
+            toast.info("已恢复默认主题");
         } else {
             styleService.applyTheme(themeId);
             setActiveThemeId(themeId);
@@ -145,16 +147,14 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
     const handleDragStart = (event: DragStartEvent) => {
-      console.log('[DragStart] Drag started! Active ID:', event.active.id); // 此处修改1行
       setDraggingStyle(event.active.data.current?.style as StyleDefinition);
     };
 
     const handleDragMove = (event: DragMoveEvent) => {
-        // console.log('[DragMove] Moving by:', event.delta); // Removed to reduce console noise
+        // No-op
     };
     
     const handleDragEnd = (event: DragEndEvent) => {
-        console.log('[DragEnd] Drag ended! Active ID:', event.active.id, 'Over ID:', event.over?.id); // 此处修改1行
         setDraggingStyle(null);
         const { active, over } = event;
     
@@ -320,7 +320,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
                 <StyleEditor isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} onSave={handleSaveStyle} styleToEdit={editingStyle} allDefinitions={stagedData ? Object.values(stagedData.item_definitions) : []} />
             </div>
             
-            <DragOverlay>
+            <DragOverlay modifiers={[snapCenterToCursor]} zIndex={20000}>
                 {draggingStyle ? (
                     <div className="style-atelier__drag-overlay">
                         <Palette size={14} />
