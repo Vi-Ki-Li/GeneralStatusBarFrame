@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../types';
 import ManagerModal from './ManagerModal';
@@ -27,7 +28,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
 }) => {
   const [activeModule, setActiveModule] = useState<ManagerModule>('DATA');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [styleEditRequest, setStyleEditRequest] = useState<string | null>(null); // 此处开始添加2行
+  const [styleEditRequest, setStyleEditRequest] = useState<string | null>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -35,7 +36,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => { // 此处开始添加5行
+  useEffect(() => {
     if (styleEditRequest) {
       setActiveModule('STYLES');
     }
@@ -44,10 +45,9 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
   const renderModuleContent = () => {
     switch (activeModule) {
       case 'DATA':
-        // FIX: Pass the onGoToStyleEditor prop to DataCenter.
         return <DataCenter data={data} onUpdate={onUpdate} isMobile={isMobile} onGoToStyleEditor={setStyleEditRequest} />;
       case 'DEFINITIONS':
-        return <DefinitionList data={data} onUpdate={onUpdate} onGoToStyleEditor={setStyleEditRequest} />; // 此处修改1行
+        return <DefinitionList data={data} onUpdate={onUpdate} onGoToStyleEditor={setStyleEditRequest} />;
       case 'STYLES':
         return <StyleManager 
           data={data} 
@@ -55,9 +55,9 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
           isMobile={isMobile}
           styleEditRequest={styleEditRequest}
           onStyleEditRequestProcessed={() => setStyleEditRequest(null)}
-        />; // 此处修改6行
+        />;
       case 'LAYOUT':
-        return <LayoutComposer data={data} onUpdate={onUpdate} />;
+        return <LayoutComposer data={data} onUpdate={onUpdate} />; // 此处修改1行
       case 'SYSTEM':
         return <SystemConfig 
             data={data} 
