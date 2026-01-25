@@ -467,9 +467,19 @@ class StyleService {
         this.saveStyleDefinitions(definitions);
     }
 
+    // --- Bulk Operations (v9.1) ---
+    deleteStyleDefinitions(ids: string[]): void {
+        const activeThemeId = this.getActiveThemeId();
+        if (activeThemeId && ids.includes(activeThemeId)) {
+            this.clearActiveTheme();
+        }
+        const definitions = this.getStyleDefinitions().filter(u => !ids.includes(u.id));
+        this.saveStyleDefinitions(definitions);
+    }
+
     // --- Import / Export ---
-    exportStyles(): string {
-        const definitions = this.getStyleDefinitions();
+    exportStyles(definitionsToExport?: StyleDefinition[]): string {
+        const definitions = definitionsToExport || this.getStyleDefinitions();
         return JSON.stringify(definitions, null, 2);
     }
 
