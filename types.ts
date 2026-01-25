@@ -9,7 +9,7 @@ export interface CategoryDefinition {
   name: string;     // "角色档案"
   icon: string;     // Lucide icon name
   order: number;    // 排序权重
-  scope?: 'shared' | 'character'; // 此处添加1行
+  scope?: 'shared' | 'character'; 
   layout_mode?: 'list' | 'grid' | 'tags'; // v6.1 布局模式
   grid_columns?: number; // v6.1 网格列数 (1-4)
 }
@@ -175,4 +175,7 @@ export interface StyleDefinition {
   css: string;
   html?: string; // Optional custom HTML structure, only for component types
   mockDataKey?: string; // Key from item_definitions to use for previewing
+  guiConfig?: { // 此处开始添加2行
+    [selector: string]: React.CSSProperties;
+  };
 }

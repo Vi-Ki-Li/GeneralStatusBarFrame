@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, RotateCcw } from 'lucide-react';
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, RotateCcw, Brush } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
+import StyleGuiControls from './StyleGuiControls'; // 此处添加1行
+import { generateCssFromGuiConfig } from '../../../utils/styleUtils'; // 此处添加1行
 import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import './StyleEditor.css';
@@ -185,43 +187,53 @@ interface StyleEditorProps {
   styleToEdit: StyleDefinition | null;
   onSave: (style: StyleDefinition) => void;
   allDefinitions: ItemDefinition[];
-  initialPreviewKey?: string; // 此处添加1行
+  initialPreviewKey?: string; 
 }
 
-const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions, initialPreviewKey }) => { // 此处修改1行
+const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions, initialPreviewKey }) => { 
   const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
   const [previewKey, setPreviewKey] = useState<string>(''); // 用户选定的预览数据源
   const [showDocs, setShowDocs] = useState(false);
+  const [showGui, setShowGui] = useState(true); // 此处添加1行
   const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
       if (styleToEdit) {
-          setFormData(styleToEdit);
+          setFormData({ // 此处开始修改
+            ...styleToEdit,
+            guiConfig: styleToEdit.guiConfig || {}
+          }); // 此处完成修改
       } else {
           const defaultTmpl = DEFAULT_STYLE_UNITS.find(u => u.id === 'default_numeric');
           setFormData({ 
               name: '', 
               dataType: 'numeric', 
               css: defaultTmpl?.css || '', 
-              html: defaultTmpl?.html || '' 
+              html: defaultTmpl?.html || '',
+              guiConfig: {} // 此处添加1行
           });
       }
       
-      if (initialPreviewKey) { // 此处开始添加6行
+      if (initialPreviewKey) { 
         setPreviewKey(initialPreviewKey);
       } else if (!styleToEdit) { // Only clear if creating a new style without a specific request
         setPreviewKey('');
       }
 
     }
-  }, [isOpen, styleToEdit, initialPreviewKey]); // 此处修改1行
+  }, [isOpen, styleToEdit, initialPreviewKey]); 
   
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  const combinedCss = useMemo(() => { // 此处开始添加4行
+    const guiCss = generateCssFromGuiConfig(formData.guiConfig);
+    return `${guiCss}\n\n${formData.css || ''}`;
+  }, [formData.guiConfig, formData.css]);
 
   const handleChange = (field: keyof StyleDefinition, value: any) => {
     setFormData(prev => {
@@ -233,6 +245,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
              if (defaultTmpl) {
                  newData.css = defaultTmpl.css;
                  newData.html = defaultTmpl.html;
+                 newData.guiConfig = {}; // 清空GUI配置
              }
         }
         return newData;
@@ -240,8 +253,8 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   };
 
   const applyTemplate = (tmpl: { css: string, html?: string }) => {
-      setFormData(prev => ({ ...prev, css: tmpl.css, html: tmpl.html || '' }));
-      toast.info("已应用模板");
+      setFormData(prev => ({ ...prev, css: tmpl.css, html: tmpl.html || '', guiConfig: {} })); // 此处修改1行
+      toast.info("已应用模板 (GUI配置已重置)");
   };
 
   const handleSave = () => {
@@ -249,16 +262,19 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
       toast.error("样式名称不能为空");
       return;
     }
-    onSave(formData as StyleDefinition);
+    onSave({ // 此处开始修改
+        ...formData,
+        id: formData.id || uuidv4(),
+    } as StyleDefinition); // 此处完成修改
     onClose();
   };
 
-  const handleCopy = (text: string) => { // 此处开始添加4行
+  const handleCopy = (text: string) => { 
     navigator.clipboard.writeText(text);
     toast.success(`已复制: ${text}`);
   };
 
-  const availablePlaceholders = useMemo(() => { // 此处开始添加31行
+  const availablePlaceholders = useMemo(() => { 
     if (!previewKey) return [];
     const definition = allDefinitions.find(d => d.key === previewKey);
     if (!definition) return [];
@@ -285,7 +301,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
             break;
     }
     
-    return [...new Set(placeholders)].sort();
+    return [...new Set(placeholders)].sort((a,b) => a.localeCompare(b));
   }, [previewKey, allDefinitions]);
 
   if (!isOpen) return null;
@@ -377,7 +393,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         />
                     </div>
 
-                    {availablePlaceholders.length > 0 && ( // 此处开始添加12行
+                    {availablePlaceholders.length > 0 && ( 
                         <div className="style-editor__placeholder-helper animate-fade-in">
                             <label className="style-editor__label">可用占位符</label>
                             <div className="style-editor__placeholder-tags">
@@ -390,8 +406,26 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         </div>
                     )}
                     
+                    {/* Visual GUI Controls Section */}
+                    <div className="style-editor__docs-container">
+                        <button onClick={() => setShowGui(!showGui)} className="style-editor__docs-toggle">
+                            <Brush size={14} />
+                            <span>可视化配置 (GUI)</span>
+                            <ChevronRight size={16} className={`icon-selector__arrow ${showGui ? 'open' : ''}`} />
+                        </button>
+                        {showGui && formData.dataType !== 'theme' && (
+                            <div className="animate-fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
+                                <StyleGuiControls 
+                                    guiConfig={formData.guiConfig}
+                                    onUpdate={(newConfig) => handleChange('guiConfig', newConfig)}
+                                    dataType={formData.dataType!}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    
                     <div className="style-editor__form-group">
-                        <label className="style-editor__label"><Code size={14}/> CSS 代码</label>
+                        <label className="style-editor__label"><Code size={14}/> 手动 CSS 代码</label>
                         <textarea
                             className="style-editor__textarea style-editor__textarea--css"
                             placeholder=".numeric-renderer__progress-fill { background: red; }"
@@ -444,7 +478,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                            </div>
                        ) : (
                            <RealtimePreview 
-                               style={formData} 
+                               style={{ ...formData, css: combinedCss }} // 此处修改1行
                                previewDefinition={allDefinitions.find(d => d.key === previewKey) || null} 
                            />
                        )}
