@@ -14,6 +14,7 @@ interface StyledItemRendererProps {
   liveHtmlOverride?: string; // For StyleEditor's live HTML preview
   styleOverride?: StyleDefinition | null;
   onInteract?: (item: StatusBarItem, value?: string) => void;
+  activeSelector?: string | null; // v9.5: For highlighting
 }
 
 // --- Data Context Builder: Universal & Decoupled ---
@@ -26,7 +27,7 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
     
     // --- Pre-render UI Elements ---
     const IconComponent = definition.icon && (LucideIcons as any)[definition.icon] ? (LucideIcons as any)[definition.icon] : HelpCircle;
-    context.icon = renderToStaticMarkup(<IconComponent size={14} className="status-item-row__icon" />);
+    context.icon = renderToStaticMarkup(<IconComponent size={14} className="status-item-row__icon" data-target-selector=".status-item-row__icon" />);
     
     context.lock_icon = item.user_modified 
         ? renderToStaticMarkup(<span title="用户已锁定，AI无法修改" className="status-item-row__lock-icon"><Lock size={10} /></span>) 
@@ -34,7 +35,7 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         
     context.label = definition.name || item.key;
     context.label_container = `
-        <div class="status-item-row__label">
+        <div class="status-item-row__label" data-target-selector=".status-item-row__label">
             ${context.icon}
             <span>${context.label}</span>
             ${context.lock_icon}
@@ -73,8 +74,6 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         const current = parseFloat(currentStr);
         let max = maxStr ? parseFloat(maxStr) : 0;
         
-        // Smart Max Inference: If max is missing but current is in 0-100 range and valid, assume max=100
-        // This allows plain text "85" to be rendered as a progress bar.
         if (!max && !isNaN(current) && current > 0 && current <= 100) {
              max = 100; 
         }
@@ -83,15 +82,13 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         const percentage = hasMax ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
 
         if (!isNaN(current)) {
-            // Overwrite 'value' to be just the current number if it's numeric-like, 
-            // so text renderers show "50" instead of "50 100"
             context.value = currentStr; 
-
             context.current = current;
             context.max = max;
             context.percentage = percentage;
             
-            context.max_html = hasMax ? `<span class="numeric-renderer__value-max">/${max}</span>` : '';
+            context.value_html = `<span class="numeric-renderer__value" data-target-selector=".numeric-renderer__value">${currentStr}</span>`;
+            context.max_html = hasMax ? `<span class="numeric-renderer__value-max" data-target-selector=".numeric-renderer__value-max">/${max}</span>` : '';
             
             let barColor = 'var(--color-primary)';
             if (hasMax) {
@@ -102,13 +99,14 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
             context.barColor = barColor;
             
             context.progress_bar_html = hasMax 
-                ? `<div class="numeric-renderer__progress-container"><div class="numeric-renderer__progress-fill" style="width: ${percentage}%; --dynamic-bar-color: ${barColor};"></div></div>`
+                ? `<div class="numeric-renderer__progress-container" data-target-selector=".numeric-renderer__progress-container"><div class="numeric-renderer__progress-fill" data-target-selector=".numeric-renderer__progress-fill" style="width: ${percentage}%; --dynamic-bar-color: ${barColor};"></div></div>`
                 : '';
         } else {
             // Not a number, provide safe defaults
             context.current = 0;
             context.percentage = 0;
             context.progress_bar_html = '';
+            context.value_html = `<span class="numeric-renderer__value" data-target-selector=".numeric-renderer__value">${currentStr}</span>`;
         }
         
         // Change Indicators
@@ -118,7 +116,7 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
              const changeColor = isPositive ? 'var(--color-success)' : 'var(--color-danger)';
              const changeBg = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
              const reasonStr = context.reason || strValues[3] || '';
-             context.change_indicator_html = `<span class="numeric-renderer__change-indicator" style="color: ${changeColor}; background: ${changeBg};" title="${reasonStr ? `原因: ${reasonStr}` : '变化量'}">${changeStr}</span>`;
+             context.change_indicator_html = `<span class="numeric-renderer__change-indicator" data-target-selector=".numeric-renderer__change-indicator" style="color: ${changeColor}; background: ${changeBg};" title="${reasonStr ? `原因: ${reasonStr}` : '变化量'}">${changeStr}</span>`;
         } else {
             context.change_indicator_html = '';
         }
@@ -127,8 +125,8 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         const descStr = context.description || strValues[4] || '';
         let subRowContent = '';
         if (reasonStr) subRowContent += `<span class="numeric-renderer__reason">(${reasonStr})</span>`;
-        if (descStr) subRowContent += `<span class="numeric-renderer__description">${descStr}</span>`;
-        context.sub_row_html = subRowContent ? `<div class="numeric-renderer__sub-row">${subRowContent}</div>` : '';
+        if (descStr) subRowContent += `<span class="numeric-renderer__description" data-target-selector=".numeric-renderer__description">${descStr}</span>`;
+        context.sub_row_html = subRowContent ? `<div class="numeric-renderer__sub-row" data-target-selector=".numeric-renderer__sub-row">${subRowContent}</div>` : '';
     }
 
     // --- 4. Array Parsing (Treat as tags) ---
@@ -137,7 +135,7 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         const tags = strValues.filter(v => v && v.trim() !== '');
         
         context.tags_html = tags.length > 0 
-            ? tags.map(tag => `<span class="array-renderer__tag-chip" data-value="${tag}">${tag}</span>`).join('')
+            ? tags.map(tag => `<span class="array-renderer__tag-chip" data-value="${tag}" data-target-selector=".array-renderer__tag-chip">${tag}</span>`).join('')
             : `<span class="array-renderer__empty-text">空</span>`;
     }
 
@@ -145,11 +143,11 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
     if (isObjectList) {
         const objects = values as Array<Record<string, string>>;
         const cardTemplate = `
-          <div class="object-card">
+          <div class="object-card" data-target-selector=".object-card">
             ${(definition.structure?.parts || []).map(partDef => `
-              <div class="object-card__property">
-                <span class="object-card__label">${partDef.label || partDef.key}</span>
-                <span class="object-card__value">{{${partDef.key}}}</span>
+              <div class="object-card__property" data-target-selector=".object-card__property">
+                <span class="object-card__label" data-target-selector=".object-card__label">${partDef.label || partDef.key}</span>
+                <span class="object-card__value" data-target-selector=".object-card__value">{{${partDef.key}}}</span>
               </div>
             `).join('')}
           </div>
@@ -183,7 +181,7 @@ const renderTemplate = (template: string, context: Record<string, any>): string 
 
 
 const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({ 
-  item, definition, liveCssOverride, liveHtmlOverride, styleOverride, onInteract
+  item, definition, liveCssOverride, liveHtmlOverride, styleOverride, onInteract, activeSelector
 }) => {
   const uniqueId = `styled-item-${item._uuid}`;
 
@@ -280,6 +278,20 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
         dangerouslySetInnerHTML={{ __html: finalHtml }}
       />
       {finalCss && <style>{finalCss}</style>}
+      {activeSelector && (
+          <style>{`
+            @keyframes highlight-glow {
+              0% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.5), 0 0 0 2px rgba(139, 92, 246, 0.5); }
+              100% { box-shadow: 0 0 16px rgba(139, 92, 246, 0.8), 0 0 0 2px rgba(139, 92, 246, 0.5); }
+            }
+            #${uniqueId} [data-target-selector="${activeSelector}"] {
+                outline: 2px solid var(--color-accent);
+                outline-offset: 2px;
+                animation: highlight-glow 0.5s alternate infinite;
+                border-radius: 4px; /* Ensure outline looks good on elements without radius */
+            }
+        `}</style>
+      )}
     </div>
   );
 };

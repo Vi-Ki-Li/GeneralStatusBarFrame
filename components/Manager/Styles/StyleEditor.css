@@ -1,4 +1,3 @@
-/* ... existing styles ... */
 /* --- Wrapper & Overlay --- */
 .style-editor-wrapper {
   position: fixed; /* Changed from absolute to be relative to window */
@@ -161,7 +160,7 @@
 }
 
 
-/* --- Placeholder Helper --- */ /* 此处开始添加28行 */
+/* --- Placeholder Helper --- */
 .style-editor__placeholder-helper {
   margin-top: -8px; /* Reduce gap slightly */
 }
@@ -279,6 +278,18 @@
   width: 100%;
   max-width: 320px;
 }
+
+/* v9.5: Interactive Preview Styles */
+.style-editor__preview-wrapper.interactive-mode [data-target-selector] {
+    cursor: pointer;
+    transition: outline 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 2px;
+}
+.style-editor__preview-wrapper.interactive-mode [data-target-selector]:hover {
+    outline: 2px dashed var(--color-primary);
+    outline-offset: 2px;
+}
+
 
 .style-editor__preview-placeholder {
   color: var(--text-tertiary);

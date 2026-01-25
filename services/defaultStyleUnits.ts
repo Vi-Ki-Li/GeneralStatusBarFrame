@@ -12,13 +12,13 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'numeric',
         isDefault: true,
         html: `
-<div class="status-item-row__label">
+<div class="status-item-row__label" data-target-selector=".status-item-row__label">
   {{icon}} <span>{{name}}</span> {{lock_icon}}
 </div>
 <div class="status-item-row__content">
     {{progress_bar_html}}
-    <div class="numeric-renderer__value-group">
-      <span class="numeric-renderer__value">{{current}}</span>
+    <div class="numeric-renderer__value-group" data-target-selector=".numeric-renderer__value-group">
+      {{value_html}}
       {{max_html}}
       {{change_indicator_html}}
     </div>
@@ -79,11 +79,11 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'array',
         isDefault: true,
         html: `
-<div class="status-item-row__label">
+<div class="status-item-row__label" data-target-selector=".status-item-row__label">
   {{icon}} <span>{{name}}</span> {{lock_icon}}
 </div>
 <div class="status-item-row__content">
-    <div class="array-renderer__tags-container">
+    <div class="array-renderer__tags-container" data-target-selector=".array-renderer__tags-container">
       {{tags_html}}
     </div>
 </div>`,
@@ -121,11 +121,11 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'text',
         isDefault: true,
         html: `
-<div class="status-item-row__label">
+<div class="status-item-row__label" data-target-selector=".status-item-row__label">
   {{icon}} <span>{{name}}</span> {{lock_icon}}
 </div>
 <div class="status-item-row__content">
-    <div class="text-renderer__value">{{value}}</div>
+    <div class="text-renderer__value" data-target-selector=".text-renderer__value">{{value}}</div>
 </div>`,
         css: `
 .status-item-row--text-inline .status-item-row__content {
@@ -165,11 +165,11 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'list-of-objects',
         isDefault: true,
         html: `
-<div class="status-item-row__label">
+<div class="status-item-row__label" data-target-selector=".status-item-row__label">
   {{icon}} <span>{{name}}</span> {{lock_icon}}
 </div>
 <div class="status-item-row__content">
-    <div class="object-list-renderer__card-container">{{cards_html}}</div>
+    <div class="object-list-renderer__card-container" data-target-selector=".object-list-renderer__card-container">{{cards_html}}</div>
 </div>`,
         css: `
 .status-item-row--list-of-objects {
