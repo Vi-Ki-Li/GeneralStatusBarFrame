@@ -9,7 +9,6 @@ import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import './StyleEditor.css';
 
 // 简易模板库 (Templates)
-// 修复：确保 HTML 中的 class 与 CSS 选择器严格匹配
 const TEMPLATES: Record<string, { label: string, css: string, html?: string }[]> = {
   numeric: [
     { 
@@ -19,7 +18,6 @@ const TEMPLATES: Record<string, { label: string, css: string, html?: string }[]>
     },
     { 
       label: '纯净 (极简)', 
-      // 这里的 HTML 默认使用了 {{progress_bar_html}}，它内部已经包含了 .numeric-renderer__progress-container 等类名
       css: `.numeric-renderer__progress-container { height: 8px; background: #eee; border-radius: 4px; }
 .numeric-renderer__progress-fill { background: #666; border-radius: 4px; }`,
       html: `<div style="width: 100%;">{{progress_bar_html}}</div>`
@@ -43,13 +41,11 @@ const TEMPLATES: Record<string, { label: string, css: string, html?: string }[]>
     { 
       label: '纯净 (无样式)', 
       css: `.text-renderer__value { color: inherit; font-size: 1rem; }`, 
-      // 修复：显式添加 class 以匹配 CSS
       html: `<div class="text-renderer__value">{{value}}</div>`
     },
     { 
         label: '警告红字', 
         css: `.text-renderer__value { color: red; font-weight: bold; border: 2px solid red; padding: 4px; text-align: center; }`, 
-        // 修复：显式添加 class 以匹配 CSS
         html: `<div class="text-renderer__value">{{value}}</div>`
     }
   ],
@@ -62,7 +58,6 @@ const TEMPLATES: Record<string, { label: string, css: string, html?: string }[]>
       {
           label: '纯净 (列表)',
           css: `.array-renderer__tag-chip { display: inline-block; margin-right: 4px; border: 1px solid #ccc; padding: 2px; }`,
-          // {{tags_html}} 内部生成 span 时会自动带上 array-renderer__tag-chip 类名
           html: `<div>{{tags_html}}</div>`
       }
   ],
@@ -82,11 +77,58 @@ const TEMPLATES: Record<string, { label: string, css: string, html?: string }[]>
 };
 
 // 独立的、真实的实时预览组件
-const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style }) => {
+const RealtimePreview: React.FC<{ style: Partial<StyleDefinition>; previewDefinition?: ItemDefinition | null }> = ({ style, previewDefinition }) => {
     // 创建稳定的模拟数据
     const { mockItem, mockDefinition } = useMemo(() => {
+        // 策略 A: 用户指定了特定的预览定义 (Preview Source)
+        // 此时，我们必须生成符合该定义结构的数据，以便 {{placeholder}} 能正确工作
+        if (previewDefinition) {
+             const item: StatusBarItem = {
+                key: previewDefinition.key,
+                _uuid: `mock_${uuidv4()}`,
+                values: [],
+                category: 'mock_cat',
+                source_id: 0,
+                user_modified: false
+            };
+            
+            // 根据定义结构智能生成 Mock 数据
+            if (previewDefinition.type === 'list-of-objects' && previewDefinition.structure?.parts) {
+                const mockObj1: Record<string, string> = {};
+                const mockObj2: Record<string, string> = {};
+                previewDefinition.structure.parts.forEach((p, i) => {
+                    mockObj1[p.key] = i === 0 ? '示例 A' : (p.key === 'level' ? '5' : `示例${p.label || p.key}`);
+                    mockObj2[p.key] = i === 0 ? '示例 B' : (p.key === 'level' ? '2' : `示例${p.label || p.key}`);
+                });
+                item.values = [mockObj1, mockObj2];
+            } else if (previewDefinition.type === 'numeric') {
+                 // 智能映射：尝试填入合理的数值
+                 const parts = previewDefinition.structure?.parts || [];
+                 const values = new Array(parts.length).fill('');
+                 
+                 parts.forEach((p, i) => {
+                     const k = p.key.toLowerCase();
+                     if (k === 'current' || k === 'value') values[i] = '75';
+                     else if (k === 'max') values[i] = '100';
+                     else if (k === 'change') values[i] = '-5';
+                     else if (k === 'reason') values[i] = '受击';
+                     else if (k === 'description') values[i] = '状态一般';
+                     else values[i] = `[${p.label || p.key}]`;
+                 });
+                 if (parts.length === 0) item.values = ['75', '100']; // 默认 fallback
+                 else item.values = values;
+            } else if (previewDefinition.type === 'array') {
+                item.values = ['示例标签 1', '示例标签 2', '示例标签 3'];
+            } else {
+                item.values = ['这是一段基于您所选定义的预览文本。'];
+            }
+
+            return { mockItem: item, mockDefinition: previewDefinition };
+        }
+
+        // 策略 B: 未指定预览源，使用当前 Style 类型生成通用 Mock 数据
         const item: StatusBarItem = {
-            key: 'mock_key',
+            key: 'Preview_Item',
             _uuid: `mock_${uuidv4()}`,
             values: [],
             category: 'mock_cat',
@@ -95,14 +137,14 @@ const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style 
         };
 
         const definition: ItemDefinition = {
-            key: 'mock_key',
-            type: 'text', // default
+            key: 'Preview_Item',
+            type: (style.dataType && style.dataType !== 'theme') ? style.dataType : 'text',
             name: '预览项目'
         };
 
         switch (style.dataType) {
             case 'numeric':
-                item.values = ['75', '100'];
+                item.values = ['75', '100', '-5', '测试', '状态描述'];
                 definition.type = 'numeric';
                 break;
             case 'array':
@@ -117,12 +159,12 @@ const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style 
                 };
                 break;
             case 'text':
-                item.values = ['这是一段示例文本。'];
+                item.values = ['这是一段通用预览文本。'];
                 definition.type = 'text';
                 break;
         }
         return { mockItem: item, mockDefinition: definition };
-    }, [style.dataType]);
+    }, [style.dataType, previewDefinition]);
 
     return (
         <div className="style-editor__preview-wrapper">
@@ -147,6 +189,7 @@ interface StyleEditorProps {
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions }) => {
   const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
+  const [previewKey, setPreviewKey] = useState<string>(''); // 用户选定的预览数据源
   const [showDocs, setShowDocs] = useState(false);
   const toast = useToast();
 
@@ -154,8 +197,9 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     if (isOpen) {
       if (styleToEdit) {
           setFormData(styleToEdit);
+          // 不重置 previewKey，保留用户的选择习惯
       } else {
-          // New style: Pre-fill with default numeric template for better UX
+          // 新建样式：预填默认值
           const defaultTmpl = DEFAULT_STYLE_UNITS.find(u => u.id === 'default_numeric');
           setFormData({ 
               name: '', 
@@ -163,6 +207,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
               css: defaultTmpl?.css || '', 
               html: defaultTmpl?.html || '' 
           });
+          // 新建时也不强制重置 previewKey
       }
     }
   }, [isOpen, styleToEdit]);
@@ -177,7 +222,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     setFormData(prev => {
         const newData = { ...prev, [field]: value };
         
-        // Smart Template Switching
+        // 智能模板切换：当改变类型时，加载该类型的默认模板，但不清空 previewKey
         if (field === 'dataType') {
              const defaultTmpl = DEFAULT_STYLE_UNITS.find(u => u.dataType === value);
              if (defaultTmpl) {
@@ -245,7 +290,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                                 <option value="theme">主题 (Theme)</option>
                             </select>
                             
-                            {/* Template Selector Dropdown */}
+                            {/* 模板选择器 */}
                             {currentTemplates && currentTemplates.length > 0 && (
                                 <div className="style-editor__template-dropdown">
                                     <button className="style-editor__template-btn" title="加载模板">
@@ -262,6 +307,30 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                             )}
                         </div>
                     </div>
+
+                    {/* 预览数据源选择器 (已解耦，不过滤) */}
+                    {formData.dataType !== 'theme' && (
+                        <div className="style-editor__form-group">
+                            <label className="style-editor__label">
+                                预览数据源 (Preview Data)
+                                <span style={{fontSize: '0.75em', marginLeft: 'auto', color: 'var(--text-tertiary)', fontWeight: 'normal'}}>
+                                    (可选任意定义进行测试)
+                                </span>
+                            </label>
+                            <select
+                                className="style-editor__input"
+                                value={previewKey}
+                                onChange={(e) => setPreviewKey(e.target.value)}
+                            >
+                                <option value="">通用默认数据 (Generic Mock)</option>
+                                {allDefinitions.map(def => (
+                                    <option key={def.key} value={def.key}>
+                                        {def.name || def.key} ({def.type})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="style-editor__form-group">
                         <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选)</label>
@@ -326,7 +395,10 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                                </p>
                            </div>
                        ) : (
-                           <RealtimePreview style={formData} />
+                           <RealtimePreview 
+                               style={formData} 
+                               previewDefinition={allDefinitions.find(d => d.key === previewKey) || null} 
+                           />
                        )}
                     </div>
                 </div>
