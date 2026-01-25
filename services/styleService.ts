@@ -467,6 +467,50 @@ class StyleService {
         this.saveStyleDefinitions(definitions);
     }
 
+    // --- Import / Export ---
+    exportStyles(): string {
+        const definitions = this.getStyleDefinitions();
+        return JSON.stringify(definitions, null, 2);
+    }
+
+    importStyles(jsonString: string): { success: number, updated: number, total: number, errors: number } {
+        const result = { success: 0, updated: 0, total: 0, errors: 0 };
+        try {
+            const imported = JSON.parse(jsonString);
+            if (!Array.isArray(imported)) {
+                throw new Error("Invalid format: expected array");
+            }
+            
+            result.total = imported.length;
+            const currentStyles = this.getStyleDefinitions();
+            
+            imported.forEach((style: any) => {
+                if (!style.name || !style.dataType || !style.css) {
+                    result.errors++;
+                    return;
+                }
+                
+                // Ensure valid ID
+                if (!style.id) style.id = uuidv4();
+
+                const existingIndex = currentStyles.findIndex(s => s.id === style.id);
+                if (existingIndex > -1) {
+                    currentStyles[existingIndex] = style;
+                    result.updated++;
+                } else {
+                    currentStyles.push(style);
+                    result.success++;
+                }
+            });
+            
+            this.saveStyleDefinitions(currentStyles);
+        } catch (e) {
+            console.error("[StyleService] Import failed:", e);
+            result.errors = -1; // Critical error
+        }
+        return result;
+    }
+
     // --- Theme Management ---
     getActiveThemeId(): string | null {
         try {

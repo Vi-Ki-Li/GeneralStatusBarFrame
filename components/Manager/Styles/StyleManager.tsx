@@ -1,13 +1,11 @@
-
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits'; 
 import { useToast } from '../../Toast/ToastContext';
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent, DragMoveEvent, DragOverlay } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw, Copy, Eye } from 'lucide-react'; 
+import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw, Copy, Eye, Download, Upload } from 'lucide-react'; 
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
 import _ from 'lodash';
@@ -59,7 +57,7 @@ const DraggableStyleUnit: React.FC<{
       </div>
     </div>
   );
-}; // 此处完成修改
+};
 
 interface StyleManagerProps {
   isMobile: boolean;
@@ -80,6 +78,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     const [previewingStyle, setPreviewingStyle] = useState<StyleDefinition | null>(null);
     const [draggingStyle, setDraggingStyle] = useState<StyleDefinition | null>(null);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
     useEffect(() => {
@@ -150,7 +149,6 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         }
     };
 
-    // 新增：处理应用主题的逻辑
     const handleApplyTheme = (themeId: string) => {
         if (activeThemeId === themeId) {
             styleService.clearActiveTheme();
@@ -161,6 +159,53 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
             setActiveThemeId(themeId);
             toast.success("主题已应用");
         }
+    };
+
+    // --- Import / Export Handlers ---
+    const handleExport = () => {
+        try {
+            const json = styleService.exportStyles();
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tavern_styles_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success("导出成功");
+        } catch (e) {
+            toast.error("导出失败");
+        }
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target?.result as string;
+            if (content) {
+                const result = styleService.importStyles(content);
+                if (result.errors === -1) {
+                    toast.error("导入失败: 格式错误");
+                } else {
+                    loadUserStyles();
+                    toast.success(`导入完成: 新增 ${result.success}, 更新 ${result.updated}`, {
+                        description: result.errors > 0 ? `跳过 ${result.errors} 个无效项` : undefined
+                    });
+                }
+            }
+        };
+        reader.readAsText(file);
+        // Reset input
+        e.target.value = '';
     };
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -191,7 +236,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         let isCompatible = false;
         if (style.dataType === 'numeric' && definition.type === 'numeric') isCompatible = true;
         else if (style.dataType === 'array' && definition.type === 'array') isCompatible = true;
-        else if (style.dataType === 'list-of-objects' && (definition.type === 'array' || definition.type === 'list-of-objects')) isCompatible = true; // 兼容
+        else if (style.dataType === 'list-of-objects' && (definition.type === 'array' || definition.type === 'list-of-objects')) isCompatible = true; 
         else if (style.dataType === 'text' && definition.type === 'text') isCompatible = true;
     
         if (!isCompatible) {
@@ -287,9 +332,26 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
                         ))}
                     </div>
                     <div className="style-atelier__sidebar-footer">
-                        <button onClick={() => { setEditingStyle(null); setIsEditorOpen(true); }} className="style-atelier__add-btn">
-                            <Plus size={16}/> 新建样式
-                        </button>
+                        <div className="style-atelier__footer-row">
+                            <button onClick={() => { setEditingStyle(null); setIsEditorOpen(true); }} className="style-atelier__add-btn">
+                                <Plus size={16}/> 新建
+                            </button>
+                            <div className="style-atelier__io-actions">
+                                <button onClick={handleImportClick} className="style-atelier__io-btn" title="导入样式">
+                                    <Upload size={16}/>
+                                </button>
+                                <button onClick={handleExport} className="style-atelier__io-btn" title="导出样式">
+                                    <Download size={16}/>
+                                </button>
+                            </div>
+                        </div>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            style={{ display: 'none' }} 
+                            accept=".json" 
+                            onChange={handleFileChange} 
+                        />
                     </div>
                 </div>
 

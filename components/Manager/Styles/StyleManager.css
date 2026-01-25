@@ -1,3 +1,4 @@
+
 .style-atelier {
   display: flex;
   height: 100%;
@@ -202,8 +203,14 @@
   border-top: 1px solid var(--chip-border);
 }
 
+.style-atelier__footer-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
 .style-atelier__add-btn {
-  width: 100%;
+  flex: 1;
   padding: var(--spacing-sm);
   border: 1px dashed var(--chip-border);
   border-radius: var(--radius-md);
@@ -215,10 +222,34 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition-fast);
+  font-size: 0.9rem;
 }
 .style-atelier__add-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.style-atelier__io-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.style-atelier__io-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.style-atelier__io-btn:hover {
+  background: var(--chip-bg);
+  color: var(--text-primary);
 }
 
 /* --- Main Preview Area Styles --- */
