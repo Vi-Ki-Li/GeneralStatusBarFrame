@@ -95,6 +95,34 @@ textarea.form-input { min-height: 100px; line-height: 1.5; resize: vertical; }
   border: 1px dashed var(--chip-border);
 }
 
+/* --- Style Select Group --- */ /* 此处开始添加22行 */
+.def-drawer__style-select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.def-drawer__style-select-group .form-input {
+  flex: 1;
+}
+.def-drawer__style-link-btn {
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+.def-drawer__style-link-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .icon-selector__display {
   padding: 10px; display: flex; align-items: center; justify-content: space-between;
   cursor: pointer; border: 1px solid var(--chip-border);

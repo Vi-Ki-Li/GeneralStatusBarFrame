@@ -88,9 +88,11 @@ interface StyleManagerProps {
   isMobile: boolean;
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
+  styleEditRequest: string | null; // 此处添加2行
+  onStyleEditRequestProcessed: () => void;
 }
 
-const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate }) => {
+const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, styleEditRequest, onStyleEditRequestProcessed }) => { // 此处修改1行
     const [userStyles, setUserStyles] = useState<StyleDefinition[]>([]); 
     const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -102,6 +104,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     
     const [previewingStyle, setPreviewingStyle] = useState<StyleDefinition | null>(null);
     const [draggingStyle, setDraggingStyle] = useState<StyleDefinition | null>(null);
+    const [initialPreviewKeyForEditor, setInitialPreviewKeyForEditor] = useState<string | undefined>(undefined); // 此处添加1行
 
     // --- Selection Mode State ---
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -126,6 +129,28 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         const stagedDefs = stagedData.item_definitions;
         setHasChanges(!_.isEqual(originalDefs, stagedDefs));
     }, [stagedData, data]);
+
+    useEffect(() => { // 此处开始添加22行
+        if (styleEditRequest) {
+          const itemKey = styleEditRequest;
+          const definition = data.item_definitions[itemKey];
+          
+          if (definition) {
+            const styleId = definition.styleId;
+            const styleToEdit = styleId ? styleService.getStyleDefinition(styleId) : null;
+            
+            setEditingStyle(styleToEdit);
+            setInitialPreviewKeyForEditor(itemKey); 
+            setIsEditorOpen(true);
+          } else {
+            setEditingStyle(null);
+            setInitialPreviewKeyForEditor(itemKey);
+            setIsEditorOpen(true);
+          }
+          
+          onStyleEditRequestProcessed(); 
+        }
+      }, [styleEditRequest, data.item_definitions, onStyleEditRequestProcessed]);
 
     const loadUserStyles = () => { 
         setUserStyles(styleService.getStyleDefinitions()); 
@@ -549,7 +574,17 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
                 )}
 
 
-                <StyleEditor isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} onSave={handleSaveStyle} styleToEdit={editingStyle} allDefinitions={stagedData ? Object.values(stagedData.item_definitions) : []} />
+                <StyleEditor 
+                    isOpen={isEditorOpen} 
+                    onClose={() => {
+                        setIsEditorOpen(false);
+                        setInitialPreviewKeyForEditor(undefined);
+                    }} 
+                    onSave={handleSaveStyle} 
+                    styleToEdit={editingStyle} 
+                    allDefinitions={stagedData ? Object.values(stagedData.item_definitions) : []}
+                    initialPreviewKey={initialPreviewKeyForEditor}
+                />
             </div>
             
             <DragOverlay modifiers={[snapCenterToCursor]} zIndex={20000}>

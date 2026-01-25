@@ -19,9 +19,10 @@ interface DataCenterProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
   isMobile: boolean;
+  onGoToStyleEditor: (itemKey: string) => void;
 }
 
-const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => {
+const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoToStyleEditor }) => {
   const [localData, setLocalData] = useState<StatusBarData>(data);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [selectedId, setSelectedId] = useState<string>('SHARED');
@@ -330,6 +331,8 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
             onSave={handleSaveDefinition}
             onInject={handleInjectDefinition}
             existingKeys={Object.keys(localData.item_definitions)}
+            // FIX: Pass the required onGoToStyleEditor prop.
+            onGoToStyleEditor={onGoToStyleEditor}
         />
         <CategoryDrawer 
             isOpen={isCatDrawerOpen}

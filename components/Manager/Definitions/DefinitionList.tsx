@@ -11,9 +11,10 @@ import './DefinitionList.css';
 interface DefinitionListProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
+  onGoToStyleEditor: (itemKey: string) => void; // 此处添加1行
 }
 
-const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
+const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToStyleEditor }) => { // 此处修改1行
   const toast = useToast();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories');
@@ -265,7 +266,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
           </div>
       </div>
 
-      <DefinitionDrawer isOpen={isItemDrawerOpen} onClose={() => setIsItemDrawerOpen(false)} definition={editingItemDef} categories={data.categories} onSave={handleSaveItemDef} onInject={handleInject} existingKeys={itemDefinitions.map(d => d.key)} preselectedCategory={selectedCategoryKey} />
+      <DefinitionDrawer isOpen={isItemDrawerOpen} onClose={() => setIsItemDrawerOpen(false)} definition={editingItemDef} categories={data.categories} onSave={handleSaveItemDef} onInject={handleInject} existingKeys={itemDefinitions.map(d => d.key)} preselectedCategory={selectedCategoryKey} onGoToStyleEditor={onGoToStyleEditor} />
       <CategoryDrawer isOpen={isCatDrawerOpen} onClose={() => setIsCatDrawerOpen(false)} category={editingCatDef} onSave={handleSaveCategory} existingKeys={categories.map(d => d.key)} />
     </div>
   );

@@ -4,7 +4,7 @@ import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
 import { styleService } from '../../../services/styleService';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits'; 
-import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
+import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud, Paintbrush } from 'lucide-react'; // 此处修改1行
 import * as LucideIcons from 'lucide-react';
 import { generateLorebookContent } from '../../../utils/lorebookInjector';
 import './DefinitionDrawer.css';
@@ -18,6 +18,7 @@ interface DefinitionDrawerProps {
   onInject: (def: ItemDefinition) => Promise<any>;
   existingKeys: string[];
   preselectedCategory?: string | null;
+  onGoToStyleEditor: (itemKey: string) => void; // 此处添加1行
 }
 
 interface StructurePart {
@@ -26,8 +27,8 @@ interface StructurePart {
 }
 
 const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({ 
-  definition, categories, isOpen, onClose, onSave, onInject, existingKeys, preselectedCategory
-}) => {
+  definition, categories, isOpen, onClose, onSave, onInject, existingKeys, preselectedCategory, onGoToStyleEditor
+}) => { // 此处修改1行
   const toast = useToast();
   
   const [formData, setFormData] = useState<ItemDefinition>({
@@ -125,6 +126,15 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
         onSave(dataToSave);
         await onInject(dataToSave);
         onClose();
+    }
+  };
+
+  const handleGoToStyleEditor = () => { // 此处开始添加8行
+    if (formData.key) {
+      onGoToStyleEditor(formData.key);
+      onClose();
+    } else {
+      toast.info("请先保存定义以创建 Key");
     }
   };
 
@@ -276,21 +286,26 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
             
             <div className="form-group">
                 <label className="form-label">渲染样式 (可选覆盖)</label>
-                <select 
-                    className="form-input" 
-                    value={formData.styleId || ''}
-                    onChange={e => {
-                      const selectedValue = e.target.value;
-                      handleChange('styleId', selectedValue === '' ? undefined : selectedValue);
-                    }}
-                >
-                    <option value="">默认 (使用该类型的默认样式)</option>
-                    {availableStyles.map(style => (
-                        <option key={style.id} value={style.id}>
-                            {style.name} ({style.dataType})
-                        </option>
-                    ))}
-                </select>
+                <div className="def-drawer__style-select-group">
+                    <select 
+                        className="form-input" 
+                        value={formData.styleId || ''}
+                        onChange={e => {
+                          const selectedValue = e.target.value;
+                          handleChange('styleId', selectedValue === '' ? undefined : selectedValue);
+                        }}
+                    >
+                        <option value="">默认 (使用该类型的默认样式)</option>
+                        {availableStyles.map(style => (
+                            <option key={style.id} value={style.id}>
+                                {style.name} ({style.dataType})
+                            </option>
+                        ))}
+                    </select>
+                    <button onClick={handleGoToStyleEditor} className="def-drawer__style-link-btn" title="编辑/创建关联样式">
+                        <Paintbrush size={16} />
+                    </button>
+                </div>
             </div>
             
             {formData.type === 'list-of-objects' && ( 

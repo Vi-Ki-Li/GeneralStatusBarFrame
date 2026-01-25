@@ -27,6 +27,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
 }) => {
   const [activeModule, setActiveModule] = useState<ManagerModule>('DATA');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [styleEditRequest, setStyleEditRequest] = useState<string | null>(null); // 此处开始添加2行
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -34,14 +35,27 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => { // 此处开始添加5行
+    if (styleEditRequest) {
+      setActiveModule('STYLES');
+    }
+  }, [styleEditRequest]);
+
   const renderModuleContent = () => {
     switch (activeModule) {
       case 'DATA':
-        return <DataCenter data={data} onUpdate={onUpdate} isMobile={isMobile} />;
+        // FIX: Pass the onGoToStyleEditor prop to DataCenter.
+        return <DataCenter data={data} onUpdate={onUpdate} isMobile={isMobile} onGoToStyleEditor={setStyleEditRequest} />;
       case 'DEFINITIONS':
-        return <DefinitionList data={data} onUpdate={onUpdate} />;
+        return <DefinitionList data={data} onUpdate={onUpdate} onGoToStyleEditor={setStyleEditRequest} />; // 此处修改1行
       case 'STYLES':
-        return <StyleManager data={data} onUpdate={onUpdate} isMobile={isMobile} />; // 此处修改1行
+        return <StyleManager 
+          data={data} 
+          onUpdate={onUpdate} 
+          isMobile={isMobile}
+          styleEditRequest={styleEditRequest}
+          onStyleEditRequestProcessed={() => setStyleEditRequest(null)}
+        />; // 此处修改6行
       case 'LAYOUT':
         return <LayoutComposer data={data} onUpdate={onUpdate} />;
       case 'SYSTEM':

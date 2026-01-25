@@ -185,9 +185,10 @@ interface StyleEditorProps {
   styleToEdit: StyleDefinition | null;
   onSave: (style: StyleDefinition) => void;
   allDefinitions: ItemDefinition[];
+  initialPreviewKey?: string; // 此处添加1行
 }
 
-const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions }) => {
+const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit, onSave, allDefinitions, initialPreviewKey }) => { // 此处修改1行
   const [formData, setFormData] = useState<Partial<StyleDefinition>>({});
   const [previewKey, setPreviewKey] = useState<string>(''); // 用户选定的预览数据源
   const [showDocs, setShowDocs] = useState(false);
@@ -197,9 +198,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     if (isOpen) {
       if (styleToEdit) {
           setFormData(styleToEdit);
-          // 不重置 previewKey，保留用户的选择习惯
       } else {
-          // 新建样式：预填默认值
           const defaultTmpl = DEFAULT_STYLE_UNITS.find(u => u.id === 'default_numeric');
           setFormData({ 
               name: '', 
@@ -207,10 +206,16 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
               css: defaultTmpl?.css || '', 
               html: defaultTmpl?.html || '' 
           });
-          // 新建时也不强制重置 previewKey
       }
+      
+      if (initialPreviewKey) { // 此处开始添加6行
+        setPreviewKey(initialPreviewKey);
+      } else if (!styleToEdit) { // Only clear if creating a new style without a specific request
+        setPreviewKey('');
+      }
+
     }
-  }, [isOpen, styleToEdit]);
+  }, [isOpen, styleToEdit, initialPreviewKey]); // 此处修改1行
   
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
@@ -248,10 +253,40 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     onClose();
   };
 
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string) => { // 此处开始添加4行
     navigator.clipboard.writeText(text);
     toast.success(`已复制: ${text}`);
   };
+
+  const availablePlaceholders = useMemo(() => { // 此处开始添加31行
+    if (!previewKey) return [];
+    const definition = allDefinitions.find(d => d.key === previewKey);
+    if (!definition) return [];
+    
+    const placeholders = ['name', 'key', 'category', 'icon', 'lock_icon', 'label_container'];
+    
+    if (definition.structure?.parts) {
+      definition.structure.parts.forEach(part => placeholders.push(part.key));
+    }
+    
+    // Add implicit placeholders based on type
+    switch (definition.type) {
+        case 'numeric':
+            placeholders.push('current', 'max', 'percentage', 'progress_bar_html', 'max_html', 'change_indicator_html', 'sub_row_html', 'barColor');
+            break;
+        case 'array':
+            placeholders.push('tags_html', 'count');
+            break;
+        case 'list-of-objects':
+            placeholders.push('cards_html', 'count');
+            break;
+        case 'text':
+            placeholders.push('value');
+            break;
+    }
+    
+    return [...new Set(placeholders)].sort();
+  }, [previewKey, allDefinitions]);
 
   if (!isOpen) return null;
 
@@ -341,6 +376,19 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                             onChange={(e) => handleChange('html', e.target.value)}
                         />
                     </div>
+
+                    {availablePlaceholders.length > 0 && ( // 此处开始添加12行
+                        <div className="style-editor__placeholder-helper animate-fade-in">
+                            <label className="style-editor__label">可用占位符</label>
+                            <div className="style-editor__placeholder-tags">
+                                {availablePlaceholders.map(ph => (
+                                    <code key={ph} className="style-editor__placeholder-tag" onClick={() => handleCopy(`{{${ph}}}`)} title="点击复制">
+                                        &#123;&#123;{ph}&#125;&#125;
+                                    </code>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     
                     <div className="style-editor__form-group">
                         <label className="style-editor__label"><Code size={14}/> CSS 代码</label>
