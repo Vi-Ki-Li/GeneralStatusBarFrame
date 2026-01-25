@@ -3,6 +3,7 @@ import { StyleDefinition } from '../types';
 /**
  * v9.0: Default Style Units
  * High-quality, theme-aware default styles for fallback rendering.
+ * REFACTOR NOTE: These now include the label structure explicitly.
  */
 export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; isDefault: true })[] = [
     {
@@ -11,13 +12,18 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'numeric',
         isDefault: true,
         html: `
-{{progress_bar_html}}
-<div class="numeric-renderer__value-group">
-  <span class="numeric-renderer__value">{{current}}</span>
-  {{max_html}}
-  {{change_indicator_html}}
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
 </div>
-{{sub_row_html}}`,
+<div class="status-item-row__content">
+    {{progress_bar_html}}
+    <div class="numeric-renderer__value-group">
+      <span class="numeric-renderer__value">{{current}}</span>
+      {{max_html}}
+      {{change_indicator_html}}
+    </div>
+    {{sub_row_html}}
+</div>`,
         css: `
 .status-item-row--numeric .status-item-row__content {
   flex: 1;
@@ -72,8 +78,13 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         dataType: 'array',
         isDefault: true,
         html: `
-<div class="array-renderer__tags-container">
-  {{tags_html}}
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="array-renderer__tags-container">
+      {{tags_html}}
+    </div>
 </div>`,
         css: `
 .array-renderer__tags-container {
@@ -108,7 +119,13 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         name: '默认文本',
         dataType: 'text',
         isDefault: true,
-        html: `<div class="text-renderer__value">{{value}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="text-renderer__value">{{value}}</div>
+</div>`,
         css: `
 .status-item-row--text-inline .status-item-row__content {
   flex: 1;
@@ -146,7 +163,13 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
         name: '默认对象列表',
         dataType: 'list-of-objects',
         isDefault: true,
-        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="object-list-renderer__card-container">{{cards_html}}</div>
+</div>`,
         css: `
 .status-item-row--list-of-objects {
   flex-direction: column;

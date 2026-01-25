@@ -255,3 +255,49 @@ body.dark-mode .skeleton {
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
 }
+
+/* --- Renderer Safety Net (Prevent Collapse) --- */
+/* 这些基础样式确保组件即使在没有自定义CSS的情况下也能显示 */
+.numeric-renderer__progress-container {
+  min-height: 6px;
+  width: 100%;
+  background-color: var(--bar-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.numeric-renderer__progress-fill {
+  height: 100%;
+  min-height: 6px; 
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.6s var(--ease-out-back);
+}
+
+.array-renderer__tags-container {
+  min-height: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.array-renderer__tag-chip {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+}
+
+.object-card {
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-md);
+}
+
+.text-renderer__value {
+  min-height: 1.5em;
+}

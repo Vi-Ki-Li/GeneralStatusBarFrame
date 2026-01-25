@@ -5,6 +5,7 @@ import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import { useDroppable } from '@dnd-kit/core';
 import { Lock, HelpCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 interface StyledItemRendererProps {
   item: StatusBarItem;
@@ -23,6 +24,26 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         key: item.key,
         category: item.category,
     };
+    
+    // --- Pre-render UI Elements (Icons, Labels, Locks) ---
+    const IconComponent = definition.icon && (LucideIcons as any)[definition.icon] ? (LucideIcons as any)[definition.icon] : HelpCircle;
+    context.icon = renderToStaticMarkup(<IconComponent size={14} className="status-item-row__icon" />);
+    
+    context.lock_icon = item.user_modified 
+        ? renderToStaticMarkup(<span title="用户已锁定，AI无法修改" className="status-item-row__lock-icon"><Lock size={10} /></span>) 
+        : '';
+        
+    context.label = definition.name || item.key;
+    
+    // Legacy support helper: standard label container
+    context.label_container = `
+        <div class="status-item-row__label">
+            ${context.icon}
+            <span>${context.label}</span>
+            ${context.lock_icon}
+        </div>
+    `;
+
     const values = item.values || [];
 
     // 1. Map structured parts
@@ -222,8 +243,6 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
 
   }, [uniqueId, liveCssOverride, liveHtmlOverride, styleOverride, definition, item]);
 
-  const IconComponent = definition.icon && (LucideIcons as any)[definition.icon] ? (LucideIcons as any)[definition.icon] : HelpCircle;
-  const displayName = definition.name || item.key;
   const dropzoneClass = isOver && isCompatibleDrag ? 'droppable-active' : '';
 
   return (
@@ -242,18 +261,8 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
             }
         }}
         title={`Key: ${item.key}`}
-      >
-        <div className="status-item-row__label">
-            <IconComponent size={14} className="status-item-row__icon" />
-            <span>{displayName}</span>
-            {item.user_modified && (
-                <span title="用户已锁定，AI无法修改" className="status-item-row__lock-icon">
-                    <Lock size={10} />
-                </span>
-            )}
-        </div>
-        <div className="status-item-row__content" dangerouslySetInnerHTML={{ __html: finalHtml }} />
-      </div>
+        dangerouslySetInnerHTML={{ __html: finalHtml }}
+      />
       {finalCss && <style>{finalCss}</style>}
     </div>
   );

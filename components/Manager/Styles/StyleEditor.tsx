@@ -7,6 +7,52 @@ import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation';
 import './StyleEditor.css';
 
+// 预设 CSS 模板，用于智能填充
+const CSS_TEMPLATES: Record<string, string> = {
+  numeric: `.numeric-renderer__progress-container {
+  height: 8px;
+  background: var(--bar-bg);
+  border-radius: 4px;
+}
+.numeric-renderer__progress-fill {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 4px;
+}`,
+  array: `.array-renderer__tag-chip {
+  background: var(--color-primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: none;
+}
+.array-renderer__tag-chip:hover {
+  opacity: 0.9;
+}`,
+  'list-of-objects': `.object-card {
+  border: 1px solid var(--color-primary);
+  background: var(--bg-app);
+  padding: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.object-card__label {
+  font-weight: bold;
+}`,
+  text: `.text-renderer__value {
+  color: var(--color-primary);
+  font-weight: 500;
+  padding: 8px;
+  background: var(--chip-bg);
+  border-radius: 4px;
+}`,
+  theme: `/* 全局主题示例 */
+body {
+  --color-primary: #ec4899;
+  --bg-app: #18181b;
+  --text-primary: #ffffff;
+  --glass-bg: rgba(39, 39, 42, 0.8);
+}`
+};
+
 // 独立的、真实的实时预览组件
 const RealtimePreview: React.FC<{ style: Partial<StyleDefinition> }> = ({ style }) => {
     // 创建稳定的模拟数据
@@ -89,7 +135,20 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   }, [isOpen]);
 
   const handleChange = (field: keyof StyleDefinition, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+        const newData = { ...prev, [field]: value };
+        
+        // 智能模板填充: 当切换类型且CSS为空或为其他模板时，自动填充推荐CSS
+        if (field === 'dataType') {
+             const prevType = prev.dataType || 'numeric';
+             const isClean = !prev.css || prev.css.trim() === '' || prev.css === CSS_TEMPLATES[prevType];
+             
+             if (isClean) {
+                 newData.css = CSS_TEMPLATES[value as string] || '';
+             }
+        }
+        return newData;
+    });
   };
 
   const handleSave = () => {
@@ -146,7 +205,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选)</label>
                         <textarea
                             className="style-editor__textarea style-editor__textarea--html"
-                            placeholder="使用 {{placeholder}} 语法..."
+                            placeholder="使用 {{placeholder}} 语法... (留空则使用默认结构)"
                             value={formData.html || ''}
                             onChange={(e) => handleChange('html', e.target.value)}
                         />
@@ -156,7 +215,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         <label className="style-editor__label"><Code size={14}/> CSS 代码</label>
                         <textarea
                             className="style-editor__textarea style-editor__textarea--css"
-                            placeholder={formData.dataType === 'theme' ? 'body { --color-primary: red; }' : '.numeric-renderer__progress-fill {\n  background: red;\n}'}
+                            placeholder=".numeric-renderer__progress-fill { background: red; }"
                             value={formData.css || ''}
                             onChange={(e) => handleChange('css', e.target.value)}
                         />

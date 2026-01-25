@@ -16,12 +16,17 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
         name: '冰川-数值条',
         dataType: 'numeric',
         html: `
-<div class="glacier-numeric">
-  {{progress_bar_html}}
-  <div class="numeric-renderer__value-group">
-    <span class="numeric-renderer__value">{{current}}</span>
-    {{max_html}}
-  </div>
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="glacier-numeric">
+      {{progress_bar_html}}
+      <div class="numeric-renderer__value-group">
+        <span class="numeric-renderer__value">{{current}}</span>
+        {{max_html}}
+      </div>
+    </div>
 </div>`,
         css: `
 .glacier-numeric { display: flex; align-items: center; gap: 12px; }
@@ -31,7 +36,13 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     {
         name: '冰川-标签组',
         dataType: 'array',
-        html: `<div class="array-renderer__tags-container">{{tags_html}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="array-renderer__tags-container">{{tags_html}}</div>
+</div>`,
         css: `
 .array-renderer__tag-chip { 
   border-radius: var(--radius-full); 
@@ -39,12 +50,19 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
   background: var(--bar-bg);
   color: var(--text-secondary);
   border-color: transparent;
-}`
+}
+.array-renderer__tags-container { justify-content: flex-end; display: flex; gap: 4px; flex-wrap: wrap; }`
     },
     {
         name: '冰川-信息卡',
         dataType: 'text',
-        html: `<div class="text-renderer__value">{{value}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="text-renderer__value">{{value}}</div>
+</div>`,
         css: `
 .text-renderer__value {
   padding: 10px;
@@ -56,11 +74,19 @@ export const DEFAULT_STYLES: Omit<StyleDefinition, 'id'>[] = [
     {
         name: '冰川-数据网格',
         dataType: 'list-of-objects',
-        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="object-list-renderer__card-container">{{cards_html}}</div>
+</div>`,
         css: `
+.object-list-renderer__card-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 .object-card {
   border: 1px solid var(--chip-border);
   background: transparent;
+  padding: 8px;
 }`
     },
     {
@@ -101,10 +127,15 @@ body.dark-mode {
         name: '奥术-能量水晶',
         dataType: 'numeric',
         html: `
-{{progress_bar_html}}
-<div class="numeric-renderer__value-group">
-  <span class="numeric-renderer__value">{{current}}</span>
-  {{max_html}}
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    {{progress_bar_html}}
+    <div class="numeric-renderer__value-group">
+      <span class="numeric-renderer__value">{{current}}</span>
+      {{max_html}}
+    </div>
 </div>`,
         css: `
 .numeric-renderer__progress-container {
@@ -120,13 +151,21 @@ body.dark-mode {
   border-radius: 2px;
 }
 .numeric-renderer__value { color: #e9d5ff; }
+.numeric-renderer__value-group { display: flex; justify-content: flex-end; gap: 4px; }
 `
     },
     {
         name: '奥术-符文石',
         dataType: 'array',
-        html: `<div class="array-renderer__tags-container">{{tags_html}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="array-renderer__tags-container">{{tags_html}}</div>
+</div>`,
         css: `
+.array-renderer__tags-container { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .array-renderer__tag-chip { 
   background: linear-gradient(145deg, #4c1d95, #3730a3);
   color: #e9d5ff;
@@ -139,7 +178,13 @@ body.dark-mode {
     {
         name: '奥术-羊皮纸',
         dataType: 'text',
-        html: `<div class="arcane-text">{{value}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="arcane-text">{{value}}</div>
+</div>`,
         css: `
 .arcane-text {
   font-family: serif;
@@ -155,10 +200,18 @@ body.dark-mode {
     {
         name: '奥术-魔法图鉴',
         dataType: 'list-of-objects',
-        html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
+        html: `
+<div class="status-item-row__label">
+  {{icon}} <span>{{name}}</span> {{lock_icon}}
+</div>
+<div class="status-item-row__content">
+    <div class="object-list-renderer__card-container">{{cards_html}}</div>
+</div>`,
         css: `
 .object-list-renderer__card-container {
+  display: grid;
   grid-template-columns: 1fr; /* Arcane style prefers a list view */
+  gap: 8px;
 }
 .object-card {
   background: linear-gradient(145deg, #4c1d95, #3730a3);
@@ -167,6 +220,7 @@ body.dark-mode {
   padding: 12px;
   color: #e9d5ff;
 }
+.object-card__property { display: flex; justify-content: space-between; }
 .object-card__label { color: #a78bfa; }
 .object-card__value { font-weight: 600; text-shadow: 0 0 3px #c4b5fd; }
 `
@@ -227,10 +281,15 @@ body.dark-mode {
     {
         name: '终端-数据芯片',
         dataType: 'array',
-        html: `> {{name}}: <div class="array-renderer__tags-container">{{tags_html}}</div>`,
+        html: `
+<div class="terminal-array">
+  > {{name}}: <div class="array-renderer__tags-container">{{tags_html}}</div>
+</div>`,
         css: `
 .status-item-row__label { display: none; }
-.status-item-row__content { font-family: monospace; color: var(--color-primary); }
+.status-item-row__content { font-family: monospace; color: var(--color-primary); width: 100%; }
+.terminal-array { display: flex; gap: 8px; align-items: center; }
+.array-renderer__tags-container { display: flex; gap: 4px; }
 .array-renderer__tag-chip {
   background: var(--color-primary);
   color: var(--bg-app);
@@ -243,11 +302,13 @@ body.dark-mode {
         dataType: 'text',
         html: `> {{value}}`,
         css: `
+.status-item-row__label { display: none; }
 .status-item-row__content { 
   font-family: monospace; 
   color: var(--color-primary); 
   font-size: 0.9rem;
   line-height: 1.5;
+  width: 100%;
 }`
     },
     {
@@ -255,11 +316,14 @@ body.dark-mode {
         dataType: 'list-of-objects',
         html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,
         css: `
+.status-item-row__label { display: none; }
 .status-item-row__content { width: 100%; }
 .object-list-renderer__card-container {
+  display: grid;
   grid-template-columns: 1fr;
   font-family: monospace;
   color: var(--color-primary);
+  gap: 8px;
 }
 .object-card {
   background: var(--bar-bg);
@@ -268,6 +332,7 @@ body.dark-mode {
 }
 .object-card__property {
   font-size: 0.85rem;
+  display: flex; justify-content: space-between;
 }
 .object-card__label::after { content: ':'; }
 .object-card__value { color: var(--text-primary); }
