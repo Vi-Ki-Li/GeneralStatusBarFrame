@@ -3,6 +3,7 @@ import { ItemDefinition, ItemDefinitionPart, CategoryDefinition, StyleDefinition
 import { useToast } from '../../Toast/ToastContext';
 import IconPicker from '../../Shared/IconPicker';
 import { styleService } from '../../../services/styleService';
+import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits'; 
 import { X, Save, Eye, ChevronRight, ChevronUp, ChevronDown, Trash2, Plus, LayoutTemplate, UploadCloud } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { generateLorebookContent } from '../../../utils/lorebookInjector';
@@ -36,11 +37,11 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
   const [structureParts, setStructureParts] = useState<StructurePart[]>([]);
   const [isNew, setIsNew] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [styles, setStyles] = useState<StyleDefinition[]>([]);
+  const [userStyles, setUserStyles] = useState<StyleDefinition[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      setStyles(styleService.getStyleDefinitions());
+      setUserStyles(styleService.getStyleDefinitions());
       if (definition) {
         setFormData({ 
             ...definition, 
@@ -50,7 +51,6 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
             icon: definition.icon || '' 
         });
         
-        // FIX: Correctly set structureParts from ItemDefinitionPart[]
         if (definition.structure?.parts) {
             setStructureParts(definition.structure.parts);
         } else {
@@ -69,41 +69,16 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
     }
   }, [definition, isOpen, preselectedCategory]);
 
-  // 当渲染类型变化时，自动验证并重置不兼容的样式
-  useEffect(() => {
-    if (!formData.styleId) return;
-
-    const isStyleCompatible = (styleId: string, itemType: ItemDefinition['type']): boolean => {
-        const style = styles.find(s => s.id === styleId);
-        if (!style) return false;
-
-        switch (itemType) {
-            case 'numeric': return style.dataType === 'numeric';
-            case 'array':
-            case 'list-of-objects': return style.dataType === 'array';
-            case 'text': return style.dataType === 'text';
-            default: return false;
-        }
-    };
-
-    if (!isStyleCompatible(formData.styleId, formData.type)) {
-      // 如果不兼容，则静默重置为 undefined
-      setFormData(prev => ({ ...prev, styleId: undefined }));
-    }
-  }, [formData.type, formData.styleId, styles]);
-
-
-  const compatibleStyles = useMemo(() => {
-    let compatibleType: StyleDefinition['dataType'] | null = null;
-    switch (formData.type) {
-        case 'numeric': compatibleType = 'numeric'; break;
-        case 'array':
-        case 'list-of-objects': compatibleType = 'array'; break;
-        case 'text': compatibleType = 'text'; break;
-    }
-    if (!compatibleType) return [];
-    return styles.filter(s => s.dataType === compatibleType);
-  }, [styles, formData.type]);
+  const availableStyles = useMemo(() => {
+    // 1. Filter out themes from user styles
+    const filteredUserStyles = userStyles.filter(s => s.dataType !== 'theme');
+    
+    // 2. Filter out themes from default styles (and maybe map them to StyleDefinition interface if needed)
+    // Cast to StyleDefinition[] because defaults are readonly/special
+    const defaultStyles = DEFAULT_STYLE_UNITS.filter(s => s.dataType !== 'theme') as unknown as StyleDefinition[];
+    
+    return [...defaultStyles, ...filteredUserStyles];
+  }, [userStyles]);
 
   const handleChange = (field: keyof ItemDefinition, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -300,7 +275,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
             </div>
             
             <div className="form-group">
-                <label className="form-label">默认渲染样式</label>
+                <label className="form-label">渲染样式 (可选覆盖)</label>
                 <select 
                     className="form-input" 
                     value={formData.styleId || ''}
@@ -309,9 +284,11 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
                       handleChange('styleId', selectedValue === '' ? undefined : selectedValue);
                     }}
                 >
-                    <option value="">默认样式</option>
-                    {compatibleStyles.map(style => (
-                        <option key={style.id} value={style.id}>{style.name}</option>
+                    <option value="">默认 (使用该类型的默认样式)</option>
+                    {availableStyles.map(style => (
+                        <option key={style.id} value={style.id}>
+                            {style.name} ({style.dataType})
+                        </option>
                     ))}
                 </select>
             </div>

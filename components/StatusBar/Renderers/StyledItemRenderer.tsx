@@ -16,16 +16,15 @@ interface StyledItemRendererProps {
   onInteract?: (item: StatusBarItem, value?: string) => void;
 }
 
-// --- Data Context Builder: The heart of the template engine ---
+// --- Data Context Builder: Universal & Decoupled ---
 const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Record<string, any> => {
-    // v9.1: Inject meta properties first
     const context: Record<string, any> = {
         name: definition.name || item.key,
         key: item.key,
         category: item.category,
     };
     
-    // --- Pre-render UI Elements (Icons, Labels, Locks) ---
+    // --- Pre-render UI Elements ---
     const IconComponent = definition.icon && (LucideIcons as any)[definition.icon] ? (LucideIcons as any)[definition.icon] : HelpCircle;
     context.icon = renderToStaticMarkup(<IconComponent size={14} className="status-item-row__icon" />);
     
@@ -34,8 +33,6 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         : '';
         
     context.label = definition.name || item.key;
-    
-    // Legacy support helper: standard label container
     context.label_container = `
         <div class="status-item-row__label">
             ${context.icon}
@@ -45,8 +42,19 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
     `;
 
     const values = item.values || [];
+    const isObjectList = values.length > 0 && typeof values[0] === 'object';
 
-    // 1. Map structured parts
+    // --- 1. Universal Base Data ---
+    context.count = values.length;
+    // Default textual representation
+    if (isObjectList) {
+        context.value = `${values.length} items`;
+    } else {
+        context.value = (values as string[]).join(' '); 
+    }
+    context.raw_values = values;
+
+    // --- 2. Map Structured Parts (if defined) ---
     if (definition.structure?.parts && Array.isArray(values)) {
         definition.structure.parts.forEach((part, index) => {
             if (typeof values[index] === 'string') {
@@ -55,26 +63,36 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
         });
     }
 
-    // 2. Type-specific logic
-    switch (definition.type) {
-        case 'numeric': {
-            const currentStr = context.current || context.value || (values[0] as string) || '0';
-            const maxStr = context.max || (values[1] as string) || '';
-            const changeStr = context.change || (values[2] as string) || '';
-            const reasonStr = context.reason || (values[3] as string) || '';
-            const descStr = context.description || (values[4] as string) || '';
+    // --- 3. Numeric Parsing (Try to interpret as number) ---
+    if (!isObjectList) {
+        const strValues = values as string[];
+        // Priority: Mapped 'current' -> First Value -> '0'
+        const currentStr = context.current || strValues[0] || '0'; 
+        const maxStr = context.max || strValues[1] || '';
+        
+        const current = parseFloat(currentStr);
+        let max = maxStr ? parseFloat(maxStr) : 0;
+        
+        // Smart Max Inference: If max is missing but current is in 0-100 range and valid, assume max=100
+        // This allows plain text "85" to be rendered as a progress bar.
+        if (!max && !isNaN(current) && current > 0 && current <= 100) {
+             max = 100; 
+        }
 
-            const current = parseFloat(currentStr);
-            const max = maxStr ? parseFloat(maxStr) : 0;
-            const hasMax = !!maxStr && maxStr.trim() !== '' && !isNaN(max) && max > 0;
-            const percentage = hasMax ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
+        const hasMax = !isNaN(max) && max > 0;
+        const percentage = hasMax ? Math.min(100, Math.max(0, (current / max) * 100)) : 0;
+
+        if (!isNaN(current)) {
+            // Overwrite 'value' to be just the current number if it's numeric-like, 
+            // so text renderers show "50" instead of "50 100"
+            context.value = currentStr; 
 
             context.current = current;
             context.max = max;
             context.percentage = percentage;
             
             context.max_html = hasMax ? `<span class="numeric-renderer__value-max">/${max}</span>` : '';
-
+            
             let barColor = 'var(--color-primary)';
             if (hasMax) {
                 if (percentage <= 20) barColor = 'var(--color-danger)';
@@ -82,78 +100,81 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
                 else barColor = 'var(--color-success)';
             }
             context.barColor = barColor;
-
-            // v9.3: Only width is inline. Color is handled by CSS variable or class.
-            // Using CSS Variable for color allows easier override in CSS editor.
+            
             context.progress_bar_html = hasMax 
                 ? `<div class="numeric-renderer__progress-container"><div class="numeric-renderer__progress-fill" style="width: ${percentage}%; --dynamic-bar-color: ${barColor};"></div></div>`
                 : '';
-
-            if (changeStr && changeStr !== '0') {
-                const isPositive = changeStr.includes('+') || parseFloat(changeStr) > 0;
-                const changeColor = isPositive ? 'var(--color-success)' : 'var(--color-danger)';
-                const changeBg = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-                // Keep these inline for dynamic feedback, but users can override with !important or by targeting the class
-                context.change_indicator_html = `<span class="numeric-renderer__change-indicator" style="color: ${changeColor}; background: ${changeBg};" title="${reasonStr ? `原因: ${reasonStr}` : '变化量'}">${changeStr}</span>`;
-            } else {
-                context.change_indicator_html = '';
-            }
-            
-            let subRowContent = '';
-            if (reasonStr) subRowContent += `<span class="numeric-renderer__reason">(${reasonStr})</span>`;
-            if (descStr) subRowContent += `<span class="numeric-renderer__description">${descStr}</span>`;
-            context.sub_row_html = subRowContent ? `<div class="numeric-renderer__sub-row">${subRowContent}</div>` : '';
-            break;
+        } else {
+            // Not a number, provide safe defaults
+            context.current = 0;
+            context.percentage = 0;
+            context.progress_bar_html = '';
         }
-        case 'array': {
-            const tags = (values as string[]).filter(v => v && v.trim() !== '');
-            context.count = tags.length;
-            context.tags_html = tags.length > 0 
-              ? tags.map(tag => `<span class="array-renderer__tag-chip" data-value="${tag}">${tag}</span>`).join('')
-              : `<span class="array-renderer__empty-text">空</span>`;
-            break;
+        
+        // Change Indicators
+        const changeStr = context.change || strValues[2] || '';
+        if (changeStr && changeStr !== '0') {
+             const isPositive = changeStr.includes('+') || parseFloat(changeStr) > 0;
+             const changeColor = isPositive ? 'var(--color-success)' : 'var(--color-danger)';
+             const changeBg = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+             const reasonStr = context.reason || strValues[3] || '';
+             context.change_indicator_html = `<span class="numeric-renderer__change-indicator" style="color: ${changeColor}; background: ${changeBg};" title="${reasonStr ? `原因: ${reasonStr}` : '变化量'}">${changeStr}</span>`;
+        } else {
+            context.change_indicator_html = '';
         }
-        case 'list-of-objects': {
-            const objects = (values as Array<Record<string, string>>);
-            context.count = objects.length;
-            
-            // The template for this type is for a SINGLE object
-            const cardTemplate = `
-              <div class="object-card">
-                ${(definition.structure?.parts || []).map(partDef => `
-                  <div class="object-card__property">
-                    <span class="object-card__label">${partDef.label || partDef.key}</span>
-                    <span class="object-card__value">{{${partDef.key}}}</span>
-                  </div>
-                `).join('')}
-              </div>
-            `;
-            
-            context.cards_html = objects.length > 0 
-              ? objects.map(obj => {
-                  let cardHtml = cardTemplate;
-                  for (const key in obj) {
-                      cardHtml = cardHtml.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), obj[key] || '');
-                  }
-                  // Clean up un-replaced placeholders
-                  cardHtml = cardHtml.replace(/\{\{.*?\}\}/g, '');
-                  return cardHtml;
-              }).join('')
-              : `<span class="object-list-renderer__empty-text">空</span>`;
-            break;
-        }
-        case 'text': {
-            context.value = (values as string[]).join(' ');
-            break;
-        }
+        
+        const reasonStr = context.reason || strValues[3] || '';
+        const descStr = context.description || strValues[4] || '';
+        let subRowContent = '';
+        if (reasonStr) subRowContent += `<span class="numeric-renderer__reason">(${reasonStr})</span>`;
+        if (descStr) subRowContent += `<span class="numeric-renderer__description">${descStr}</span>`;
+        context.sub_row_html = subRowContent ? `<div class="numeric-renderer__sub-row">${subRowContent}</div>` : '';
     }
+
+    // --- 4. Array Parsing (Treat as tags) ---
+    if (!isObjectList) {
+        const strValues = values as string[];
+        const tags = strValues.filter(v => v && v.trim() !== '');
+        
+        context.tags_html = tags.length > 0 
+            ? tags.map(tag => `<span class="array-renderer__tag-chip" data-value="${tag}">${tag}</span>`).join('')
+            : `<span class="array-renderer__empty-text">空</span>`;
+    }
+
+    // --- 5. Object List Parsing ---
+    if (isObjectList) {
+        const objects = values as Array<Record<string, string>>;
+        const cardTemplate = `
+          <div class="object-card">
+            ${(definition.structure?.parts || []).map(partDef => `
+              <div class="object-card__property">
+                <span class="object-card__label">${partDef.label || partDef.key}</span>
+                <span class="object-card__value">{{${partDef.key}}}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        context.cards_html = objects.length > 0 
+          ? objects.map(obj => {
+              let cardHtml = cardTemplate;
+              for (const key in obj) {
+                  cardHtml = cardHtml.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), obj[key] || '');
+              }
+              cardHtml = cardHtml.replace(/\{\{.*?\}\}/g, '');
+              return cardHtml;
+          }).join('')
+          : `<span class="object-list-renderer__empty-text">空</span>`;
+    } else {
+        context.cards_html = '';
+    }
+
     return context;
 };
 
 const renderTemplate = (template: string, context: Record<string, any>): string => {
     let output = template;
     for (const key in context) {
-        output = output.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), context[key]);
+        output = output.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), context[key] !== undefined && context[key] !== null ? context[key] : '');
     }
     // Clean up any un-replaced placeholders
     output = output.replace(/\{\{.*?\}\}/g, '');
@@ -168,53 +189,44 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
 
   const { isOver, setNodeRef, active } = useDroppable({ id: definition.key });
 
-  const isCompatibleDrag = useMemo(() => {
-    if (!active || !active.data.current) return false;
-    const draggingStyle = active.data.current.style as StyleDefinition;
-    if (!draggingStyle) return false;
-    return draggingStyle.dataType === definition.type || 
-           (draggingStyle.dataType === 'array' && definition.type === 'list-of-objects');
-  }, [active, definition.type]);
+  // V9.2: Always compatible drop.
+  const isCompatibleDrag = !!active;
   
   const { finalHtml, finalCss, finalLayoutClass } = useMemo(() => {
     let styleDef: StyleDefinition | undefined | null = null;
-    let htmlTemplate: string | undefined; // Initialize as undefined
+    let htmlTemplate: string | undefined;
 
     // Priority 1: Live editor overrides (takes precedence for everything)
     if (liveCssOverride !== undefined) {
       styleDef = { css: liveCssOverride, dataType: definition.type, id: 'live', name: 'live' };
       htmlTemplate = liveHtmlOverride;
     } 
-    // For all other cases, find the correct style definition first.
-    else {
-        // Priority 2: Hover preview
-        if (styleOverride) {
-          styleDef = styleOverride;
+    // Priority 2: Hover preview
+    else if (styleOverride) {
+      styleDef = styleOverride;
+      htmlTemplate = styleDef.html;
+    }
+    // Priority 3: Saved style from definition
+    else if (definition.styleId && definition.styleId !== 'style_default') {
+      styleDef = styleService.getStyleDefinition(definition.styleId);
+      htmlTemplate = styleDef?.html;
+    }
+    
+    // Fallback logic
+    if (!styleDef) {
+        let defaultId = '';
+        switch (definition.type) {
+            case 'numeric': defaultId = 'default_numeric'; break;
+            case 'array': defaultId = 'default_array'; break;
+            case 'text': defaultId = 'default_text'; break;
+            case 'list-of-objects': defaultId = 'default_object_list'; break;
         }
-        // Priority 3: Saved style from definition
-        else if (definition.styleId && definition.styleId !== 'style_default') {
-          styleDef = styleService.getStyleDefinition(definition.styleId);
+        if (defaultId) {
+            styleDef = DEFAULT_STYLE_UNITS.find(u => u.id === defaultId);
+            htmlTemplate = styleDef?.html;
         }
-        
-        // Fallback to default if no specific style is found or applied
-        if (!styleDef) {
-            let defaultId = '';
-            switch (definition.type) {
-                case 'numeric': defaultId = 'default_numeric'; break;
-                case 'array': defaultId = 'default_array'; break;
-                case 'text': defaultId = 'default_text'; break;
-                case 'list-of-objects': defaultId = 'default_object_list'; break;
-            }
-            if (defaultId) {
-                styleDef = DEFAULT_STYLE_UNITS.find(u => u.id === defaultId);
-            }
-        }
-        
-        // Now that we have the correct styleDef, get its html template.
-        htmlTemplate = styleDef?.html;
     }
 
-    // Final fallback if html template is STILL not found
     if (typeof htmlTemplate !== 'string') {
         const fallbackDefault = DEFAULT_STYLE_UNITS.find(u => u.dataType === definition.type);
         htmlTemplate = fallbackDefault?.html || '';
@@ -223,30 +235,24 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
     const context = buildDataContext(item, definition);
     const finalHtml = renderTemplate(htmlTemplate, context);
 
-    // CSS Scoping Strategy v2:
-    // Regex explanation:
-    // 1. ([^\r\n,{}]+)  Matches the selector part (anything not newline, comma, brace)
-    // 2. (,(?=[^}]*{)|\s*?{) Matches the trigger: either a comma (for multiple selectors) OR the opening brace '{'
-    //    We relaxed \s*? to allow any amount of whitespace before the brace.
+    // CSS Scoping Strategy v2
     const rawCss = styleDef?.css;
     const scopedCss = rawCss ? rawCss.replace(
       /([^\r\n,{}]+)(,(?=[^}]*{)|\s*?{)/g,
       (match, selector, trigger) => {
         const trimmedSelector = selector.trim();
-        // Skip @media, @keyframes, :root, etc.
         if (trimmedSelector.startsWith('@') || trimmedSelector.startsWith(':root') || trimmedSelector.startsWith('body')) {
             return match; 
         }
-        // Scope the selector with the unique ID
         const scopedSelector = `#${uniqueId} ${trimmedSelector}`;
         return scopedSelector + trigger;
       }
     ) : null;
 
-    // Layout class for text
     let layoutClass = '';
+    // Use definition type for layout class hint, but fallback to text block if content is long
     if (definition.type === 'text') {
-        const text = (item.values as string[]).join(' ');
+        const text = context.value || '';
         layoutClass = text.length > 20 ? 'status-item-row--text-block' : 'status-item-row--text-inline';
     }
 

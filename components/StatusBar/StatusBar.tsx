@@ -66,29 +66,15 @@ const StatusBar: React.FC<StatusBarProps> = ({ data, styleOverride }) => {
       }
     }
 
-    // v9.1: Stricter Compatibility Check
-    let finalStyleOverride = styleOverride;
-    if (styleOverride) {
-      const styleType = styleOverride.dataType;
-      const itemType = originalDef.type;
-      
-      let isCompatible = false;
-      if (styleType === 'numeric' && itemType === 'numeric') isCompatible = true;
-      else if (styleType === 'array' && itemType === 'array') isCompatible = true;
-      else if (styleType === 'list-of-objects' && itemType === 'list-of-objects') isCompatible = true;
-      else if (styleType === 'text' && itemType === 'text') isCompatible = true;
-
-      if (!isCompatible) {
-        finalStyleOverride = null;
-      }
-    }
+    // V9.2: Decoupled - Removed Strict Compatibility Check
+    // All styleOverrides are now allowed.
     
     return (
       <StyledItemRenderer 
         key={item._uuid}
         item={item} 
         definition={finalDef}
-        styleOverride={finalStyleOverride}
+        styleOverride={styleOverride}
         onInteract={(interactItem: StatusBarItem, val?: string) => {
             const text = val || (Array.isArray(interactItem.values) ? interactItem.values.join(', ') : '');
             console.log(`[Interaction] ${interactItem.key}: ${text}`);

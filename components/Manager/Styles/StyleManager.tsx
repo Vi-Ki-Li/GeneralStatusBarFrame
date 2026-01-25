@@ -106,7 +106,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
     // --- Selection Mode State ---
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [pendingBulkDeleteIds, setPendingBulkDeleteIds] = useState<string[] | null>(null); // New state for bulk delete confirmation
+    const [pendingBulkDeleteIds, setPendingBulkDeleteIds] = useState<string[] | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -228,7 +228,6 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
             return;
         }
 
-        // Trigger custom modal instead of window.confirm
         setPendingBulkDeleteIds(idsToDelete);
     };
 
@@ -333,27 +332,15 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate })
         const styleId = active.id as string;
         const itemDefKey = over.id as string;
     
-        const allStyles = [...DEFAULT_STYLE_UNITS, ...userStyles]; 
-        const style = allStyles.find(s => s.id === styleId); 
-        const definition = stagedData.item_definitions[itemDefKey];
-    
-        if (!style || !definition) return;
-    
-        let isCompatible = false;
-        if (style.dataType === 'numeric' && definition.type === 'numeric') isCompatible = true;
-        else if (style.dataType === 'array' && definition.type === 'array') isCompatible = true;
-        else if (style.dataType === 'list-of-objects' && (definition.type === 'array' || definition.type === 'list-of-objects')) isCompatible = true; 
-        else if (style.dataType === 'text' && definition.type === 'text') isCompatible = true;
-    
-        if (!isCompatible) {
-            toast.warning(`样式 "${style.name}" 与条目 "${definition.name || definition.key}" 不兼容`);
-            return;
-        }
-    
+        // V9.2: REMOVED COMPATIBILITY CHECK
+        // Allow any style to be dropped on any item.
+        
         setStagedData(prevData => {
             if (!prevData) return null;
             const newData = _.cloneDeep(prevData);
-            newData.item_definitions[itemDefKey].styleId = styleId;
+            if (newData.item_definitions[itemDefKey]) {
+                newData.item_definitions[itemDefKey].styleId = styleId;
+            }
             return newData;
         });
     };
