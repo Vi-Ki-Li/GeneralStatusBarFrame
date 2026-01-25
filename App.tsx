@@ -91,7 +91,7 @@ const AppContent = () => {
             tavernService.saveVariables({ statusBarCharacterData: processedData });
         }
         
-        styleService.initializeActiveTheme(); // 此处修改1行
+        styleService.initializeActiveTheme(); 
         
       } catch (e) {
         console.error(e);

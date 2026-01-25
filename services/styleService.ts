@@ -370,7 +370,7 @@ class StyleService {
     saveStyleDefinition(definition: StyleDefinition): StyleDefinition {
         const definitions = this.getStyleDefinitions();
         
-        // Find existing '主题-赛博朋克' and replace it if names match and ID is new
+        // Find existing '赛博朋克' and replace it if names match and ID is new
         const isDefaultCyberpunk = definition.name === '赛博朋克' && !definition.id;
         if (isDefaultCyberpunk) {
             const existingDefaultIndex = definitions.findIndex(d => d.name === '赛博朋克');

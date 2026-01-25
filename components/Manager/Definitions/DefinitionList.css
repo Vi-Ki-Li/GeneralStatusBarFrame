@@ -34,13 +34,13 @@
 
 .def-studio__cat-list {
   flex: 1;
-  overflow-y: auto; /* FIX: Added for scrolling */
+  overflow-y: auto; 
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-/* NEW: Wrapper for category item and its actions */
+/* Wrapper for category item and its actions */
 .def-studio__cat-item-wrapper {
   position: relative;
   display: flex;
@@ -61,7 +61,7 @@
   background: var(--color-primary); /* Keep active color on hover */
 }
 
-/* This is now the clickable part inside the wrapper */
+/* The clickable part inside the wrapper */
 .def-studio__cat-item {
   flex: 1;
   min-width: 0;
@@ -89,7 +89,7 @@
   color: white;
 }
 
-/* NEW: Action buttons for category items */
+/* Action buttons for category items */
 .def-studio__cat-item-actions {
   display: flex;
   align-items: center;

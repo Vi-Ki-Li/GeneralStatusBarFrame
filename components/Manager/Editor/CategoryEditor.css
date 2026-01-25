@@ -10,7 +10,7 @@
   color: var(--text-primary);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-base);
-  position: relative; /* 此处添加1行 */
+  position: relative; 
 }
 
 .category-editor__header-icon {
@@ -27,7 +27,7 @@
   font-weight: var(--font-weight-regular);
 }
 
-.category-editor__edit-btn { /* 此处开始添加12行 */
+.category-editor__edit-btn { 
   background: transparent;
   border: none;
   color: var(--text-tertiary);

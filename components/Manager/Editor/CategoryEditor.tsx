@@ -2,7 +2,7 @@ import React from 'react';
 import { StatusBarItem, CategoryDefinition, ItemDefinition } from '../../../types';
 import ItemEditorRow from './ItemEditorRow';
 import * as LucideIcons from 'lucide-react';
-import { PlusCircle, CircleHelp, Settings } from 'lucide-react'; // 此处修改1行
+import { PlusCircle, CircleHelp, Settings } from 'lucide-react'; 
 import { getItemDefinition } from '../../../services/definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
 import './CategoryEditor.css';
@@ -14,11 +14,11 @@ interface CategoryEditorProps {
   items: StatusBarItem[];
   onUpdateItems: (newItems: StatusBarItem[]) => void;
   onEditDefinition: (itemKey: string) => void;
-  onEditCategory: (categoryKey: string) => void; // 此处添加1行
+  onEditCategory: (categoryKey: string) => void; 
 }
 
 const CategoryEditor: React.FC<CategoryEditorProps> = ({ 
-  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems, onEditDefinition, onEditCategory // 此处修改1行
+  categoryKey, categoryDef, itemDefinitions, items, onUpdateItems, onEditDefinition, onEditCategory 
 }) => {
   const IconComponent = categoryDef.icon && (LucideIcons as any)[categoryDef.icon] 
     ? (LucideIcons as any)[categoryDef.icon] 

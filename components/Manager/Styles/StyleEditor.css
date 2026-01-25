@@ -104,7 +104,7 @@
 .style-editor__textarea--html { min-height: 80px; }
 .style-editor__textarea--css { flex: 1; min-height: 120px; }
 
-/* --- CSS Docs Section --- */ /* 此处开始添加49行 */
+/* --- CSS Docs Section --- */ 
 .style-editor__docs-container {
   border-top: 1px solid var(--chip-border);
   padding-top: var(--spacing-lg);

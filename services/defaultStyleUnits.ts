@@ -1,13 +1,13 @@
 import { StyleDefinition } from '../types';
 
 /**
- * v9.0: Default Style Units - Glacier Theme
+ * v9.0: Default Style Units
  * High-quality, theme-aware default styles for fallback rendering.
  */
 export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; isDefault: true })[] = [
     {
         id: 'default_numeric',
-        name: '默认数值条 (冰川)',
+        name: '默认数值条',
         dataType: 'numeric',
         isDefault: true,
         html: `
@@ -68,7 +68,7 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
     },
     {
         id: 'default_array',
-        name: '默认标签组 (冰川)',
+        name: '默认标签组',
         dataType: 'array',
         isDefault: true,
         html: `
@@ -105,7 +105,7 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
     },
     {
         id: 'default_text',
-        name: '默认文本 (冰川)',
+        name: '默认文本',
         dataType: 'text',
         isDefault: true,
         html: `<div class="text-renderer__value">{{value}}</div>`,
@@ -143,7 +143,7 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
     },
     {
         id: 'default_object_list',
-        name: '默认对象列表 (冰川)',
+        name: '默认对象列表',
         dataType: 'list-of-objects',
         isDefault: true,
         html: `<div class="object-list-renderer__card-container">{{cards_html}}</div>`,

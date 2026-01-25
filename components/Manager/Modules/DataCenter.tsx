@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { StatusBarData, StatusBarItem, ItemDefinition, CategoryDefinition } from '../../../types'; // 此处修改1行
+import { StatusBarData, StatusBarItem, ItemDefinition, CategoryDefinition } from '../../../types'; 
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
 import { resolveDisplayName } from '../../../utils/idManager';
 import { syncMetaFromData } from '../../../utils/dataMerger';
@@ -9,7 +9,7 @@ import CharacterListSidebar from '../CharacterListSidebar';
 import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import DefinitionDrawer from '../Definitions/DefinitionDrawer';
-import CategoryDrawer from '../Definitions/CategoryDrawer'; // 此处添加1行
+import CategoryDrawer from '../Definitions/CategoryDrawer'; 
 import { tavernService } from '../../../services/mockTavernService';
 import { Plus, Save, RotateCcw, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -31,8 +31,8 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null); // 此处添加1行
-  const [isCatDrawerOpen, setIsCatDrawerOpen] = useState(false); // 此处添加1行
+  const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null); 
+  const [isCatDrawerOpen, setIsCatDrawerOpen] = useState(false); 
   
   const toast = useToast();
 
@@ -182,7 +182,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
     toast.success(`定义 "${updatedDef.key}" 已暂存`);
   };
   
-  const handleEditCategory = (categoryKey: string) => { // 此处开始添加5行
+  const handleEditCategory = (categoryKey: string) => { 
     const catDef = localData.categories[categoryKey];
     if (catDef) {
       setEditingCategory(catDef);
@@ -190,7 +190,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
     }
   };
 
-  const handleSaveCategory = (updatedCat: CategoryDefinition) => { // 此处开始添加5行
+  const handleSaveCategory = (updatedCat: CategoryDefinition) => { 
     const newData = _.cloneDeep(localData);
     newData.categories[updatedCat.key] = updatedCat;
     handleLocalUpdate(newData);
@@ -216,7 +216,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
   };
 
 
-  const getCategoriesToRender = () => { // 此处开始修改6行
+  const getCategoriesToRender = () => { 
     const allCategories = Object.values(localData.categories || {});
     const sorted = allCategories.sort((a, b) => a.order - b.order);
     if (selectedId === 'SHARED') {
@@ -275,7 +275,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
                         items={getCurrentItems(catKey)}
                         onUpdateItems={(newItems) => handleUpdateItems(catKey, newItems)}
                         onEditDefinition={handleEditDefinition}
-                        onEditCategory={handleEditCategory} // 此处添加1行
+                        onEditCategory={handleEditCategory} 
                     />
                 ))}
                 <div className="data-center__editor-spacer" />
@@ -332,7 +332,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
             onInject={handleInjectDefinition}
             existingKeys={Object.keys(localData.item_definitions)}
         />
-        <CategoryDrawer // 此处开始添加7行
+        <CategoryDrawer 
             isOpen={isCatDrawerOpen}
             onClose={() => setIsCatDrawerOpen(false)}
             category={editingCategory}

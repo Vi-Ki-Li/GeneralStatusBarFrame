@@ -55,7 +55,7 @@ const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
         toast.warning('作用域已变更为“共享”', {
             description: `分类 "${formData.name}" 中已存在的角色数据将被隐藏。此操作可逆。`
         });
-    } else if (originalScope === 'shared' && formData.scope === 'character') { // 此处开始添加4行
+    } else if (originalScope === 'shared' && formData.scope === 'character') { 
         toast.warning('作用域已变更为“角色”', {
             description: `分类 "${formData.name}" 中已存在的共享数据将被隐藏。此操作可逆。`
         });

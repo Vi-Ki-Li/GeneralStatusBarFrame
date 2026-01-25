@@ -179,7 +179,7 @@
 .style-atelier__item-actions .btn--ghost {
   padding: 4px; height: 24px; width: 24px;
 }
-.style-atelier__item-actions .btn--ghost:disabled { /* 此处开始添加15行 */
+.style-atelier__item-actions .btn--ghost:disabled { 
   opacity: 0.4;
   cursor: not-allowed;
   background: transparent !important;

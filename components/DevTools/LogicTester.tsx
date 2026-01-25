@@ -30,7 +30,7 @@ const LogicTester: React.FC<LogicTesterProps> = ({ initialData, onUpdate }) => {
     }
   }, [initialData]);
 
-  // Updated Test Case for v7.2+ (Reinforce List of Objects)
+  // Test Case
   const [inputText, setInputText] = useState<string>(
 `// 1. 标准数值更新 (体力: 80/100)
 [Eria^CV|体力::80|100|-5|中毒]

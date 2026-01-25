@@ -86,8 +86,8 @@ textarea.form-input { min-height: 100px; line-height: 1.5; resize: vertical; }
   margin-top: 4px;
   font-family: monospace;
   font-size: 0.85rem;
-  white-space: pre-wrap; /* 此处修改1行 */
-  word-wrap: break-word; /* 此处修改1行 */
+  white-space: pre-wrap; 
+  word-wrap: break-word; 
   color: var(--text-primary);
   background: rgba(0,0,0,0.03);
   padding: 10px;
