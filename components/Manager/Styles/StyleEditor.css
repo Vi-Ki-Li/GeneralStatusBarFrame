@@ -1,3 +1,5 @@
+
+/* ... existing styles ... */
 /* --- Wrapper & Overlay --- */
 .style-editor-wrapper {
   position: fixed; /* Changed from absolute to be relative to window */
@@ -103,6 +105,62 @@
 }
 .style-editor__textarea--html { min-height: 80px; }
 .style-editor__textarea--css { flex: 1; min-height: 120px; }
+
+/* --- Type Row & Template Dropdown --- */
+.style-editor__type-row {
+    display: flex;
+    gap: 8px;
+}
+.style-editor__template-dropdown {
+    position: relative;
+}
+.style-editor__template-btn {
+    height: 100%;
+    padding: 0 12px;
+    background: var(--bg-app);
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+.style-editor__template-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.style-editor__template-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-app);
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 20;
+    min-width: 150px;
+    padding: 4px;
+    display: none;
+}
+.style-editor__template-dropdown:hover .style-editor__template-menu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+.style-editor__template-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+}
+.style-editor__template-item:hover {
+    background: var(--chip-bg);
+    color: var(--color-primary);
+}
+
 
 /* --- CSS Docs Section --- */ 
 .style-editor__docs-container {

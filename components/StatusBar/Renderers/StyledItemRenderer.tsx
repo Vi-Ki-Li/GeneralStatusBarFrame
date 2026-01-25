@@ -83,15 +83,17 @@ const buildDataContext = (item: StatusBarItem, definition: ItemDefinition): Reco
             }
             context.barColor = barColor;
 
-            // v8.5: Conditional progress bar rendering
+            // v9.3: Only width is inline. Color is handled by CSS variable or class.
+            // Using CSS Variable for color allows easier override in CSS editor.
             context.progress_bar_html = hasMax 
-                ? `<div class="numeric-renderer__progress-container"><div class="numeric-renderer__progress-fill" style="width: ${percentage}%; background-color: ${barColor};"></div></div>`
+                ? `<div class="numeric-renderer__progress-container"><div class="numeric-renderer__progress-fill" style="width: ${percentage}%; --dynamic-bar-color: ${barColor};"></div></div>`
                 : '';
 
             if (changeStr && changeStr !== '0') {
                 const isPositive = changeStr.includes('+') || parseFloat(changeStr) > 0;
                 const changeColor = isPositive ? 'var(--color-success)' : 'var(--color-danger)';
                 const changeBg = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+                // Keep these inline for dynamic feedback, but users can override with !important or by targeting the class
                 context.change_indicator_html = `<span class="numeric-renderer__change-indicator" style="color: ${changeColor}; background: ${changeBg};" title="${reasonStr ? `原因: ${reasonStr}` : '变化量'}">${changeStr}</span>`;
             } else {
                 context.change_indicator_html = '';
@@ -221,14 +223,23 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
     const context = buildDataContext(item, definition);
     const finalHtml = renderTemplate(htmlTemplate, context);
 
-    // CSS Scoping
+    // CSS Scoping Strategy v2:
+    // Regex explanation:
+    // 1. ([^\r\n,{}]+)  Matches the selector part (anything not newline, comma, brace)
+    // 2. (,(?=[^}]*{)|\s*?{) Matches the trigger: either a comma (for multiple selectors) OR the opening brace '{'
+    //    We relaxed \s*? to allow any amount of whitespace before the brace.
     const rawCss = styleDef?.css;
     const scopedCss = rawCss ? rawCss.replace(
-      /([^\r\n,{}]+)(,(?=[^}]*{)|s*?{)/g,
-      (match, selector) => {
-        if (selector.trim().startsWith('@') || selector.trim().startsWith(':root') || selector.trim().startsWith('body')) return selector + match.slice(selector.length);
-        const scopedSelector = selector.split(',').map(part => `#${uniqueId} ${part.trim()}`).join(', ');
-        return scopedSelector + match.slice(selector.length);
+      /([^\r\n,{}]+)(,(?=[^}]*{)|\s*?{)/g,
+      (match, selector, trigger) => {
+        const trimmedSelector = selector.trim();
+        // Skip @media, @keyframes, :root, etc.
+        if (trimmedSelector.startsWith('@') || trimmedSelector.startsWith(':root') || trimmedSelector.startsWith('body')) {
+            return match; 
+        }
+        // Scope the selector with the unique ID
+        const scopedSelector = `#${uniqueId} ${trimmedSelector}`;
+        return scopedSelector + trigger;
       }
     ) : null;
 
@@ -251,7 +262,6 @@ const StyledItemRenderer: React.FC<StyledItemRendererProps> = ({
         className={`status-item-row status-item-row--${definition.type} ${finalLayoutClass}`}
         onClick={(e) => {
             if (!onInteract) return;
-            // Handle specific interactions for array/list types
             const target = e.target as HTMLElement;
             const chip = target.closest('[data-value]');
             if (chip) {

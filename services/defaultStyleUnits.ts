@@ -42,6 +42,7 @@ export const DEFAULT_STYLE_UNITS: (Omit<StyleDefinition, 'id'> & { id: string; i
   height: 100%;
   border-radius: var(--radius-full);
   transition: width 0.6s var(--ease-out-back), background-color 0.3s ease;
+  background-color: var(--dynamic-bar-color, var(--color-primary));
 }
 .numeric-renderer__value-group {
   display: flex;

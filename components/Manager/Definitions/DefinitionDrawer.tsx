@@ -234,7 +234,7 @@ const DefinitionDrawer: React.FC<DefinitionDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  const categoryList = Object.values(categories).sort((a: CategoryDefinition, b: CategoryDefinition) => a.order - b.order);
+  const categoryList = (Object.values(categories) as CategoryDefinition[]).sort((a, b) => a.order - b.order);
   const IconDisplay = formData.icon && (LucideIcons as any)[formData.icon] ? (LucideIcons as any)[formData.icon] : null;
 
   return (

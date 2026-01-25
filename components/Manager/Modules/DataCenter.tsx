@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem, ItemDefinition, CategoryDefinition } from '../../../types'; 
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
@@ -217,7 +216,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile }) => 
 
 
   const getCategoriesToRender = () => { 
-    const allCategories = Object.values(localData.categories || {});
+    const allCategories = Object.values(localData.categories || {}) as CategoryDefinition[];
     const sorted = allCategories.sort((a, b) => a.order - b.order);
     if (selectedId === 'SHARED') {
       return sorted.filter(c => c.scope === 'shared').map(c => c.key);

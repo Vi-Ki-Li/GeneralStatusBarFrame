@@ -28,7 +28,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
     loadPresets();
   }, []);
 
-  const allDefinitions = Object.values(data.item_definitions);
+  const allDefinitions = Object.values(data.item_definitions) as ItemDefinition[];
   const activePresetId = data._meta?.activePresetIds?.[0];
 
   const loadPresets = () => setPresets(presetService.getPresets());

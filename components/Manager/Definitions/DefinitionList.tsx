@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
@@ -27,8 +26,8 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate }) => {
   const [confirmDeleteItemKey, setConfirmDeleteItemKey] = useState<string | null>(null);
   const [isInjectingAll, setIsInjectingAll] = useState(false);
 
-  const categories = Object.values(data.categories || {}).sort((a: CategoryDefinition, b: CategoryDefinition) => a.order - b.order);
-  const itemDefinitions = Object.values(data.item_definitions || {}).sort((a: ItemDefinition, b: ItemDefinition) => a.key.localeCompare(b.key));
+  const categories = (Object.values(data.categories || {}) as CategoryDefinition[]).sort((a, b) => a.order - b.order);
+  const itemDefinitions = (Object.values(data.item_definitions || {}) as ItemDefinition[]).sort((a, b) => a.key.localeCompare(b.key));
 
   const filteredItems = useMemo(() => {
     if (selectedCategoryKey === null) {

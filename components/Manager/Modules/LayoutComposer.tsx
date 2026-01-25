@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   DndContext,
@@ -27,7 +26,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
 
   // 从 props 同步并排序分类
   useEffect(() => {
-    const sorted = Object.values(data.categories || {}).sort(
+    const sorted = (Object.values(data.categories || {}) as CategoryDefinition[]).sort(
       (a, b) => a.order - b.order
     );
     setCategories(sorted);

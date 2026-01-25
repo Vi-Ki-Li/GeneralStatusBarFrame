@@ -256,48 +256,50 @@ body.dark-mode .skeleton {
   .mobile-only { display: flex !important; }
 }
 
-/* --- Renderer Safety Net (Prevent Collapse) --- */
-/* 这些基础样式确保组件即使在没有自定义CSS的情况下也能显示 */
+/* --- Renderer Safety Net (Visuals STRIPPED) --- */
+/* 这些基础样式仅确保布局不塌陷，不包含颜色/圆角等皮肤属性 */
+
+/* Numeric */
 .numeric-renderer__progress-container {
-  min-height: 6px;
+  /* 仅保留布局属性 */
+  min-height: 4px;
   width: 100%;
-  background-color: var(--bar-bg);
-  border-radius: var(--radius-full);
   overflow: hidden;
+  /* 默认背景色移至 defaultStyleUnits */
 }
 
 .numeric-renderer__progress-fill {
   height: 100%;
-  min-height: 6px; 
-  background-color: var(--color-primary);
-  border-radius: var(--radius-full);
+  min-height: 4px; 
   transition: width 0.6s var(--ease-out-back);
+  /* 默认颜色移至 defaultStyleUnits */
 }
 
+/* Array */
 .array-renderer__tags-container {
-  min-height: 24px;
+  min-height: 20px;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
 .array-renderer__tag-chip {
-  min-height: 24px;
+  min-height: 20px;
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  background: var(--chip-bg);
-  border: 1px solid var(--chip-border);
-  border-radius: var(--radius-md);
+  /* padding, color, background, border 全部移除，交由 Editor 控制 */
 }
 
+/* Object List */
 .object-card {
-  min-height: 40px;
-  padding: 8px;
-  border: 1px solid var(--chip-border);
-  border-radius: var(--radius-md);
+  min-height: 30px;
+  /* padding, border 等移除 */
+  display: flex;
+  flex-direction: column;
 }
 
+/* Text */
 .text-renderer__value {
-  min-height: 1.5em;
+  min-height: 1em;
+  /* color, font-weight 等移除 */
 }
