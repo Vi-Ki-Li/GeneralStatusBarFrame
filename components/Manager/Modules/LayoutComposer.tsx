@@ -5,7 +5,7 @@ import { LayoutNode } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import * as LucideIcons from 'lucide-react';
-import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine } from 'lucide-react';
+import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -197,7 +197,8 @@ const LayoutRowDraggable: React.FC<{
     isSelected: boolean;
     children: React.ReactNode;
     isOverlay?: boolean;
-}> = ({ node, onSelect, isSelected, children, isOverlay }) => {
+    onDelete: () => void;
+}> = ({ node, onSelect, isSelected, children, isOverlay, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: node.id,
         data: { type: 'row', node },
@@ -220,6 +221,15 @@ const LayoutRowDraggable: React.FC<{
             <div className="layout-row__handle" {...listeners} {...attributes} title="拖动行排序">
                 <GripVertical size={16} />
             </div>
+            {!isOverlay && (
+                <button 
+                    className="layout-hover-delete row-delete" 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    title="删除行"
+                >
+                    <XIcon size={14} />
+                </button>
+            )}
             <div className="layout-row__columns">
                 {children}
             </div>
@@ -236,7 +246,13 @@ const LayoutColumnDroppable: React.FC<{
     data: StatusBarData;
     selectedId: string | null;
     onSelectNode: (id: string) => void;
-}> = ({ node, items, allDefinitions, allCategories, data, selectedId, onSelectNode }) => {
+    // New Props for Split
+    isGlobalDragging: boolean;
+    onSetSplitIntent: (intent: { colId: string, side: 'left' | 'right' } | null) => void;
+    splitIntent: { colId: string, side: 'left' | 'right' } | null;
+    onDelete: () => void;
+    onDeleteItem: (itemId: string) => void;
+}> = ({ node, items, allDefinitions, allCategories, data, selectedId, onSelectNode, isGlobalDragging, onSetSplitIntent, splitIntent, onDelete, onDeleteItem }) => {
     const { setNodeRef } = useDroppable({
         id: node.id,
         data: { type: 'col', node },
@@ -248,6 +264,38 @@ const LayoutColumnDroppable: React.FC<{
         ...(node.props?.style || {})
     };
 
+    // Calculate Split Intent on Mouse Move
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isGlobalDragging) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const percent = offsetX / rect.width;
+
+        // Threshold: 20%
+        if (percent < 0.2) {
+            if (splitIntent?.colId !== node.id || splitIntent?.side !== 'left') {
+                onSetSplitIntent({ colId: node.id, side: 'left' });
+            }
+        } else if (percent > 0.8) {
+            if (splitIntent?.colId !== node.id || splitIntent?.side !== 'right') {
+                onSetSplitIntent({ colId: node.id, side: 'right' });
+            }
+        } else {
+            if (splitIntent?.colId === node.id) {
+                onSetSplitIntent(null);
+            }
+        }
+    };
+
+    // Clear intent on leave
+    const handleMouseLeave = () => {
+        if (isGlobalDragging && splitIntent?.colId === node.id) {
+            onSetSplitIntent(null);
+        }
+    };
+
+    const isSplitTarget = splitIntent?.colId === node.id;
+
     return (
         <div 
             ref={setNodeRef} 
@@ -257,10 +305,23 @@ const LayoutColumnDroppable: React.FC<{
                 e.stopPropagation();
                 onSelectNode(node.id);
             }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
         >
+            {isSplitTarget && splitIntent?.side === 'left' && <div className="layout-column__split-indicator left" />}
+            {isSplitTarget && splitIntent?.side === 'right' && <div className="layout-column__split-indicator right" />}
+            
+            <button 
+                className="layout-hover-delete col-delete" 
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                title="删除列"
+            >
+                <Trash2 size={12} />
+            </button>
+
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                 {items.length === 0 ? (
-                    <div className="layout-column__empty">空列 - 点击选择</div>
+                    <div className="layout-column__empty">空列 - 拖拽组件至此</div>
                 ) : (
                     items.map(item => (
                         <LayoutItemSortable 
@@ -274,6 +335,7 @@ const LayoutColumnDroppable: React.FC<{
                                 e.stopPropagation();
                                 onSelectNode(item.id);
                             }}
+                            onDelete={() => onDeleteItem(item.id)}
                         />
                     ))
                 )}
@@ -291,7 +353,8 @@ const LayoutItemSortable: React.FC<{
     isSelected?: boolean;
     onSelect?: (e: React.MouseEvent) => void;
     isOverlay?: boolean;
-}> = ({ node, allDefinitions, allCategories, data, isSelected, onSelect, isOverlay }) => {
+    onDelete?: () => void;
+}> = ({ node, allDefinitions, allCategories, data, isSelected, onSelect, isOverlay, onDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: node.id,
         data: { type: node.type, node },
@@ -347,6 +410,15 @@ const LayoutItemSortable: React.FC<{
             onClick={onSelect}
         >
             {renderContent()}
+            {!isOverlay && onDelete && (
+                <button 
+                    className="layout-hover-delete item-delete" 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    title="移除组件"
+                >
+                    <XIcon size={12} />
+                </button>
+            )}
         </div>
     );
 };
@@ -359,6 +431,9 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const [search, setSearch] = useState('');
     const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+    
+    // NEW: Split Intent State
+    const [dragSplitIntent, setDragSplitIntent] = useState<{ colId: string, side: 'left' | 'right' } | null>(null);
 
     // Sync layout state if prop changes (e.g. undo)
     useEffect(() => {
@@ -526,6 +601,11 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDragData(null);
+        
+        // Always clear split intent on end
+        const currentSplitIntent = dragSplitIntent;
+        setDragSplitIntent(null);
+
         if (!over) return;
 
         const activeData = active.data.current;
@@ -557,6 +637,101 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             setSelectedNodeId(newRow.id); // Select the new row for styling
             return;
         }
+
+        // --- NEW: SPLIT LOGIC ---
+        if (currentSplitIntent) {
+            const { colId, side } = currentSplitIntent;
+            
+            // 1. Create Node to Insert
+            let nodeToInsert: LayoutNode;
+            
+            // 1a. From Palette
+            if (activeData?.from === 'palette') {
+                nodeToInsert = {
+                    id: uuidv4(),
+                    type: activeData.type,
+                    data: { key: activeData.key }
+                };
+            } 
+            // 1b. Move Existing (Complex: Remove first, then insert)
+            else if (activeData?.type === 'item' || activeData?.type === 'category') {
+                // Find and clone existing node logic would be here, 
+                // but moving existing item to split is complex because we need to remove it from old place first.
+                // For simplicity phase 1: Only support Palette items for splitting or implement move.
+                
+                // Let's implement move:
+                const sourceColId = findParentId(layout, active.id as string);
+                if (!sourceColId) return; // Should not happen
+                
+                const sourceRow = layout.find(r => r.children?.some(c => c.id === sourceColId));
+                const sourceCol = sourceRow?.children?.find(c => c.id === sourceColId);
+                const item = sourceCol?.children?.find(c => c.id === active.id);
+                
+                if (item) {
+                    nodeToInsert = { ...item }; // Clone it
+                    // NOTE: We need to remove it from source later (which is handled by `updateLayout` if we construct new layout correctly)
+                } else {
+                    return;
+                }
+            } else {
+                return; // Row reorder cannot split
+            }
+
+            // 2. Perform Split in Layout
+            const performSplit = (nodes: LayoutNode[]): LayoutNode[] => {
+                // If moving existing, filter it out first
+                let processedNodes = nodes;
+                if (activeData?.from !== 'palette') {
+                     processedNodes = nodes.map(row => ({
+                        ...row,
+                        children: row.children?.map(col => ({
+                            ...col,
+                            children: col.children?.filter(c => c.id !== active.id) || []
+                        }))
+                    }));
+                }
+
+                return processedNodes.map(row => {
+                    const targetColIndex = row.children?.findIndex(c => c.id === colId);
+                    if (targetColIndex === undefined || targetColIndex === -1 || !row.children) return row;
+
+                    const targetCol = row.children[targetColIndex];
+                    const currentWidth = targetCol.props?.width || (100 / row.children.length);
+                    
+                    const halfWidth = currentWidth / 2;
+                    
+                    // Update Target Col Width
+                    const updatedTargetCol = {
+                        ...targetCol,
+                        props: { ...targetCol.props, width: halfWidth }
+                    };
+
+                    // Create New Col
+                    const newCol: LayoutNode = {
+                        id: uuidv4(),
+                        type: 'col',
+                        children: [nodeToInsert],
+                        props: { width: halfWidth }
+                    };
+
+                    const newChildren = [...row.children];
+                    if (side === 'left') {
+                        newChildren.splice(targetColIndex, 1, newCol, updatedTargetCol);
+                    } else {
+                        newChildren.splice(targetColIndex, 1, updatedTargetCol, newCol);
+                    }
+
+                    return { ...row, children: newChildren };
+                });
+            };
+
+            const newLayout = performSplit(layout);
+            updateLayout(newLayout);
+            setSelectedNodeId(nodeToInsert.id);
+            return;
+        }
+        // --- END SPLIT LOGIC ---
+
 
         // 1. Reorder Rows
         if (activeData?.type === 'row' && overData?.type === 'row') {
@@ -605,7 +780,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             return;
         }
 
-        // 3. Move Item
+        // 3. Move Item (Standard Reorder)
         if ((activeData?.type === 'item' || activeData?.type === 'category') && activeData.from !== 'palette') {
              const targetColId = overData?.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
              const sourceColId = findParentId(layout, active.id as string);
@@ -704,6 +879,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                         node={row} 
                                         isSelected={selectedNodeId === row.id}
                                         onSelect={(e) => { e.stopPropagation(); setSelectedNodeId(row.id); }}
+                                        onDelete={() => deleteNode(row.id)}
                                     >
                                         {row.children?.map((col, index) => (
                                             <React.Fragment key={col.id}>
@@ -718,6 +894,12 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                                     data={data}
                                                     selectedId={selectedNodeId}
                                                     onSelectNode={setSelectedNodeId}
+                                                    // Pass Split Props
+                                                    isGlobalDragging={!!activeDragData}
+                                                    onSetSplitIntent={setDragSplitIntent}
+                                                    splitIntent={dragSplitIntent}
+                                                    onDelete={() => deleteNode(col.id)}
+                                                    onDeleteItem={(itemId) => deleteNode(itemId)}
                                                 />
                                             </React.Fragment>
                                         ))}

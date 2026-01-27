@@ -120,6 +120,7 @@
   border-color: var(--color-primary);
   cursor: grabbing;
   z-index: 9999;
+  pointer-events: none; /* Crucial for hover detection on underlying elements */
 }
 
 .palette-item__icon { color: var(--text-tertiary); }
@@ -562,6 +563,78 @@
 }
 .layout-category-placeholder__icon {
   color: var(--color-primary);
+}
+
+/* --- Split Indicators --- */
+.layout-column__split-indicator {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 4px;
+    background: var(--color-primary);
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    border-radius: 2px;
+}
+.layout-column__split-indicator.left {
+    left: 0;
+}
+.layout-column__split-indicator.right {
+    right: 0;
+}
+
+/* --- Hover Delete Buttons --- */
+.layout-hover-delete {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--bg-app);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.1s;
+    z-index: 50;
+    box-shadow: var(--shadow-sm);
+}
+
+.layout-hover-delete:hover {
+    background: var(--color-danger);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Row Delete Button */
+.layout-row:hover > .layout-hover-delete.row-delete {
+    opacity: 1;
+}
+.layout-hover-delete.row-delete {
+    top: -10px;
+    right: -10px;
+}
+
+/* Item Delete Button */
+.layout-item-wrapper:hover > .layout-hover-delete.item-delete {
+    opacity: 1;
+}
+.layout-hover-delete.item-delete {
+    top: -8px;
+    right: -8px;
+}
+
+/* Col Delete Button */
+.layout-column:hover > .layout-hover-delete.col-delete {
+    opacity: 1;
+}
+.layout-hover-delete.col-delete {
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
 }
 
 @media (max-width: 768px) {
