@@ -27,8 +27,7 @@ export function generateCssFromGuiConfig(
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => {
           // Assert key is a valid CSS property key
-          const propKey = key as keyof React.CSSProperties;
-          return `  ${toKebabCase(propKey)}: ${value};`;
+          return `  ${toKebabCase(key)}: ${value};`;
         })
         .join('\n');
 

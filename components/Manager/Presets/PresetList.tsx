@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Preset, StatusBarData, ItemDefinition, StyleDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
@@ -71,12 +72,19 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       if (!newData._meta) newData._meta = {};
       
       const isDeactivating = newData._meta.activePresetIds?.[0] === preset.id;
-      
+      let layoutMsg = "";
+
       // Toggle logic
       if (isDeactivating) {
           newData._meta.activePresetIds = [];
       } else {
           newData._meta.activePresetIds = [preset.id];
+          
+          // Apply Layout if present
+          if (preset.layout && preset.layout.length > 0) {
+              newData.layout = preset.layout;
+              layoutMsg = " & 布局";
+          }
       }
 
       // --- Worldbook Sync Logic ---
@@ -107,7 +115,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
               description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
           });
       } else {
-          toast.success(`配置 "${preset.name}" 已应用`, {
+          toast.success(`配置 "${preset.name}" 已应用 (定义${layoutMsg})`, {
               description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
           });
       }
@@ -124,16 +132,27 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
 
   const renderEntryDetails = (preset: Preset) => {
       const includedEntries = allDefinitions.filter(def => preset.itemKeys.includes(def.key));
-      if (includedEntries.length === 0) return <div className="preset-item__no-entries">此配置不包含任何条目</div>;
       
       return (
-          <div className="preset-item__details-grid">
-              {includedEntries.map(def => (
-                  <div key={def.key} className="preset-item__detail-chip">
-                    {def.name || def.key}
-                    {preset.styleOverrides[def.key] && preset.styleOverrides[def.key] !== 'style_default' && ' (*)'}
+          <div className="preset-item__details-container">
+              {preset.layout && (
+                  <div className="preset-item__layout-indicator">
+                      <LayoutTemplate size={14} />
+                      <span>包含自定义布局结构 ({preset.layout.length} 行)</span>
                   </div>
-              ))}
+              )}
+              {includedEntries.length === 0 ? (
+                  <div className="preset-item__no-entries">此配置不包含任何条目定义</div>
+              ) : (
+                  <div className="preset-item__details-grid">
+                      {includedEntries.map(def => (
+                          <div key={def.key} className="preset-item__detail-chip">
+                            {def.name || def.key}
+                            {preset.styleOverrides[def.key] && preset.styleOverrides[def.key] !== 'style_default' && ' (*)'}
+                          </div>
+                      ))}
+                  </div>
+              )}
           </div>
       );
   };
@@ -143,7 +162,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       <div className="preset-list__header glass-panel">
         <div>
             <h3 className="preset-list__title"><Layers size={20} /> 配置预设库</h3>
-            <p className="preset-list__subtitle">创建“定义”与“样式”的组合，以“主题”的形式应用到聊天中。</p>
+            <p className="preset-list__subtitle">创建“定义”、“样式”与“布局”的组合，以“主题”的形式应用到聊天中。</p>
         </div>
         <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
             <Plus size={16} /> 新建预设
@@ -162,6 +181,8 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                      const isExpanded = expandedPreset === preset.id;
                      const isActive = activePresetId === preset.id;
                      const isApplying = applyingPresetId === preset.id;
+                     const hasLayout = !!preset.layout && preset.layout.length > 0;
+
                      return (
                         <div key={preset.id} className={`preset-item glass-panel ${isExpanded ? 'preset-item--expanded' : ''} ${isActive ? 'preset-item--active' : ''}`} onClick={() => toggleDetails(preset.id)}>
                             <div className="preset-item__main">
@@ -169,6 +190,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                                     <div className="preset-item__name-row">
                                         {isActive && <CheckCircle size={16} className="preset-item__active-icon" />}
                                         <h4 className="preset-item__name">{preset.name}</h4>
+                                        {hasLayout && <LayoutTemplate size={14} className="preset-item__layout-icon" title="包含布局"/>}
                                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                     </div>
                                     <div className="preset-item__meta">
@@ -221,6 +243,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
         presetToEdit={editingPreset}
         allDefinitions={allDefinitions}
         allStyles={allStyles}
+        currentLayout={data.layout}
       />
     </div>
   );

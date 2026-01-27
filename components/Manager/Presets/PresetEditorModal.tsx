@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Preset, ItemDefinition, StyleDefinition } from '../../../types';
+import { LayoutNode } from '../../../types/layout';
 import { useToast } from '../../Toast/ToastContext';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
-import { X, Save, Search, Box } from 'lucide-react';
+import { X, Save, Search, Box, LayoutTemplate } from 'lucide-react';
 import './PresetEditorModal.css';
 
 interface PresetEditorModalProps {
@@ -12,15 +14,17 @@ interface PresetEditorModalProps {
   presetToEdit: Preset | null;
   allDefinitions: ItemDefinition[];
   allStyles: StyleDefinition[];
+  currentLayout?: LayoutNode[]; // Passed from parent
 }
 
 const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
-  isOpen, onClose, onSave, presetToEdit, allDefinitions, allStyles
+  isOpen, onClose, onSave, presetToEdit, allDefinitions, allStyles, currentLayout
 }) => {
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
   const [selectedItemKeys, setSelectedItemKeys] = useState<Set<string>>(new Set());
   const [styleOverrides, setStyleOverrides] = useState<{ [key: string]: string }>({});
+  const [includeLayout, setIncludeLayout] = useState(false);
   
   const toast = useToast();
 
@@ -30,10 +34,12 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         setName(presetToEdit.name);
         setSelectedItemKeys(new Set(presetToEdit.itemKeys));
         setStyleOverrides(presetToEdit.styleOverrides || {});
+        setIncludeLayout(!!presetToEdit.layout && presetToEdit.layout.length > 0);
       } else {
         setName('');
         setSelectedItemKeys(new Set());
         setStyleOverrides({});
+        setIncludeLayout(false);
       }
       setSearch('');
     }
@@ -98,6 +104,7 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
       toast.error("预设名称不能为空");
       return;
     }
+    
     const preset: Preset = {
       id: presetToEdit?.id || '', // Service will generate new ID if empty
       name: name.trim(),
@@ -105,6 +112,22 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
       itemKeys: Array.from(selectedItemKeys),
       styleOverrides,
     };
+
+    if (includeLayout) {
+        if (currentLayout && currentLayout.length > 0) {
+            preset.layout = currentLayout;
+        } else {
+            // If editing a preset that had layout, but current session has no layout, keep old layout or warn?
+            // Let's assume we take the current state.
+            if (presetToEdit?.layout) {
+                 preset.layout = presetToEdit.layout; // Preserve if not editing layout explicitly
+                 toast.info("保留了原有的布局设置 (因为当前没有活动布局)");
+            } else {
+                 toast.warning("当前没有自定义布局，预设将不包含布局信息");
+            }
+        }
+    }
+
     onSave(preset);
   };
 
@@ -128,6 +151,23 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
             placeholder="例如: 魔法世界观"
             className="preset-editor__input"
           />
+        </div>
+        
+        <div className="preset-editor__form-group">
+            <label className="preset-editor__checkbox-label">
+                <input 
+                    type="checkbox" 
+                    checked={includeLayout} 
+                    onChange={e => setIncludeLayout(e.target.checked)} 
+                />
+                <span className="preset-editor__checkbox-text">包含当前布局结构</span>
+                {includeLayout && <LayoutTemplate size={14} className="preset-editor__layout-icon" />}
+            </label>
+            {includeLayout && (
+                <div className="preset-editor__hint">
+                    应用此预设时，整个状态栏的排版布局将被该快照覆盖。
+                </div>
+            )}
         </div>
 
         <div className="preset-editor__form-group preset-editor__form-group--full">

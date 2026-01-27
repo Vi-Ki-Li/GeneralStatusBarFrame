@@ -1,3 +1,4 @@
+
 .preset-list {
   padding: var(--spacing-xl);
   height: 100%;
@@ -107,6 +108,10 @@
   color: var(--color-success);
 }
 
+.preset-item__layout-icon {
+    color: var(--color-accent);
+}
+
 .preset-item__name {
   font-weight: var(--font-weight-semibold);
 }
@@ -134,14 +139,31 @@
 .btn--delete { color: var(--text-tertiary); }
 .btn--delete:hover { color: var(--color-danger); background: rgba(239, 68, 68, 0.1); }
 
+.preset-item__details-container {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--chip-border);
+    animation: fadeIn 0.3s ease;
+}
+
+.preset-item__layout-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--color-accent);
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-md);
+    background: rgba(139, 92, 246, 0.05);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+}
+
 .preset-item__details-grid {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--chip-border);
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
-  animation: fadeIn 0.3s ease;
 }
 .preset-item__detail-chip {
   background: var(--bar-bg);

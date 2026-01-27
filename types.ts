@@ -1,3 +1,5 @@
+import React from 'react';
+
 
 /**
  * TavernHelper Remastered Core Types
@@ -164,6 +166,7 @@ export interface Preset {
   styleOverrides: {
     [itemKey: string]: string; // Key: ItemDefinition.key, Value: StyleDefinition.id
   };
+  layout?: LayoutNode[]; // v9.8: Layout Snapshot
 }
 
 export interface AppOptions {

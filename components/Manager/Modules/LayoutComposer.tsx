@@ -5,7 +5,7 @@ import { LayoutNode } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import * as LucideIcons from 'lucide-react';
-import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon } from 'lucide-react';
+import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon, Save, Download, FileJson } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -33,6 +33,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
+import { useToast } from '../../Toast/ToastContext'; // Add Toast
 import './LayoutComposer.css';
 
 interface LayoutComposerProps {
@@ -41,17 +42,23 @@ interface LayoutComposerProps {
 }
 
 const CREATE_ROW_ZONE_ID = 'layout-create-row-zone';
+const LAYOUT_SNAPSHOTS_KEY = 'th_layout_snapshots_v1';
 
-// --- Helper: Get Preview Item (Real or Mock) ---
+interface LayoutSnapshot {
+    id: string;
+    name: string;
+    layout: LayoutNode[];
+    timestamp: number;
+}
+
+// ... (getPreviewItem helper - UNCHANGED) ...
 const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem => {
-    // 1. Try to find a real item in Shared Data
     if (data.shared) {
         for (const catKey in data.shared) {
             const found = data.shared[catKey].find(i => i.key === def.key);
             if (found) return found;
         }
     }
-    // 2. Try to find a real item in First Available Character
     if (data.characters) {
         const charKeys = Object.keys(data.characters);
         for (const charId of charKeys) {
@@ -62,8 +69,6 @@ const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem
             }
         }
     }
-
-    // 3. Fallback: Generate Mock Item based on definition
     const mockItem: StatusBarItem = {
         key: def.key,
         values: [],
@@ -72,11 +77,9 @@ const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem
         user_modified: false,
         _uuid: `preview-${def.key}`
     };
-
     if (def.type === 'numeric') {
         const parts = def.structure?.parts || [];
         const values = new Array(parts.length).fill('');
-        // Fill common numeric slots
         const setVal = (k: string, v: string) => {
             const idx = parts.findIndex(p => p.key === k);
             if (idx > -1) values[idx] = v;
@@ -88,7 +91,7 @@ const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem
             setVal('reason', '战斗');
             setVal('description', '轻伤');
         } else {
-            mockItem.values = ['75', '100']; // Default simple numeric
+            mockItem.values = ['75', '100'];
             return mockItem;
         }
         mockItem.values = values;
@@ -105,12 +108,10 @@ const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem
     } else {
         mockItem.values = ['预览文本内容...'];
     }
-
     return mockItem;
 };
 
-
-// --- Component: Palette Item ---
+// ... (PaletteItem component - UNCHANGED) ...
 const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'category'; label?: string; isOverlay?: boolean }> = ({ definition, type, label, isOverlay }) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `palette-${definition.key}`,
@@ -135,7 +136,7 @@ const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'catego
     );
 };
 
-// --- Component: Layout Creator Zone ---
+// ... (LayoutCreatorZone - UNCHANGED) ...
 const LayoutCreatorZone: React.FC = () => {
     const { setNodeRef, isOver } = useDroppable({
         id: CREATE_ROW_ZONE_ID,
@@ -150,7 +151,7 @@ const LayoutCreatorZone: React.FC = () => {
     );
 };
 
-// --- Component: Column Resizer ---
+// ... (ColumnResizer - UNCHANGED) ...
 const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({ onResize }) => {
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -163,13 +164,9 @@ const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({
         const handleMouseMove = (moveEvent: MouseEvent) => {
             const currentX = moveEvent.clientX;
             const deltaPixels = currentX - lastX;
-            
             if (deltaPixels === 0) return;
-
             const deltaPercent = (deltaPixels / parentWidth) * 100;
-            
             onResize(deltaPercent);
-            
             lastX = currentX;
         };
 
@@ -189,8 +186,7 @@ const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({
     );
 };
 
-
-// --- Component: Layout Element (Row) ---
+// ... (LayoutRowDraggable - UNCHANGED) ...
 const LayoutRowDraggable: React.FC<{ 
     node: LayoutNode; 
     onSelect: (e: React.MouseEvent) => void;
@@ -208,7 +204,7 @@ const LayoutRowDraggable: React.FC<{
         transform: CSS.Transform.toString(transform), 
         transition, 
         opacity: isDragging ? 0.3 : 1,
-        ...(node.props?.style || {}) // Apply custom styles
+        ...(node.props?.style || {})
     };
 
     return (
@@ -238,7 +234,7 @@ const LayoutRowDraggable: React.FC<{
     );
 };
 
-// --- Component: Layout Column (Droppable) ---
+// ... (LayoutColumnDroppable - UNCHANGED) ...
 const LayoutColumnDroppable: React.FC<{ 
     node: LayoutNode; 
     items: LayoutNode[];
@@ -247,7 +243,6 @@ const LayoutColumnDroppable: React.FC<{
     data: StatusBarData;
     selectedId: string | null;
     onSelectNode: (id: string) => void;
-    // New Props for Split
     isGlobalDragging: boolean;
     onSetSplitIntent: (intent: { colId: string, side: 'left' | 'right' } | null) => void;
     splitIntent: { colId: string, side: 'left' | 'right' } | null;
@@ -265,14 +260,12 @@ const LayoutColumnDroppable: React.FC<{
         ...(node.props?.style || {})
     };
 
-    // Calculate Split Intent on Mouse Move
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isGlobalDragging) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
         const percent = offsetX / rect.width;
 
-        // Threshold: 20%
         if (percent < 0.2) {
             if (splitIntent?.colId !== node.id || splitIntent?.side !== 'left') {
                 onSetSplitIntent({ colId: node.id, side: 'left' });
@@ -288,7 +281,6 @@ const LayoutColumnDroppable: React.FC<{
         }
     };
 
-    // Clear intent on leave
     const handleMouseLeave = () => {
         if (isGlobalDragging && splitIntent?.colId === node.id) {
             onSetSplitIntent(null);
@@ -346,7 +338,7 @@ const LayoutColumnDroppable: React.FC<{
     );
 };
 
-// --- Component: Layout Item (Sortable inside Column) ---
+// ... (LayoutItemSortable - UNCHANGED) ...
 const LayoutItemSortable: React.FC<{ 
     node: LayoutNode; 
     allDefinitions: { [key: string]: ItemDefinition };
@@ -369,14 +361,11 @@ const LayoutItemSortable: React.FC<{
         ...(node.props?.style || {})
     };
     
-    // Logic to render content
     const renderContent = () => {
         if (node.type === 'item' && node.data?.key) {
             const def = allDefinitions[node.data.key];
             if (!def) return <div className="palette-item">未知组件: {node.data.key}</div>;
-            
             const previewItem = getPreviewItem(def, data);
-            
             return (
                 <StyledItemRenderer 
                     item={previewItem} 
@@ -398,7 +387,6 @@ const LayoutItemSortable: React.FC<{
                 </div>
             );
         }
-
         return <div>未知节点</div>;
     };
 
@@ -416,12 +404,105 @@ const LayoutItemSortable: React.FC<{
                 <button 
                     className="layout-hover-delete item-delete" 
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    onPointerDown={(e) => e.stopPropagation()} // CRITICAL FIX: Prevent dnd-kit from starting drag
+                    onPointerDown={(e) => e.stopPropagation()} 
                     title="移除组件"
                 >
                     <XIcon size={12} />
                 </button>
             )}
+        </div>
+    );
+};
+
+// --- Snapshot Manager Modal ---
+const SnapshotManagerModal: React.FC<{ 
+    isOpen: boolean; 
+    onClose: () => void; 
+    onLoad: (layout: LayoutNode[]) => void; 
+    currentLayout: LayoutNode[] 
+}> = ({ isOpen, onClose, onLoad, currentLayout }) => {
+    const [snapshots, setSnapshots] = useState<LayoutSnapshot[]>([]);
+    const [newName, setNewName] = useState('');
+    const toast = useToast();
+
+    useEffect(() => {
+        if (isOpen) {
+            const stored = localStorage.getItem(LAYOUT_SNAPSHOTS_KEY);
+            setSnapshots(stored ? JSON.parse(stored) : []);
+            setNewName('');
+        }
+    }, [isOpen]);
+
+    const handleSave = () => {
+        if (!newName.trim()) return;
+        const newSnapshot: LayoutSnapshot = {
+            id: uuidv4(),
+            name: newName.trim(),
+            layout: currentLayout,
+            timestamp: Date.now(),
+        };
+        const updated = [...snapshots, newSnapshot];
+        setSnapshots(updated);
+        localStorage.setItem(LAYOUT_SNAPSHOTS_KEY, JSON.stringify(updated));
+        setNewName('');
+        toast.success('布局快照已保存');
+    };
+
+    const handleDelete = (id: string) => {
+        const updated = snapshots.filter(s => s.id !== id);
+        setSnapshots(updated);
+        localStorage.setItem(LAYOUT_SNAPSHOTS_KEY, JSON.stringify(updated));
+    };
+
+    const handleLoad = (layout: LayoutNode[]) => {
+        if (confirm("加载快照将覆盖当前布局，确定吗？")) {
+            onLoad(layout);
+            onClose();
+            toast.success('布局已加载');
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="layout-snapshot-modal-overlay" onClick={onClose}>
+            <div className="layout-snapshot-modal glass-panel" onClick={e => e.stopPropagation()}>
+                <div className="layout-snapshot-header">
+                    <h3>布局快照管理</h3>
+                    <button onClick={onClose}><XIcon size={20}/></button>
+                </div>
+                
+                <div className="layout-snapshot-save-row">
+                    <input 
+                        value={newName} 
+                        onChange={e => setNewName(e.target.value)} 
+                        placeholder="新快照名称..." 
+                        className="layout-snapshot-input"
+                    />
+                    <button onClick={handleSave} disabled={!newName.trim()} className="btn btn--primary">
+                        <Save size={16} /> 保存当前
+                    </button>
+                </div>
+
+                <div className="layout-snapshot-list">
+                    {snapshots.length === 0 ? (
+                        <div className="layout-snapshot-empty">暂无保存的布局</div>
+                    ) : (
+                        snapshots.map(s => (
+                            <div key={s.id} className="layout-snapshot-item">
+                                <div className="layout-snapshot-info">
+                                    <span className="name">{s.name}</span>
+                                    <span className="date">{new Date(s.timestamp).toLocaleDateString()}</span>
+                                </div>
+                                <div className="layout-snapshot-actions">
+                                    <button onClick={() => handleLoad(s.layout)} className="btn btn--ghost" title="加载"><Download size={16}/></button>
+                                    <button onClick={() => handleDelete(s.id)} className="btn btn--ghost delete" title="删除"><Trash2 size={16}/></button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -434,11 +515,12 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const [search, setSearch] = useState('');
     const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-    
-    // NEW: Split Intent State
     const [dragSplitIntent, setDragSplitIntent] = useState<{ colId: string, side: 'left' | 'right' } | null>(null);
+    const [showSnapshotModal, setShowSnapshotModal] = useState(false);
+    
+    // Mobile Check
+    const isMobile = window.innerWidth <= 768;
 
-    // Sync layout state if prop changes (e.g. undo)
     useEffect(() => {
         if (data.layout) setLayout(data.layout);
     }, [data.layout]);
@@ -456,13 +538,12 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         });
     };
 
-    // Filter Items
     const { categories, itemsByCategory } = useMemo(() => {
         const sortedCats = (Object.values(data.categories) as CategoryDefinition[]).sort((a,b) => a.order - b.order);
         const grouped: Record<string, ItemDefinition[]> = {};
         const lowerSearch = search.toLowerCase();
         
-        Object.values(data.item_definitions).forEach(def => {
+        (Object.values(data.item_definitions) as ItemDefinition[]).forEach(def => {
             if (search && !def.key.toLowerCase().includes(lowerSearch) && !def.name?.toLowerCase().includes(lowerSearch)) return;
             const cat = def.defaultCategory || 'Other';
             if (!grouped[cat]) grouped[cat] = [];
@@ -472,7 +553,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         return { categories: sortedCats, itemsByCategory: grouped };
     }, [data, search]);
 
-    // --- Helper: Find Node & Parent ---
     const findNodeById = (nodes: LayoutNode[], id: string): LayoutNode | null => {
         for (const node of nodes) {
             if (node.id === id) return node;
@@ -495,7 +575,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         return null;
     };
 
-    // --- Actions ---
     const updateLayout = (newLayout: LayoutNode[]) => {
         setLayout(newLayout);
         onUpdate({ ...data, layout: newLayout });
@@ -528,7 +607,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         updateLayout(updateRecursive(layout));
     };
 
-    // Add Column to specific Row
     const addColumnToRow = (rowId: string) => {
         const newLayout = layout.map(row => {
             if (row.id !== rowId) return row;
@@ -537,9 +615,8 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                 id: uuidv4(),
                 type: 'col',
                 children: [],
-                props: { width: 100 / (currentCols.length + 1) } // Reset widths effectively
+                props: { width: 100 / (currentCols.length + 1) }
             };
-            // Normalize widths
             const newChildren = [...currentCols, newCol].map(c => ({
                 ...c,
                 props: { ...c.props, width: 100 / (currentCols.length + 1) }
@@ -549,12 +626,11 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         updateLayout(newLayout);
     };
 
-    // Remove last column from Row
     const removeColumnFromRow = (rowId: string) => {
         const newLayout = layout.map(row => {
             if (row.id !== rowId) return row;
             const currentCols = row.children || [];
-            if (currentCols.length <= 1) return row; // Keep at least 1 col
+            if (currentCols.length <= 1) return row;
             
             const newChildren = currentCols.slice(0, -1).map(c => ({
                 ...c,
@@ -565,8 +641,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         updateLayout(newLayout);
     };
 
-
-    // Resize Logic (Incremental)
     const handleColumnResize = (rowId: string, leftColIndex: number, deltaPercent: number) => {
         setLayout(prevLayout => {
             const newLayout = _.cloneDeep(prevLayout);
@@ -596,7 +670,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         });
     };
 
-    // Drag Logic
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragData(event.active.data.current);
     };
@@ -604,8 +677,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDragData(null);
-        
-        // Always clear split intent on end
         const currentSplitIntent = dragSplitIntent;
         setDragSplitIntent(null);
 
@@ -614,9 +685,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         const activeData = active.data.current;
         const overData = over.data.current;
         
-        // 0. Handle Create Row Zone
         if (activeData?.from === 'palette' && over.id === CREATE_ROW_ZONE_ID) {
-            // Create New Row -> Col -> Item
             const newItemNode: LayoutNode = {
                 id: uuidv4(),
                 type: activeData.type,
@@ -637,52 +706,36 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             
             const newLayout = [...layout, newRow];
             updateLayout(newLayout);
-            setSelectedNodeId(newRow.id); // Select the new row for styling
+            setSelectedNodeId(newRow.id);
             return;
         }
 
-        // --- NEW: SPLIT LOGIC ---
         if (currentSplitIntent) {
             const { colId, side } = currentSplitIntent;
-            
-            // 1. Create Node to Insert
             let nodeToInsert: LayoutNode;
             
-            // 1a. From Palette
             if (activeData?.from === 'palette') {
                 nodeToInsert = {
                     id: uuidv4(),
                     type: activeData.type,
                     data: { key: activeData.key }
                 };
-            } 
-            // 1b. Move Existing (Complex: Remove first, then insert)
-            else if (activeData?.type === 'item' || activeData?.type === 'category') {
-                // Find and clone existing node logic would be here, 
-                // but moving existing item to split is complex because we need to remove it from old place first.
-                // For simplicity phase 1: Only support Palette items for splitting or implement move.
-                
-                // Let's implement move:
+            } else if (activeData?.type === 'item' || activeData?.type === 'category') {
                 const sourceColId = findParentId(layout, active.id as string);
-                if (!sourceColId) return; // Should not happen
-                
+                if (!sourceColId) return;
                 const sourceRow = layout.find(r => r.children?.some(c => c.id === sourceColId));
                 const sourceCol = sourceRow?.children?.find(c => c.id === sourceColId);
                 const item = sourceCol?.children?.find(c => c.id === active.id);
-                
                 if (item) {
-                    nodeToInsert = { ...item }; // Clone it
-                    // NOTE: We need to remove it from source later (which is handled by `updateLayout` if we construct new layout correctly)
+                    nodeToInsert = { ...item };
                 } else {
                     return;
                 }
             } else {
-                return; // Row reorder cannot split
+                return;
             }
 
-            // 2. Perform Split in Layout
             const performSplit = (nodes: LayoutNode[]): LayoutNode[] => {
-                // If moving existing, filter it out first
                 let processedNodes = nodes;
                 if (activeData?.from !== 'palette') {
                      processedNodes = nodes.map(row => ({
@@ -700,22 +753,9 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
 
                     const targetCol = row.children[targetColIndex];
                     const currentWidth = targetCol.props?.width || (100 / row.children.length);
-                    
                     const halfWidth = currentWidth / 2;
-                    
-                    // Update Target Col Width
-                    const updatedTargetCol = {
-                        ...targetCol,
-                        props: { ...targetCol.props, width: halfWidth }
-                    };
-
-                    // Create New Col
-                    const newCol: LayoutNode = {
-                        id: uuidv4(),
-                        type: 'col',
-                        children: [nodeToInsert],
-                        props: { width: halfWidth }
-                    };
+                    const updatedTargetCol = { ...targetCol, props: { ...targetCol.props, width: halfWidth } };
+                    const newCol: LayoutNode = { id: uuidv4(), type: 'col', children: [nodeToInsert], props: { width: halfWidth } };
 
                     const newChildren = [...row.children];
                     if (side === 'left') {
@@ -723,7 +763,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                     } else {
                         newChildren.splice(targetColIndex, 1, updatedTargetCol, newCol);
                     }
-
                     return { ...row, children: newChildren };
                 });
             };
@@ -733,10 +772,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             setSelectedNodeId(nodeToInsert.id);
             return;
         }
-        // --- END SPLIT LOGIC ---
 
-
-        // 1. Reorder Rows
         if (activeData?.type === 'row' && overData?.type === 'row') {
             const oldIndex = layout.findIndex(n => n.id === active.id);
             const newIndex = layout.findIndex(n => n.id === over.id);
@@ -747,7 +783,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             return;
         }
 
-        // 2. Drop Item/Category from Palette to Column
         if (activeData?.from === 'palette' && (overData?.type === 'col' || overData?.type === 'item' || overData?.type === 'category')) {
             const targetColId = overData.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
             if (!targetColId) return;
@@ -779,15 +814,13 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
 
             const newLayout = insertNodeIntoCol(layout, targetColId, newNode, over.id as string);
             updateLayout(newLayout);
-            setSelectedNodeId(newNode.id); // Select dropped item
+            setSelectedNodeId(newNode.id);
             return;
         }
 
-        // 3. Move Item (Standard Reorder)
         if ((activeData?.type === 'item' || activeData?.type === 'category') && activeData.from !== 'palette') {
              const targetColId = overData?.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
              const sourceColId = findParentId(layout, active.id as string);
-             
              if (!targetColId || !sourceColId) return;
 
              const moveNode = (nodes: LayoutNode[], itemId: string, sId: string, tId: string, oId: string): LayoutNode[] => {
@@ -832,6 +865,17 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }),
     };
 
+    // Mobile Overlay
+    if (isMobile) {
+        return (
+            <div className="layout-composer-mobile-overlay">
+                <LayoutTemplate size={48} />
+                <h3>不支持移动端编排</h3>
+                <p>为了保证最佳体验，复杂的拖拽排版功能仅在桌面端可用。</p>
+            </div>
+        );
+    }
+
     return (
         <div className="layout-composer">
             <DndContext 
@@ -865,6 +909,12 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                             ))}
                         </div>
                     </div>
+                    {/* New: Snapshot Button in Palette Footer */}
+                    <div className="palette-section palette-footer">
+                        <button className="btn btn--ghost w-100" onClick={() => setShowSnapshotModal(true)}>
+                            <FileJson size={16} /> 管理布局快照
+                        </button>
+                    </div>
                 </div>
 
                 <div className="layout-composer__canvas" onClick={() => setSelectedNodeId(null)}>
@@ -897,7 +947,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                                     data={data}
                                                     selectedId={selectedNodeId}
                                                     onSelectNode={setSelectedNodeId}
-                                                    // Pass Split Props
                                                     isGlobalDragging={!!activeDragData}
                                                     onSetSplitIntent={setDragSplitIntent}
                                                     splitIntent={dragSplitIntent}
@@ -921,7 +970,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                     onDelete={deleteNode}
                     allDefinitions={data.item_definitions}
                     onSelectParent={(id) => setSelectedNodeId(id)}
-                    // New Props for Column Management
                     onAddColumn={() => selectedNodeId && addColumnToRow(selectedNodeId)}
                     onRemoveColumn={() => selectedNodeId && removeColumnFromRow(selectedNodeId)}
                 />
@@ -948,6 +996,13 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                         )
                     ) : null}
                 </DragOverlay>
+
+                <SnapshotManagerModal 
+                    isOpen={showSnapshotModal} 
+                    onClose={() => setShowSnapshotModal(false)}
+                    currentLayout={layout}
+                    onLoad={updateLayout}
+                />
             </DndContext>
         </div>
     );
