@@ -28,8 +28,14 @@ const LayoutNodeRenderer: React.FC<{
     
     // 1. Render Row
     if (node.type === 'row') {
+        const customStyle = node.props?.style || {};
         return (
-            <div className="status-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <div className="status-row" style={{ 
+                display: 'flex', 
+                gap: node.props?.style?.gap || '8px', // Prioritize gap from props
+                marginBottom: '8px',
+                ...customStyle 
+            }}>
                 {node.children?.map(child => (
                     <LayoutNodeRenderer 
                         key={child.id} 
@@ -46,13 +52,15 @@ const LayoutNodeRenderer: React.FC<{
 
     // 2. Render Column
     if (node.type === 'col') {
+        const customStyle = node.props?.style || {};
         return (
             <div className="status-col" style={{ 
                 flex: node.props?.width ? `${node.props.width}%` : 1,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
-                minWidth: 0 // Fix flex overflow
+                minWidth: 0, // Fix flex overflow
+                ...customStyle
             }}>
                 {node.children?.map(child => (
                     <LayoutNodeRenderer 
@@ -73,10 +81,12 @@ const LayoutNodeRenderer: React.FC<{
         const items = itemsMap[node.data.key] || [];
         if (items.length === 0) return null; // Don't render empty items (or maybe render placeholder?)
         
+        const wrapperStyle = node.props?.style || {}; // Wrapper styles for item (e.g. margins)
+
         // Items in itemsMap are grouped by key. Usually there is only 1 item per key per character.
         // But shared items might have multiple. Render all found.
         return (
-            <>
+            <div style={wrapperStyle}>
                 {items.map(item => {
                     const originalDef = getItemDefinition(data.item_definitions, item.key);
                     let finalDef = originalDef;
@@ -103,7 +113,7 @@ const LayoutNodeRenderer: React.FC<{
                         />
                     );
                 })}
-            </>
+            </div>
         );
     }
 
@@ -113,42 +123,45 @@ const LayoutNodeRenderer: React.FC<{
         if (catItems.length === 0) return null;
         
         const catDef = getCategoryDefinition(data.categories, node.data.key);
+        const wrapperStyle = node.props?.style || {};
         
         return (
-            <StatusSection 
-                title={catDef.name} 
-                iconName={catDef.icon}
-                defaultExpanded={true}
-                layoutMode={catDef.layout_mode}
-                gridColumns={catDef.grid_columns}
-            >
-                {catItems.map(item => {
-                     // Duplicate Item render logic (refactor later)
-                     const originalDef = getItemDefinition(data.item_definitions, item.key);
-                     let finalDef = originalDef;
-                     const activePresetId = data._meta?.activePresetIds?.[0];
-                     if (activePresetId) {
-                         const allPresets = presetService.getPresets();
-                         const activePreset = allPresets.find(p => p.id === activePresetId);
-                         const overrideStyleId = activePreset?.styleOverrides?.[item.key];
-                         if (overrideStyleId) {
-                             finalDef = {
-                                 ...originalDef,
-                                 styleId: overrideStyleId === 'style_default' ? undefined : overrideStyleId
-                             };
-                         }
-                     }
-                     return (
-                        <StyledItemRenderer 
-                            key={item._uuid}
-                            item={item} 
-                            definition={finalDef}
-                            styleOverride={styleOverride}
-                            onInteract={onInteract}
-                        />
-                     );
-                })}
-            </StatusSection>
+            <div style={wrapperStyle}>
+                <StatusSection 
+                    title={catDef.name} 
+                    iconName={catDef.icon}
+                    defaultExpanded={true}
+                    layoutMode={catDef.layout_mode}
+                    gridColumns={catDef.grid_columns}
+                >
+                    {catItems.map(item => {
+                        // Duplicate Item render logic (refactor later)
+                        const originalDef = getItemDefinition(data.item_definitions, item.key);
+                        let finalDef = originalDef;
+                        const activePresetId = data._meta?.activePresetIds?.[0];
+                        if (activePresetId) {
+                            const allPresets = presetService.getPresets();
+                            const activePreset = allPresets.find(p => p.id === activePresetId);
+                            const overrideStyleId = activePreset?.styleOverrides?.[item.key];
+                            if (overrideStyleId) {
+                                finalDef = {
+                                    ...originalDef,
+                                    styleId: overrideStyleId === 'style_default' ? undefined : overrideStyleId
+                                };
+                            }
+                        }
+                        return (
+                            <StyledItemRenderer 
+                                key={item._uuid}
+                                item={item} 
+                                definition={finalDef}
+                                styleOverride={styleOverride}
+                                onInteract={onInteract}
+                            />
+                        );
+                    })}
+                </StatusSection>
+            </div>
         );
     }
 

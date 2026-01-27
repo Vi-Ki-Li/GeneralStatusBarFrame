@@ -1,5 +1,6 @@
 
 // types/layout.ts
+import React from 'react';
 
 export type LayoutNodeType = 'row' | 'col' | 'item' | 'category' | 'placeholder';
 
@@ -11,6 +12,7 @@ export interface LayoutNode {
     width?: number; // Percent width for columns
     flex?: number;
     className?: string;
+    style?: React.CSSProperties; // Added for Phase 3: Custom styles
   };
   data?: {
     key: string; // ItemDefinition.key or CategoryDefinition.key

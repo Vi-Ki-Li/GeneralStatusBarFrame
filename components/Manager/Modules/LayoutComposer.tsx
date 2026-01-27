@@ -3,8 +3,9 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
 import { LayoutNode } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
+import LayoutInspector from './LayoutInspector';
 import * as LucideIcons from 'lucide-react';
-import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus } from 'lucide-react';
+import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -38,6 +39,8 @@ interface LayoutComposerProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
 }
+
+const CREATE_ROW_ZONE_ID = 'layout-create-row-zone';
 
 // --- Helper: Get Preview Item (Real or Mock) ---
 const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem => {
@@ -132,11 +135,26 @@ const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'catego
     );
 };
 
+// --- Component: Layout Creator Zone ---
+const LayoutCreatorZone: React.FC = () => {
+    const { setNodeRef, isOver } = useDroppable({
+        id: CREATE_ROW_ZONE_ID,
+        data: { type: 'creator_zone' }
+    });
+
+    return (
+        <div ref={setNodeRef} className={`layout-composer__drop-zone ${isOver ? 'active' : ''}`}>
+            <ArrowDownToLine size={24} />
+            <span>拖拽组件至此创建新行</span>
+        </div>
+    );
+};
+
 // --- Component: Column Resizer ---
 const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({ onResize }) => {
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault();
-        e.stopPropagation(); // Stop DndKit from grabbing this
+        e.stopPropagation();
 
         let lastX = e.clientX;
         const parentElement = (e.target as HTMLElement).parentElement;
@@ -150,10 +168,8 @@ const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({
 
             const deltaPercent = (deltaPixels / parentWidth) * 100;
             
-            // Trigger resize
             onResize(deltaPercent);
             
-            // Update lastX for incremental calculation
             lastX = currentX;
         };
 
@@ -177,28 +193,36 @@ const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({
 // --- Component: Layout Element (Row) ---
 const LayoutRowDraggable: React.FC<{ 
     node: LayoutNode; 
-    onDelete: (id: string) => void; 
+    onSelect: (e: React.MouseEvent) => void;
+    isSelected: boolean;
     children: React.ReactNode;
     isOverlay?: boolean;
-}> = ({ node, onDelete, children, isOverlay }) => {
+}> = ({ node, onSelect, isSelected, children, isOverlay }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: node.id,
         data: { type: 'row', node },
     });
 
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
+    const style: React.CSSProperties = { 
+        transform: CSS.Transform.toString(transform), 
+        transition, 
+        opacity: isDragging ? 0.3 : 1,
+        ...(node.props?.style || {}) // Apply custom styles
+    };
 
     return (
-        <div ref={setNodeRef} style={style} className={`layout-row ${isOverlay ? 'overlay' : ''}`}>
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            className={`layout-row ${isOverlay ? 'overlay' : ''} ${isSelected ? 'selected' : ''}`}
+            onClick={onSelect}
+        >
             <div className="layout-row__handle" {...listeners} {...attributes} title="拖动行排序">
                 <GripVertical size={16} />
             </div>
             <div className="layout-row__columns">
                 {children}
             </div>
-            <button className="layout-row__delete" onClick={() => onDelete(node.id)} title="删除整行">
-                <Trash2 size={14} />
-            </button>
         </div>
     );
 };
@@ -209,19 +233,34 @@ const LayoutColumnDroppable: React.FC<{
     items: LayoutNode[];
     allDefinitions: { [key: string]: ItemDefinition };
     allCategories: { [key: string]: CategoryDefinition };
-    onDeleteItem: (itemId: string) => void;
-    data: StatusBarData; // Pass data for previews
-}> = ({ node, items, allDefinitions, allCategories, onDeleteItem, data }) => {
+    data: StatusBarData;
+    selectedId: string | null;
+    onSelectNode: (id: string) => void;
+}> = ({ node, items, allDefinitions, allCategories, data, selectedId, onSelectNode }) => {
     const { setNodeRef } = useDroppable({
         id: node.id,
         data: { type: 'col', node },
     });
 
+    const isSelected = selectedId === node.id;
+    const style: React.CSSProperties = { 
+        flex: node.props?.width ? `${node.props.width}%` : 1,
+        ...(node.props?.style || {})
+    };
+
     return (
-        <div ref={setNodeRef} className="layout-column" style={{ flex: node.props?.width ? `${node.props.width}%` : 1 }}>
+        <div 
+            ref={setNodeRef} 
+            className={`layout-column ${isSelected ? 'selected' : ''}`} 
+            style={style}
+            onClick={(e) => {
+                e.stopPropagation();
+                onSelectNode(node.id);
+            }}
+        >
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                 {items.length === 0 ? (
-                    <div className="layout-column__empty">空列</div>
+                    <div className="layout-column__empty">空列 - 点击选择</div>
                 ) : (
                     items.map(item => (
                         <LayoutItemSortable 
@@ -229,8 +268,12 @@ const LayoutColumnDroppable: React.FC<{
                             node={item} 
                             allDefinitions={allDefinitions} 
                             allCategories={allCategories}
-                            onDelete={() => onDeleteItem(item.id)} 
                             data={data}
+                            isSelected={selectedId === item.id}
+                            onSelect={(e) => {
+                                e.stopPropagation();
+                                onSelectNode(item.id);
+                            }}
                         />
                     ))
                 )}
@@ -244,16 +287,22 @@ const LayoutItemSortable: React.FC<{
     node: LayoutNode; 
     allDefinitions: { [key: string]: ItemDefinition };
     allCategories: { [key: string]: CategoryDefinition };
-    onDelete: () => void;
     data: StatusBarData;
+    isSelected?: boolean;
+    onSelect?: (e: React.MouseEvent) => void;
     isOverlay?: boolean;
-}> = ({ node, allDefinitions, allCategories, onDelete, data, isOverlay }) => {
+}> = ({ node, allDefinitions, allCategories, data, isSelected, onSelect, isOverlay }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: node.id,
         data: { type: node.type, node },
     });
 
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
+    const style: React.CSSProperties = { 
+        transform: CSS.Transform.toString(transform), 
+        transition, 
+        opacity: isDragging ? 0.6 : 1,
+        ...(node.props?.style || {})
+    };
     
     // Logic to render content
     const renderContent = () => {
@@ -267,7 +316,6 @@ const LayoutItemSortable: React.FC<{
                 <StyledItemRenderer 
                     item={previewItem} 
                     definition={def} 
-                    // No interaction in editor
                     onInteract={() => {}}
                 />
             );
@@ -290,13 +338,15 @@ const LayoutItemSortable: React.FC<{
     };
 
     return (
-        <div ref={setNodeRef} style={style} className={`layout-item-wrapper ${isOverlay ? 'overlay' : ''}`} {...attributes} {...listeners}>
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            className={`layout-item-wrapper ${isOverlay ? 'overlay' : ''} ${isSelected ? 'selected' : ''}`} 
+            {...attributes} 
+            {...listeners}
+            onClick={onSelect}
+        >
             {renderContent()}
-            {!isOverlay && (
-                <button className="layout-item__delete" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="删除组件">
-                    <Trash2 size={12} />
-                </button>
-            )}
         </div>
     );
 };
@@ -308,6 +358,12 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const [activeDragData, setActiveDragData] = useState<any>(null);
     const [search, setSearch] = useState('');
     const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+    // Sync layout state if prop changes (e.g. undo)
+    useEffect(() => {
+        if (data.layout) setLayout(data.layout);
+    }, [data.layout]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -338,26 +394,36 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         return { categories: sortedCats, itemsByCategory: grouped };
     }, [data, search]);
 
-    // Actions
-    const addRow = (cols: number) => {
-        const newCols: LayoutNode[] = Array.from({ length: cols }).map(() => ({
-            id: uuidv4(),
-            type: 'col',
-            children: [],
-            props: { width: Math.floor(100 / cols) }
-        }));
-        const newRow: LayoutNode = {
-            id: uuidv4(),
-            type: 'row',
-            children: newCols
-        };
-        const newLayout = [...layout, newRow];
+    // --- Helper: Find Node & Parent ---
+    const findNodeById = (nodes: LayoutNode[], id: string): LayoutNode | null => {
+        for (const node of nodes) {
+            if (node.id === id) return node;
+            if (node.children) {
+                const found = findNodeById(node.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const findParentId = (nodes: LayoutNode[], childId: string): string | null => {
+        for (const node of nodes) {
+            if (node.children?.some(c => c.id === childId)) return node.id;
+            if (node.children) {
+                const found = findParentId(node.children, childId);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    // --- Actions ---
+    const updateLayout = (newLayout: LayoutNode[]) => {
         setLayout(newLayout);
         onUpdate({ ...data, layout: newLayout });
     };
 
     const deleteNode = (id: string) => {
-        // Recursive delete
         const filterNodes = (nodes: LayoutNode[]): LayoutNode[] => {
             return nodes.filter(n => n.id !== id).map(n => ({
                 ...n,
@@ -365,9 +431,62 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             }));
         };
         const newLayout = filterNodes(layout);
-        setLayout(newLayout);
-        onUpdate({ ...data, layout: newLayout });
+        updateLayout(newLayout);
+        if (selectedNodeId === id) setSelectedNodeId(null);
     };
+
+    const handleNodeUpdate = (id: string, updates: Partial<LayoutNode>) => {
+        const updateRecursive = (nodes: LayoutNode[]): LayoutNode[] => {
+            return nodes.map(node => {
+                if (node.id === id) {
+                    return { ...node, ...updates };
+                }
+                if (node.children) {
+                    return { ...node, children: updateRecursive(node.children) };
+                }
+                return node;
+            });
+        };
+        updateLayout(updateRecursive(layout));
+    };
+
+    // Add Column to specific Row
+    const addColumnToRow = (rowId: string) => {
+        const newLayout = layout.map(row => {
+            if (row.id !== rowId) return row;
+            const currentCols = row.children || [];
+            const newCol: LayoutNode = {
+                id: uuidv4(),
+                type: 'col',
+                children: [],
+                props: { width: 100 / (currentCols.length + 1) } // Reset widths effectively
+            };
+            // Normalize widths
+            const newChildren = [...currentCols, newCol].map(c => ({
+                ...c,
+                props: { ...c.props, width: 100 / (currentCols.length + 1) }
+            }));
+            return { ...row, children: newChildren };
+        });
+        updateLayout(newLayout);
+    };
+
+    // Remove last column from Row
+    const removeColumnFromRow = (rowId: string) => {
+        const newLayout = layout.map(row => {
+            if (row.id !== rowId) return row;
+            const currentCols = row.children || [];
+            if (currentCols.length <= 1) return row; // Keep at least 1 col
+            
+            const newChildren = currentCols.slice(0, -1).map(c => ({
+                ...c,
+                props: { ...c.props, width: 100 / (currentCols.length - 1) }
+            }));
+            return { ...row, children: newChildren };
+        });
+        updateLayout(newLayout);
+    };
+
 
     // Resize Logic (Incremental)
     const handleColumnResize = (rowId: string, leftColIndex: number, deltaPercent: number) => {
@@ -380,7 +499,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
             const rightCol = row.children[leftColIndex + 1];
 
             if (leftCol && rightCol) {
-                // Ensure widths exist (default to even split if missing)
                 if (!leftCol.props) leftCol.props = {};
                 if (!rightCol.props) rightCol.props = {};
                 
@@ -390,14 +508,11 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                 const newLeftWidth = Math.max(10, currentLeftWidth + deltaPercent);
                 const newRightWidth = Math.max(10, currentRightWidth - deltaPercent);
 
-                // Only apply if constraints met
                 if (newLeftWidth >= 10 && newRightWidth >= 10) {
                     leftCol.props.width = newLeftWidth;
                     rightCol.props.width = newRightWidth;
                 }
             }
-            // Sync with parent immediately to avoid lag, but might need debouncing for onUpdate in real app
-            // Here we rely on React state speed.
             onUpdate({ ...data, layout: newLayout }); 
             return newLayout;
         });
@@ -408,10 +523,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         setActiveDragData(event.active.data.current);
     };
 
-    const handleDragOver = (event: DragOverEvent) => {
-        // ... (existing logic)
-    };
-
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDragData(null);
@@ -420,100 +531,124 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         const activeData = active.data.current;
         const overData = over.data.current;
         
+        // 0. Handle Create Row Zone
+        if (activeData?.from === 'palette' && over.id === CREATE_ROW_ZONE_ID) {
+            // Create New Row -> Col -> Item
+            const newItemNode: LayoutNode = {
+                id: uuidv4(),
+                type: activeData.type,
+                data: { key: activeData.key }
+            };
+            const newCol: LayoutNode = {
+                id: uuidv4(),
+                type: 'col',
+                children: [newItemNode],
+                props: { width: 100 }
+            };
+            const newRow: LayoutNode = {
+                id: uuidv4(),
+                type: 'row',
+                children: [newCol],
+                props: { style: { gap: '8px' } }
+            };
+            
+            const newLayout = [...layout, newRow];
+            updateLayout(newLayout);
+            setSelectedNodeId(newRow.id); // Select the new row for styling
+            return;
+        }
+
         // 1. Reorder Rows
         if (activeData?.type === 'row' && overData?.type === 'row') {
             const oldIndex = layout.findIndex(n => n.id === active.id);
             const newIndex = layout.findIndex(n => n.id === over.id);
             if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
                 const newLayout = arrayMove(layout, oldIndex, newIndex);
-                setLayout(newLayout);
-                onUpdate({ ...data, layout: newLayout });
+                updateLayout(newLayout);
             }
             return;
         }
 
         // 2. Drop Item/Category from Palette to Column
         if (activeData?.from === 'palette' && (overData?.type === 'col' || overData?.type === 'item' || overData?.type === 'category')) {
-            const targetColId = overData.type === 'col' ? (over.id as string) : findParentColId(layout, over.id as string);
+            const targetColId = overData.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
             if (!targetColId) return;
 
             const newNode: LayoutNode = {
                 id: uuidv4(),
-                type: activeData.type, // item or category
+                type: activeData.type,
                 data: { key: activeData.key }
             };
 
+            const insertNodeIntoCol = (nodes: LayoutNode[], colId: string, node: LayoutNode, refId: string): LayoutNode[] => {
+                return nodes.map(row => {
+                    if (!row.children) return row;
+                    const newCols = row.children.map(col => {
+                        if (col.id !== colId) return col;
+                        const newChildren = col.children ? [...col.children] : [];
+                        if (refId === colId) {
+                            newChildren.push(node);
+                        } else {
+                            const index = newChildren.findIndex(c => c.id === refId);
+                            if (index !== -1) newChildren.splice(index, 0, node);
+                            else newChildren.push(node);
+                        }
+                        return { ...col, children: newChildren };
+                    });
+                    return { ...row, children: newCols };
+                });
+            };
+
             const newLayout = insertNodeIntoCol(layout, targetColId, newNode, over.id as string);
-            setLayout(newLayout);
-            onUpdate({ ...data, layout: newLayout });
+            updateLayout(newLayout);
+            setSelectedNodeId(newNode.id); // Select dropped item
             return;
         }
 
-        // 3. Move Item between Columns or Reorder within Column
+        // 3. Move Item
         if ((activeData?.type === 'item' || activeData?.type === 'category') && activeData.from !== 'palette') {
-             const targetColId = overData?.type === 'col' ? (over.id as string) : findParentColId(layout, over.id as string);
-             const sourceColId = findParentColId(layout, active.id as string);
+             const targetColId = overData?.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
+             const sourceColId = findParentId(layout, active.id as string);
              
              if (!targetColId || !sourceColId) return;
 
-             // Remove from source, insert into target
+             const moveNode = (nodes: LayoutNode[], itemId: string, sId: string, tId: string, oId: string): LayoutNode[] => {
+                let nodeToMove: LayoutNode | null = null;
+                const withoutNode = nodes.map(row => ({
+                    ...row,
+                    children: row.children?.map(col => {
+                        if (col.id !== sId) return col;
+                        const child = col.children?.find(c => c.id === itemId);
+                        if (child) nodeToMove = child;
+                        return { ...col, children: col.children?.filter(c => c.id !== itemId) || [] };
+                    })
+                }));
+
+                if (!nodeToMove) return nodes;
+
+                return withoutNode.map(row => ({
+                    ...row,
+                    children: row.children?.map(col => {
+                        if (col.id !== tId) return col;
+                        const newChildren = col.children ? [...col.children] : [];
+                        if (oId === tId) {
+                            newChildren.push(nodeToMove!);
+                        } else {
+                            const index = newChildren.findIndex(c => c.id === oId);
+                            if (index !== -1) newChildren.splice(index, 0, nodeToMove!);
+                            else newChildren.push(nodeToMove!);
+                        }
+                        return { ...col, children: newChildren };
+                    })
+                }));
+             };
+
              const newLayout = moveNode(layout, active.id as string, sourceColId, targetColId, over.id as string);
-             setLayout(newLayout);
-             onUpdate({ ...data, layout: newLayout });
+             updateLayout(newLayout);
         }
     };
 
-    // Helpers
-    const findParentColId = (nodes: LayoutNode[], itemId: string): string | null => {
-        for (const row of nodes) {
-            if (row.children) {
-                for (const col of row.children) {
-                    if (col.id === itemId) return col.id; // It is a col
-                    if (col.children?.some(child => child.id === itemId)) return col.id;
-                }
-            }
-        }
-        return null;
-    };
-
-    const insertNodeIntoCol = (nodes: LayoutNode[], colId: string, newNode: LayoutNode, overId: string): LayoutNode[] => {
-        return nodes.map(row => {
-            if (!row.children) return row;
-            const newCols = row.children.map(col => {
-                if (col.id !== colId) return col;
-                const newChildren = col.children ? [...col.children] : [];
-                if (overId === colId) {
-                    newChildren.push(newNode); // Append to end if dropped on col
-                } else {
-                    const index = newChildren.findIndex(c => c.id === overId);
-                    if (index !== -1) newChildren.splice(index, 0, newNode);
-                    else newChildren.push(newNode);
-                }
-                return { ...col, children: newChildren };
-            });
-            return { ...row, children: newCols };
-        });
-    };
-
-    const moveNode = (nodes: LayoutNode[], itemId: string, sourceColId: string, targetColId: string, overId: string): LayoutNode[] => {
-        let nodeToMove: LayoutNode | null = null;
-        
-        // 1. Extract
-        const withoutNode = nodes.map(row => ({
-            ...row,
-            children: row.children?.map(col => {
-                if (col.id !== sourceColId) return col;
-                const childToMove = col.children?.find(c => c.id === itemId);
-                if (childToMove) nodeToMove = childToMove;
-                return { ...col, children: col.children?.filter(c => c.id !== itemId) || [] };
-            })
-        }));
-
-        if (!nodeToMove) return nodes;
-
-        // 2. Insert
-        return insertNodeIntoCol(withoutNode, targetColId, nodeToMove, overId);
-    };
+    const selectedNode = selectedNodeId ? findNodeById(layout, selectedNodeId) : null;
 
     const dropAnimation: DropAnimation = {
         sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }),
@@ -526,18 +661,8 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                 collisionDetection={closestCenter} 
                 onDragStart={handleDragStart} 
                 onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
             >
                 <div className="layout-composer__palette">
-                    <div className="palette-section">
-                        <div className="palette-header">布局组件</div>
-                        <div className="palette-grid">
-                            <button className="palette-btn" onClick={() => addRow(1)}><Columns size={16}/> 1栏</button>
-                            <button className="palette-btn" onClick={() => addRow(2)}><Columns size={16}/> 2栏</button>
-                            <button className="palette-btn" onClick={() => addRow(3)}><Columns size={16}/> 3栏</button>
-                        </div>
-                    </div>
-                    
                     <div className="palette-section flex-grow">
                         <div className="palette-header">
                             <span>数据组件</span>
@@ -552,9 +677,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                     </div>
                                     {expandedCats.has(cat.key) && (
                                         <div className="palette-category-items">
-                                            {/* Draggable Category Container */}
                                             <PaletteItem definition={cat as any} type="category" label={`[分类] ${cat.name}`} />
-                                            {/* Draggable Individual Items */}
                                             {itemsByCategory[cat.key]?.map(def => (
                                                 <PaletteItem key={def.key} definition={def} type="item" />
                                             ))}
@@ -566,20 +689,24 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                     </div>
                 </div>
 
-                <div className="layout-composer__canvas">
+                <div className="layout-composer__canvas" onClick={() => setSelectedNodeId(null)}>
                     <SortableContext items={layout.map(n => n.id)} strategy={verticalListSortingStrategy}>
                         {layout.length === 0 ? (
                             <div className="canvas-empty-state">
                                 <LayoutTemplate size={48} />
-                                <p>画布为空，请从左侧添加行或组件</p>
+                                <p>从左侧拖拽组件至下方虚线框</p>
                             </div>
                         ) : (
                             <div className="canvas-rows">
                                 {layout.map(row => (
-                                    <LayoutRowDraggable key={row.id} node={row} onDelete={deleteNode}>
+                                    <LayoutRowDraggable 
+                                        key={row.id} 
+                                        node={row} 
+                                        isSelected={selectedNodeId === row.id}
+                                        onSelect={(e) => { e.stopPropagation(); setSelectedNodeId(row.id); }}
+                                    >
                                         {row.children?.map((col, index) => (
                                             <React.Fragment key={col.id}>
-                                                {/* Insert Resizer BEFORE column if it's not the first column */}
                                                 {index > 0 && (
                                                     <ColumnResizer onResize={(delta) => handleColumnResize(row.id, index - 1, delta)} />
                                                 )}
@@ -588,8 +715,9 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                                     items={col.children || []} 
                                                     allDefinitions={data.item_definitions}
                                                     allCategories={data.categories}
-                                                    onDeleteItem={deleteNode}
                                                     data={data}
+                                                    selectedId={selectedNodeId}
+                                                    onSelectNode={setSelectedNodeId}
                                                 />
                                             </React.Fragment>
                                         ))}
@@ -598,7 +726,20 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                             </div>
                         )}
                     </SortableContext>
+                    
+                    <LayoutCreatorZone />
                 </div>
+
+                <LayoutInspector 
+                    node={selectedNode} 
+                    onUpdate={handleNodeUpdate} 
+                    onDelete={deleteNode}
+                    allDefinitions={data.item_definitions}
+                    onSelectParent={(id) => setSelectedNodeId(id)}
+                    // New Props for Column Management
+                    onAddColumn={() => selectedNodeId && addColumnToRow(selectedNodeId)}
+                    onRemoveColumn={() => selectedNodeId && removeColumnFromRow(selectedNodeId)}
+                />
 
                 <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]}>
                     {activeDragData ? (
@@ -616,7 +757,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                 node={activeDragData.node} 
                                 allDefinitions={data.item_definitions} 
                                 allCategories={data.categories} 
-                                onDelete={() => {}} 
                                 data={data}
                                 isOverlay
                             />

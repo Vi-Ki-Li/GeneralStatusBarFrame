@@ -10,13 +10,13 @@
 
 /* --- Palette (Left Sidebar) --- */
 .layout-composer__palette {
-  width: 260px;
+  width: 240px;
   background: rgba(0,0,0,0.02);
   border-right: 1px solid var(--chip-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  z-index: 10; /* Ensure palette stays above canvas content if needed */
+  z-index: 10; 
 }
 
 .palette-section {
@@ -59,32 +59,6 @@
   font-size: 0.75rem;
   margin-left: 4px;
   color: var(--text-primary);
-}
-
-.palette-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.palette-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px;
-  background: var(--glass-bg);
-  border: 1px dashed var(--chip-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  transition: all 0.2s;
-}
-.palette-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.05);
 }
 
 .palette-content {
@@ -153,7 +127,7 @@
 .palette-item__name { font-size: 0.8rem; font-weight: var(--font-weight-medium); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .palette-item__key { font-size: 0.7rem; color: var(--text-tertiary); font-family: monospace; }
 
-/* --- Canvas (Right Side) --- */
+/* --- Canvas (Center) --- */
 .layout-composer__canvas {
   flex: 1;
   padding: var(--spacing-xl);
@@ -161,10 +135,36 @@
   /* Subtle grid pattern for canvas background */
   background-image: radial-gradient(var(--chip-border) 1px, transparent 1px);
   background-size: 20px 20px;
+  position: relative; /* For add bar positioning if needed */
+  padding-bottom: 80px; /* Space for add bar */
+}
+
+/* NEW: Drop Zone for creating new rows */
+.layout-composer__drop-zone {
+    margin-top: 20px;
+    padding: 30px;
+    border: 2px dashed var(--chip-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.01);
+}
+
+.layout-composer__drop-zone.active {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+    color: var(--color-primary);
+    transform: scale(1.02);
 }
 
 .canvas-empty-state {
-  height: 100%;
+  height: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -173,32 +173,237 @@
   gap: var(--spacing-md);
   border: 2px dashed var(--chip-border);
   border-radius: var(--radius-xl);
+  margin-bottom: 20px;
 }
 
 .canvas-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Match StatusBar gap */
+  gap: 8px; 
   max-width: 800px;
   margin: 0 auto;
+}
+
+/* --- Inspector (Right Sidebar) --- */
+.layout-inspector {
+  width: 280px;
+  background: var(--bg-app);
+  border-left: 1px solid var(--chip-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.layout-inspector--empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  gap: var(--spacing-md);
+  height: 100%;
+}
+
+.inspector-header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--chip-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--glass-bg);
+}
+
+.inspector-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.9rem;
+}
+
+.inspector-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.inspector-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+.inspector-section {
+  border-bottom: 1px solid var(--chip-border);
+}
+
+.inspector-section__header {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(0,0,0,0.02);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.inspector-section__content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.inspector-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inspector-control label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.inspector-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+}
+.inspector-input-group input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  outline: none;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.inspector-unit {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.inspector-control select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.inspector-color-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inspector-color-wrapper input[type="color"] {
+  border: none;
+  background: none;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  padding: 0;
+}
+.inspector-color-text {
+  flex: 1;
+  border: 1px solid var(--chip-border);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.inspector-info-card {
+  padding: var(--spacing-md);
+  background: rgba(0,0,0,0.02);
+  border-bottom: 1px solid var(--chip-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inspector-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+.inspector-info-row .label { color: var(--text-tertiary); }
+.inspector-info-row .value { font-family: monospace; color: var(--text-secondary); }
+
+.inspector-hint {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.inspector-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.inspector-action-row {
+    display: flex;
+    gap: 8px;
+}
+.inspector-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--chip-border);
+    background: var(--bg-app);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.inspector-action-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 /* --- Row (WYSIWYG) --- */
 .layout-row {
   display: flex;
-  gap: 8px; /* Match StatusBar gap */
+  gap: 8px;
   position: relative;
   /* Transparent by default to mimic real render */
   background: transparent;
-  border: 1px dashed transparent;
+  border: 1px dashed transparent; /* Important: Invisible border by default */
   border-radius: var(--radius-md);
-  transition: border-color 0.2s;
-  padding: 4px; /* Reduced padding to minimize layout shift */
+  transition: all 0.2s;
+  padding: 4px;
   min-height: 40px;
 }
 
+/* Selected State */
+.layout-row.selected {
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: 0 0 0 1px var(--color-primary);
+  z-index: 2;
+}
+
 /* Hover state shows editing hints */
-.layout-row:hover {
+.layout-row:hover:not(.selected) {
   border-color: rgba(99, 102, 241, 0.3);
   background: rgba(99, 102, 241, 0.02);
 }
@@ -212,7 +417,7 @@
 
 .layout-row__handle {
   position: absolute;
-  left: -24px; /* Move handle outside visually */
+  left: -24px;
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
@@ -225,34 +430,12 @@
   opacity: 0;
   transition: opacity 0.2s;
 }
-.layout-row:hover .layout-row__handle {
+.layout-row:hover .layout-row__handle,
+.layout-row.selected .layout-row__handle {
   opacity: 1;
 }
 .layout-row__handle:hover {
   color: var(--text-primary);
-}
-
-.layout-row__delete {
-  position: absolute;
-  right: -24px; /* Move delete btn outside visually */
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--bg-app);
-  border: 1px solid var(--chip-border);
-  color: var(--color-danger);
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 20;
-}
-.layout-row:hover .layout-row__delete {
-  opacity: 1;
 }
 
 .layout-row__columns {
@@ -268,13 +451,26 @@
   flex-direction: column;
   gap: 8px;
   min-width: 50px;
-  /* Visual hint for columns only on hover of parent row */
-  border-right: 1px dashed transparent;
+  border: 1px dashed transparent;
   padding-right: 4px; 
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  position: relative; /* For selection border */
 }
+
 .layout-row:hover .layout-column:not(:last-child) {
   border-right-color: var(--chip-border);
 }
+
+/* Selected Column */
+.layout-column.selected {
+    border-color: var(--color-accent);
+    background: rgba(139, 92, 246, 0.05);
+    box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* Clickable Area Overlay for Columns (to allow selection when empty or full) */
+/* We rely on event bubbling for now, clicking inside column selects it */
 
 .layout-column__empty {
   flex: 1;
@@ -288,19 +484,19 @@
   background: rgba(0,0,0,0.02);
   border-radius: var(--radius-sm);
   border: 1px dashed var(--chip-border);
+  cursor: pointer;
 }
 
-/* --- Resizer (New Phase 2) --- */
+/* --- Resizer --- */
 .layout-resizer {
   width: 12px;
-  margin: 0 -6px; /* Negative margin to center click area */
+  margin: 0 -6px;
   cursor: col-resize;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  /* Visual guide line inside the click area */
 }
 
 .layout-resizer::after {
@@ -322,16 +518,24 @@
 .layout-item-wrapper {
   position: relative;
   cursor: grab;
-  /* Ensure the wrapper doesn't break the layout of the inner renderer */
   display: flex; 
   flex-direction: column;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.layout-item-wrapper.selected {
+    outline: 2px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    z-index: 5;
+    background: rgba(99, 102, 241, 0.05);
 }
 
 /* When hovering item, show outline */
-.layout-item-wrapper:hover {
-  outline: 1px dashed var(--color-primary);
+.layout-item-wrapper:hover:not(.selected) {
+  outline: 1px dashed var(--text-tertiary);
   border-radius: var(--radius-md);
-  z-index: 5;
+  z-index: 4;
 }
 
 /* Disable interaction with inner elements to allow dragging */
@@ -339,37 +543,7 @@
   pointer-events: none;
 }
 
-/* Delete button for Item */
-.layout-item__delete {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 20px;
-  height: 20px;
-  background: var(--bg-app);
-  border: 1px solid var(--chip-border);
-  color: var(--color-danger);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: auto; /* Re-enable pointer events for button */
-  box-shadow: var(--shadow-sm);
-  z-index: 10;
-}
-.layout-item-wrapper:hover .layout-item__delete {
-  opacity: 1;
-}
-.layout-item__delete:hover {
-  background: var(--color-danger);
-  color: white;
-  border-color: var(--color-danger);
-}
-
-/* Category Placeholder (Visual Fallback for Phase 1) */
+/* Category Placeholder */
 .layout-category-placeholder {
   display: flex;
   align-items: center;
@@ -392,6 +566,7 @@
 
 @media (max-width: 768px) {
   .layout-composer { flex-direction: column; }
-  .layout-composer__palette { width: 100%; height: 40%; border-right: none; border-bottom: 1px solid var(--chip-border); }
-  .layout-composer__canvas { height: 60%; }
+  .layout-composer__palette { width: 100%; height: 30%; border-right: none; border-bottom: 1px solid var(--chip-border); }
+  .layout-composer__canvas { height: 40%; }
+  .layout-inspector { width: 100%; height: 30%; border-left: none; border-top: 1px solid var(--chip-border); }
 }
