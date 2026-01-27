@@ -1,6 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
-import { StatusBarData, ItemDefinition, CategoryDefinition } from '../../../types';
+import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
 import { LayoutNode } from '../../../types/layout';
+import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import * as LucideIcons from 'lucide-react';
 import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus } from 'lucide-react';
 import {
@@ -36,6 +38,74 @@ interface LayoutComposerProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
 }
+
+// --- Helper: Get Preview Item (Real or Mock) ---
+const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem => {
+    // 1. Try to find a real item in Shared Data
+    if (data.shared) {
+        for (const catKey in data.shared) {
+            const found = data.shared[catKey].find(i => i.key === def.key);
+            if (found) return found;
+        }
+    }
+    // 2. Try to find a real item in First Available Character
+    if (data.characters) {
+        const charKeys = Object.keys(data.characters);
+        for (const charId of charKeys) {
+            const charData = data.characters[charId];
+            for (const catKey in charData) {
+                const found = charData[catKey].find(i => i.key === def.key);
+                if (found) return found;
+            }
+        }
+    }
+
+    // 3. Fallback: Generate Mock Item based on definition
+    const mockItem: StatusBarItem = {
+        key: def.key,
+        values: [],
+        category: def.defaultCategory || 'Mock',
+        source_id: 0,
+        user_modified: false,
+        _uuid: `preview-${def.key}`
+    };
+
+    if (def.type === 'numeric') {
+        const parts = def.structure?.parts || [];
+        const values = new Array(parts.length).fill('');
+        // Fill common numeric slots
+        const setVal = (k: string, v: string) => {
+            const idx = parts.findIndex(p => p.key === k);
+            if (idx > -1) values[idx] = v;
+        };
+        if (parts.length > 0) {
+            setVal('current', '75');
+            setVal('max', '100');
+            setVal('change', '-5');
+            setVal('reason', '战斗');
+            setVal('description', '轻伤');
+        } else {
+            mockItem.values = ['75', '100']; // Default simple numeric
+            return mockItem;
+        }
+        mockItem.values = values;
+    } else if (def.type === 'array') {
+        mockItem.values = ['标签 A', '标签 B'];
+    } else if (def.type === 'list-of-objects') {
+        const obj1: Record<string, string> = {};
+        const obj2: Record<string, string> = {};
+        (def.structure?.parts || []).forEach(p => {
+            obj1[p.key] = `示例${p.label}`;
+            obj2[p.key] = `示例${p.label}2`;
+        });
+        mockItem.values = [obj1, obj2];
+    } else {
+        mockItem.values = ['预览文本内容...'];
+    }
+
+    return mockItem;
+};
+
 
 // --- Component: Palette Item ---
 const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'category'; label?: string; isOverlay?: boolean }> = ({ definition, type, label, isOverlay }) => {
@@ -98,7 +168,8 @@ const LayoutColumnDroppable: React.FC<{
     allDefinitions: { [key: string]: ItemDefinition };
     allCategories: { [key: string]: CategoryDefinition };
     onDeleteItem: (itemId: string) => void;
-}> = ({ node, items, allDefinitions, allCategories, onDeleteItem }) => {
+    data: StatusBarData; // Pass data for previews
+}> = ({ node, items, allDefinitions, allCategories, onDeleteItem, data }) => {
     const { setNodeRef } = useDroppable({
         id: node.id,
         data: { type: 'col', node },
@@ -117,6 +188,7 @@ const LayoutColumnDroppable: React.FC<{
                             allDefinitions={allDefinitions} 
                             allCategories={allCategories}
                             onDelete={() => onDeleteItem(item.id)} 
+                            data={data}
                         />
                     ))
                 )}
@@ -131,43 +203,55 @@ const LayoutItemSortable: React.FC<{
     allDefinitions: { [key: string]: ItemDefinition };
     allCategories: { [key: string]: CategoryDefinition };
     onDelete: () => void;
+    data: StatusBarData;
     isOverlay?: boolean;
-}> = ({ node, allDefinitions, allCategories, onDelete, isOverlay }) => {
+}> = ({ node, allDefinitions, allCategories, onDelete, data, isOverlay }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: node.id,
         data: { type: node.type, node },
     });
 
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
+    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
     
-    let def: ItemDefinition | CategoryDefinition | undefined;
-    let Icon = Box;
-    let label = '';
-    let subLabel = '';
+    // Logic to render content
+    const renderContent = () => {
+        if (node.type === 'item' && node.data?.key) {
+            const def = allDefinitions[node.data.key];
+            if (!def) return <div className="palette-item">未知组件: {node.data.key}</div>;
+            
+            const previewItem = getPreviewItem(def, data);
+            
+            return (
+                <StyledItemRenderer 
+                    item={previewItem} 
+                    definition={def} 
+                    // No interaction in editor
+                    onInteract={() => {}}
+                />
+            );
+        } 
+        
+        if (node.type === 'category' && node.data?.key) {
+            const def = allCategories[node.data.key];
+            const Icon = def?.icon ? (LucideIcons as any)[def.icon] || LayoutTemplate : LayoutTemplate;
+            return (
+                <div className="layout-category-placeholder">
+                    <div className="layout-category-placeholder__info">
+                        <Icon size={18} className="layout-category-placeholder__icon" />
+                        <span>{def?.name || node.data.key} (分类)</span>
+                    </div>
+                </div>
+            );
+        }
 
-    if (node.type === 'item' && node.data?.key) {
-        def = allDefinitions[node.data.key];
-        label = def?.name || node.data.key;
-        subLabel = node.data.key;
-        Icon = def?.icon ? (LucideIcons as any)[def.icon] || Box : Box;
-    } else if (node.type === 'category' && node.data?.key) {
-        def = allCategories[node.data.key];
-        label = def?.name || node.data.key;
-        subLabel = '分类容器';
-        Icon = def?.icon ? (LucideIcons as any)[def.icon] || Box : LayoutTemplate;
-    }
+        return <div>未知节点</div>;
+    };
 
     return (
-        <div ref={setNodeRef} style={style} className={`layout-item ${node.type} ${isOverlay ? 'overlay' : ''}`} {...attributes} {...listeners}>
-            <div className="layout-item__content">
-                <Icon size={14} className="layout-item__icon" />
-                <div className="layout-item__text">
-                    <span className="layout-item__name">{label}</span>
-                    <span className="layout-item__key">{subLabel}</span>
-                </div>
-            </div>
+        <div ref={setNodeRef} style={style} className={`layout-item-wrapper ${isOverlay ? 'overlay' : ''}`} {...attributes} {...listeners}>
+            {renderContent()}
             {!isOverlay && (
-                <button className="layout-item__delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                <button className="layout-item__delete" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="删除组件">
                     <Trash2 size={12} />
                 </button>
             )}
@@ -429,6 +513,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                                 allDefinitions={data.item_definitions}
                                                 allCategories={data.categories}
                                                 onDeleteItem={deleteNode}
+                                                data={data}
                                             />
                                         ))}
                                     </LayoutRowDraggable>
@@ -455,6 +540,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                                 allDefinitions={data.item_definitions} 
                                 allCategories={data.categories}
                                 onDelete={() => {}} 
+                                data={data}
                                 isOverlay
                             />
                         )
