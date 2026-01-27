@@ -225,6 +225,7 @@ const LayoutRowDraggable: React.FC<{
                 <button 
                     className="layout-hover-delete row-delete" 
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    onPointerDown={(e) => e.stopPropagation()} 
                     title="删除行"
                 >
                     <XIcon size={14} />
@@ -314,6 +315,7 @@ const LayoutColumnDroppable: React.FC<{
             <button 
                 className="layout-hover-delete col-delete" 
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                onPointerDown={(e) => e.stopPropagation()}
                 title="删除列"
             >
                 <Trash2 size={12} />
@@ -414,6 +416,7 @@ const LayoutItemSortable: React.FC<{
                 <button 
                     className="layout-hover-delete item-delete" 
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    onPointerDown={(e) => e.stopPropagation()} // CRITICAL FIX: Prevent dnd-kit from starting drag
                     title="移除组件"
                 >
                     <XIcon size={12} />
@@ -923,7 +926,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                     onRemoveColumn={() => selectedNodeId && removeColumnFromRow(selectedNodeId)}
                 />
 
-                <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]}>
+                <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} style={{ pointerEvents: 'none' }}>
                     {activeDragData ? (
                         activeDragData.from === 'palette' ? (
                             <PaletteItem 
