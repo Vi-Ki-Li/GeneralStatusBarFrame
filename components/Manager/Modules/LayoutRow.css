@@ -1,0 +1,52 @@
+/* components/Manager/Modules/LayoutRow.css */
+
+.layout-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--chip-border);
+    min-height: 54px;
+    touch-action: none;
+}
+
+.layout-row__drag-handle {
+    cursor: grab;
+    color: var(--text-tertiary);
+    padding: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.layout-row.dragging .layout-row__drag-handle,
+.layout-row.overlay .layout-row__drag-handle {
+    cursor: grabbing;
+}
+
+.layout-row__content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.9rem;
+}
+
+.layout-row__item-icon {
+    color: var(--color-primary);
+}
+
+.layout-row__item-name {
+    font-weight: var(--font-weight-medium);
+}
+
+/* State Styles */
+.layout-row.dragging {
+    opacity: 0.5;
+}
+
+.layout-row.overlay {
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary);
+    transform: scale(1.02);
+}
