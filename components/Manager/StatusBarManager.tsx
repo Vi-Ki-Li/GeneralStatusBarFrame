@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../types';
 import ManagerModal from './ManagerModal';
@@ -57,7 +55,7 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
           onStyleEditRequestProcessed={() => setStyleEditRequest(null)}
         />;
       case 'LAYOUT':
-        return <LayoutComposer data={data} onUpdate={onUpdate} />; // 此处修改1行
+        return <LayoutComposer data={data} onUpdate={onUpdate} isMobile={isMobile} />; // 此处修改1行
       case 'SYSTEM':
         return <SystemConfig 
             data={data} 

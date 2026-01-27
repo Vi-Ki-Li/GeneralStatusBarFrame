@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 
@@ -5,7 +6,7 @@ import React from 'react';
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
  */
-import { LayoutNode } from './layout'; // 此处添加1行
+import { LayoutNode } from './types/layout'; // Fixed import path
 
 // 1. 分类定义 (容器)
 export interface CategoryDefinition {

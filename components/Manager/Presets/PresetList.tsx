@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Preset, StatusBarData, ItemDefinition, StyleDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
@@ -190,7 +189,11 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                                     <div className="preset-item__name-row">
                                         {isActive && <CheckCircle size={16} className="preset-item__active-icon" />}
                                         <h4 className="preset-item__name">{preset.name}</h4>
-                                        {hasLayout && <LayoutTemplate size={14} className="preset-item__layout-icon" title="包含布局"/>}
+                                        {hasLayout && (
+                                            <span title="包含布局" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                                <LayoutTemplate size={14} className="preset-item__layout-icon" />
+                                            </span>
+                                        )}
                                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                     </div>
                                     <div className="preset-item__meta">

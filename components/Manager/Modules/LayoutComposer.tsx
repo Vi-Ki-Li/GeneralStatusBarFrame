@@ -39,6 +39,7 @@ import './LayoutComposer.css';
 interface LayoutComposerProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
+  isMobile: boolean;
 }
 
 const CREATE_ROW_ZONE_ID = 'layout-create-row-zone';
@@ -509,7 +510,7 @@ const SnapshotManagerModal: React.FC<{
 
 
 // --- Main Component ---
-const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
+const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobile }) => {
     const [layout, setLayout] = useState<LayoutNode[]>(data.layout || []);
     const [activeDragData, setActiveDragData] = useState<any>(null);
     const [search, setSearch] = useState('');
@@ -518,9 +519,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
     const [dragSplitIntent, setDragSplitIntent] = useState<{ colId: string, side: 'left' | 'right' } | null>(null);
     const [showSnapshotModal, setShowSnapshotModal] = useState(false);
     
-    // Mobile Check
-    const isMobile = window.innerWidth <= 768;
-
     useEffect(() => {
         if (data.layout) setLayout(data.layout);
     }, [data.layout]);
