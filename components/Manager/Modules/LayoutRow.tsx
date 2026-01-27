@@ -1,14 +1,14 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LayoutRow as LayoutRowData } from '../../../types/layout';
+import { LayoutNode } from '../../../types/layout';
 import { ItemDefinition } from '../../../types';
 import { GripVertical, Box } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import './LayoutRow.css';
 
 interface LayoutRowProps {
-  row: LayoutRowData;
+  row: LayoutNode;
   allDefinitions: { [key: string]: ItemDefinition };
   isOverlay?: boolean;
 }
@@ -34,7 +34,26 @@ const LayoutRow: React.FC<LayoutRowProps> = ({ row, allDefinitions, isOverlay = 
     transition,
   };
 
-  const itemDef = allDefinitions[row.items[0]?.key];
+  // Logic to find a displayable key from the node structure
+  let displayKey: string | undefined;
+  
+  if (row.type === 'item' && row.data?.key) {
+      displayKey = row.data.key;
+  } else if (row.children && row.children.length > 0) {
+      // Traverse children to find an item key for display preview
+      // Supports both Row -> Items and Row -> Cols -> Items
+      const firstChild = row.children[0];
+      if (firstChild.type === 'item' && firstChild.data?.key) {
+          displayKey = firstChild.data.key;
+      } else if (firstChild.children && firstChild.children.length > 0) {
+          const firstGrandChild = firstChild.children[0];
+          if (firstGrandChild.type === 'item' && firstGrandChild.data?.key) {
+              displayKey = firstGrandChild.data.key;
+          }
+      }
+  }
+
+  const itemDef = displayKey ? allDefinitions[displayKey] : undefined;
   const Icon = itemDef?.icon && (LucideIcons as any)[itemDef.icon] 
     ? (LucideIcons as any)[itemDef.icon] 
     : Box;
@@ -56,7 +75,7 @@ const LayoutRow: React.FC<LayoutRowProps> = ({ row, allDefinitions, isOverlay = 
             <span className="layout-row__item-name">{itemDef.name || itemDef.key}</span>
           </>
         ) : (
-          <span>未知组件</span>
+          <span>{row.type === 'row' ? '行 (容器)' : '组件'}</span>
         )}
       </div>
     </div>

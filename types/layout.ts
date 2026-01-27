@@ -1,18 +1,21 @@
+
 // types/layout.ts
 
-/**
- * Represents a single item within a layout row.
- */
-export interface LayoutItem {
-  id: string;      // Unique ID for dnd-kit
-  key: string;     // Corresponds to ItemDefinition.key
+export type LayoutNodeType = 'row' | 'col' | 'item' | 'category' | 'placeholder';
+
+export interface LayoutNode {
+  id: string;
+  type: LayoutNodeType;
+  children?: LayoutNode[]; // Row has Cols; Col has Items
+  props?: {
+    width?: number; // Percent width for columns
+    flex?: number;
+    className?: string;
+  };
+  data?: {
+    key: string; // ItemDefinition.key or CategoryDefinition.key
+  };
 }
 
-/**
- * Represents a single row in the layout canvas.
- * A row can contain one or more items.
- */
-export interface LayoutRow {
-  id: string;       // Unique ID for dnd-kit
-  items: LayoutItem[];
-}
+// Helper to define the root structure (List of Rows)
+export type LayoutStructure = LayoutNode[];

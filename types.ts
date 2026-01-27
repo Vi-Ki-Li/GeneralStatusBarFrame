@@ -1,7 +1,9 @@
+
 /**
  * TavernHelper Remastered Core Types
  * v6.0 Refactor: Split Categories & Item Definitions
  */
+import { LayoutNode } from './layout'; // 此处添加1行
 
 // 1. 分类定义 (容器)
 export interface CategoryDefinition {
@@ -84,6 +86,9 @@ export interface StatusBarData {
   characters: {
     [charId: string]: CharacterData;
   };
+  
+  // v9.7: 布局数据 (Grid-Stack)
+  layout?: LayoutNode[]; // 此处添加1行
   
   _meta?: {
     message_count?: number;
@@ -175,7 +180,7 @@ export interface StyleDefinition {
   css: string;
   html?: string; // Optional custom HTML structure, only for component types
   mockDataKey?: string; // Key from item_definitions to use for previewing
-  guiConfig?: { // 此处开始添加2行
+  guiConfig?: {
     [selector: string]: React.CSSProperties;
   };
 }
