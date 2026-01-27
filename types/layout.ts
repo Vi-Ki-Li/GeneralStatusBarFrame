@@ -19,5 +19,13 @@ export interface LayoutNode {
   };
 }
 
+// v9.8: Layout Snapshot Type
+export interface LayoutSnapshot {
+    id: string;
+    name: string;
+    layout: LayoutNode[];
+    timestamp: number;
+}
+
 // Helper to define the root structure (List of Rows)
 export type LayoutStructure = LayoutNode[];

@@ -1,11 +1,13 @@
+
 import React, { useState } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import SnapshotSettings from '../SnapshotSettings';
 import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
+import BackupManager from '../System/BackupManager'; // Added
 import HelpGuide from '../Help/HelpGuide';
-import { Camera, Layers, ListFilter, CircleHelp } from 'lucide-react';
+import { Camera, Layers, ListFilter, CircleHelp, Archive } from 'lucide-react'; // Added Archive icon
 import './SystemConfig.css';
 
 interface SystemConfigProps {
@@ -16,18 +18,19 @@ interface SystemConfigProps {
   snapshotMeta: SnapshotMeta | null;
 }
 
-type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'HELP';
+type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'BACKUP' | 'HELP'; // Added BACKUP
 
 const SystemConfig: React.FC<SystemConfigProps> = ({ 
   data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta
 }) => {
-  const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); // Default to presets
+  const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); 
   const allStyles = styleService.getStyleDefinitions();
 
   const tabs: { id: SystemTab; label: string; icon: React.ElementType }[] = [
     { id: 'SNAPSHOT', label: '动态快照', icon: Camera },
     { id: 'PRESETS', label: '配置预设', icon: Layers },
     { id: 'ENTRIES', label: '条目管理', icon: ListFilter },
+    { id: 'BACKUP', label: '备份与迁移', icon: Archive }, // Added
     { id: 'HELP', label: '使用指南', icon: CircleHelp },
   ];
 
@@ -60,6 +63,7 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
         )}
         {activeTab === 'PRESETS' && <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} />}
         {activeTab === 'ENTRIES' && <EntryList />}
+        {activeTab === 'BACKUP' && <BackupManager data={data} onUpdate={onUpdate} />} 
         {activeTab === 'HELP' && <HelpGuide />}
       </div>
     </div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
-import { LayoutNode } from '../../../types/layout';
+import { LayoutNode, LayoutSnapshot } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import * as LucideIcons from 'lucide-react';
@@ -44,13 +44,6 @@ interface LayoutComposerProps {
 
 const CREATE_ROW_ZONE_ID = 'layout-create-row-zone';
 const LAYOUT_SNAPSHOTS_KEY = 'th_layout_snapshots_v1';
-
-interface LayoutSnapshot {
-    id: string;
-    name: string;
-    layout: LayoutNode[];
-    timestamp: number;
-}
 
 // ... (getPreviewItem helper - UNCHANGED) ...
 const getPreviewItem = (def: ItemDefinition, data: StatusBarData): StatusBarItem => {

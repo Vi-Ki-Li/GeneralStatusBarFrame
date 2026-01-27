@@ -1,0 +1,153 @@
+
+.backup-manager {
+  padding: var(--spacing-xl);
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.backup-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.backup-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--chip-border);
+}
+
+.backup-card {
+  background: var(--bg-app);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.backup-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.backup-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(0,0,0,0.02);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backup-checkbox:hover {
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+}
+
+.backup-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.backup-checkbox span {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.backup-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Import Zone */
+.import-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  border: 2px dashed var(--chip-border);
+  border-radius: var(--radius-lg);
+  background: rgba(0,0,0,0.01);
+  transition: all 0.2s;
+  cursor: pointer;
+  text-align: center;
+  gap: var(--spacing-md);
+}
+
+.import-zone:hover {
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.import-zone__icon {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.import-zone__text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Import Preview */
+.import-preview {
+  margin-top: var(--spacing-lg);
+  border-top: 1px solid var(--chip-border);
+  padding-top: var(--spacing-lg);
+}
+
+.import-preview__header {
+  margin-bottom: var(--spacing-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.import-logs {
+  background: rgba(0,0,0,0.8);
+  color: #0f0;
+  font-family: monospace;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-lg);
+}
+
+.import-strategy {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.backup-danger-zone {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.danger-text {
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  margin-bottom: var(--spacing-md);
+}
