@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
 import { LayoutNode } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
@@ -131,6 +131,48 @@ const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'catego
         </div>
     );
 };
+
+// --- Component: Column Resizer ---
+const ColumnResizer: React.FC<{ onResize: (deltaPercent: number) => void }> = ({ onResize }) => {
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation(); // Stop DndKit from grabbing this
+
+        let lastX = e.clientX;
+        const parentElement = (e.target as HTMLElement).parentElement;
+        const parentWidth = parentElement?.offsetWidth || 1000;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const currentX = moveEvent.clientX;
+            const deltaPixels = currentX - lastX;
+            
+            if (deltaPixels === 0) return;
+
+            const deltaPercent = (deltaPixels / parentWidth) * 100;
+            
+            // Trigger resize
+            onResize(deltaPercent);
+            
+            // Update lastX for incremental calculation
+            lastX = currentX;
+        };
+
+        const handleMouseUp = () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+        };
+
+        document.body.style.cursor = 'col-resize';
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    };
+
+    return (
+        <div className="layout-resizer" onMouseDown={handleMouseDown} />
+    );
+};
+
 
 // --- Component: Layout Element (Row) ---
 const LayoutRowDraggable: React.FC<{ 
@@ -327,17 +369,47 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
         onUpdate({ ...data, layout: newLayout });
     };
 
+    // Resize Logic (Incremental)
+    const handleColumnResize = (rowId: string, leftColIndex: number, deltaPercent: number) => {
+        setLayout(prevLayout => {
+            const newLayout = _.cloneDeep(prevLayout);
+            const row = newLayout.find(r => r.id === rowId);
+            if (!row || !row.children) return prevLayout;
+
+            const leftCol = row.children[leftColIndex];
+            const rightCol = row.children[leftColIndex + 1];
+
+            if (leftCol && rightCol) {
+                // Ensure widths exist (default to even split if missing)
+                if (!leftCol.props) leftCol.props = {};
+                if (!rightCol.props) rightCol.props = {};
+                
+                const currentLeftWidth = leftCol.props.width || (100 / row.children.length);
+                const currentRightWidth = rightCol.props.width || (100 / row.children.length);
+
+                const newLeftWidth = Math.max(10, currentLeftWidth + deltaPercent);
+                const newRightWidth = Math.max(10, currentRightWidth - deltaPercent);
+
+                // Only apply if constraints met
+                if (newLeftWidth >= 10 && newRightWidth >= 10) {
+                    leftCol.props.width = newLeftWidth;
+                    rightCol.props.width = newRightWidth;
+                }
+            }
+            // Sync with parent immediately to avoid lag, but might need debouncing for onUpdate in real app
+            // Here we rely on React state speed.
+            onUpdate({ ...data, layout: newLayout }); 
+            return newLayout;
+        });
+    };
+
     // Drag Logic
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragData(event.active.data.current);
     };
 
     const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-
-        // Logic for moving items BETWEEN columns during drag is complex.
-        // For simplicity in this version, we handle reordering in DragEnd.
+        // ... (existing logic)
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -362,7 +434,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
 
         // 2. Drop Item/Category from Palette to Column
         if (activeData?.from === 'palette' && (overData?.type === 'col' || overData?.type === 'item' || overData?.type === 'category')) {
-            const targetColId = overData.type === 'col' ? over.id : findParentColId(layout, over.id);
+            const targetColId = overData.type === 'col' ? (over.id as string) : findParentColId(layout, over.id as string);
             if (!targetColId) return;
 
             const newNode: LayoutNode = {
@@ -371,7 +443,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                 data: { key: activeData.key }
             };
 
-            const newLayout = insertNodeIntoCol(layout, targetColId, newNode, over.id);
+            const newLayout = insertNodeIntoCol(layout, targetColId, newNode, over.id as string);
             setLayout(newLayout);
             onUpdate({ ...data, layout: newLayout });
             return;
@@ -379,13 +451,13 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
 
         // 3. Move Item between Columns or Reorder within Column
         if ((activeData?.type === 'item' || activeData?.type === 'category') && activeData.from !== 'palette') {
-             const targetColId = overData?.type === 'col' ? over.id : findParentColId(layout, over.id);
-             const sourceColId = findParentColId(layout, active.id);
+             const targetColId = overData?.type === 'col' ? (over.id as string) : findParentColId(layout, over.id as string);
+             const sourceColId = findParentColId(layout, active.id as string);
              
              if (!targetColId || !sourceColId) return;
 
              // Remove from source, insert into target
-             const newLayout = moveNode(layout, active.id, sourceColId, targetColId, over.id);
+             const newLayout = moveNode(layout, active.id as string, sourceColId, targetColId, over.id as string);
              setLayout(newLayout);
              onUpdate({ ...data, layout: newLayout });
         }
@@ -505,16 +577,21 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                             <div className="canvas-rows">
                                 {layout.map(row => (
                                     <LayoutRowDraggable key={row.id} node={row} onDelete={deleteNode}>
-                                        {row.children?.map(col => (
-                                            <LayoutColumnDroppable 
-                                                key={col.id} 
-                                                node={col} 
-                                                items={col.children || []} 
-                                                allDefinitions={data.item_definitions}
-                                                allCategories={data.categories}
-                                                onDeleteItem={deleteNode}
-                                                data={data}
-                                            />
+                                        {row.children?.map((col, index) => (
+                                            <React.Fragment key={col.id}>
+                                                {/* Insert Resizer BEFORE column if it's not the first column */}
+                                                {index > 0 && (
+                                                    <ColumnResizer onResize={(delta) => handleColumnResize(row.id, index - 1, delta)} />
+                                                )}
+                                                <LayoutColumnDroppable 
+                                                    node={col} 
+                                                    items={col.children || []} 
+                                                    allDefinitions={data.item_definitions}
+                                                    allCategories={data.categories}
+                                                    onDeleteItem={deleteNode}
+                                                    data={data}
+                                                />
+                                            </React.Fragment>
                                         ))}
                                     </LayoutRowDraggable>
                                 ))}
@@ -538,7 +615,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate }) => {
                             <LayoutItemSortable 
                                 node={activeDragData.node} 
                                 allDefinitions={data.item_definitions} 
-                                allCategories={data.categories}
+                                allCategories={data.categories} 
                                 onDelete={() => {}} 
                                 data={data}
                                 isOverlay

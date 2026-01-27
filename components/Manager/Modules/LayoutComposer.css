@@ -290,6 +290,34 @@
   border: 1px dashed var(--chip-border);
 }
 
+/* --- Resizer (New Phase 2) --- */
+.layout-resizer {
+  width: 12px;
+  margin: 0 -6px; /* Negative margin to center click area */
+  cursor: col-resize;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* Visual guide line inside the click area */
+}
+
+.layout-resizer::after {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background-color: var(--chip-border);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.layout-resizer:hover::after,
+.layout-resizer:active::after {
+  height: 100%;
+  background-color: var(--color-primary);
+}
+
 /* --- Layout Item Wrapper (WYSIWYG) --- */
 .layout-item-wrapper {
   position: relative;
