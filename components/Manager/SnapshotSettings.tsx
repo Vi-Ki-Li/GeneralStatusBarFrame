@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { StatusBarData, SnapshotMeta } from '../../types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { StatusBarData, SnapshotMeta, SnapshotEvent } from '../../types';
 import { 
     detectChanges, 
     generateNarrative, 
@@ -18,9 +18,138 @@ import {
     DEFAULT_TEMPLATES 
 } from '../../utils/snapshotGenerator';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
-import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X } from 'lucide-react'; // Added X icon
+import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X, Terminal } from 'lucide-react'; 
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
+
+// --- MOCK DATA ENGINE ---
+// Helper function to generate a fake event based on template type
+const getMockEvent = (templateKey: string): SnapshotEvent => {
+    const isUser = templateKey.includes('_user');
+    const source = isUser ? 'user' : 'ai';
+    
+    // Numeric
+    if (templateKey.startsWith('numeric_')) {
+        const increase = templateKey.includes('increase');
+        const from = 10;
+        const to = increase ? 90 : 0;
+        const change = to - from;
+        
+        return {
+            source, character: 'Eria', key: '生命值', category: 'CV', change_type: templateKey.replace(`_${source}`, ''), 
+            data_type: 'numeric', previous: [String(from)], current: [String(to)],
+            details: { from, to, change, reason: '治疗魔法', ratio: 0.8 }
+        };
+    }
+    
+    // Array
+    if (templateKey.startsWith('array_')) {
+        const added = ['传说之剑', '恢复药水'];
+        const removed = ['生锈的铁剑'];
+        const current = ['传说之剑', '恢复药水', '地图'];
+        const previous = ['生锈的铁剑', '地图'];
+        
+        const details: any = {};
+        if (templateKey.includes('added')) details.added = added;
+        if (templateKey.includes('removed')) details.removed = removed;
+        if (templateKey.includes('replaced')) { details.added = added; details.removed = removed; }
+
+        return {
+            source, character: 'Eria', key: '背包', category: 'CR', change_type: templateKey.replace(`_${source}`, ''),
+            data_type: 'array', previous, current, details
+        };
+    }
+    
+    // Text
+    if (templateKey.startsWith('text_')) {
+        return {
+            source, character: '世界', key: '天气', category: 'ST', change_type: 'text_change',
+            data_type: 'text', previous: ['晴朗'], current: ['雷暴'],
+            details: { from: '晴朗', to: '雷暴', value: '雷暴' }
+        };
+    }
+
+    // Meta
+    if (templateKey.startsWith('character_')) {
+        return {
+            source, character: 'Eria', key: 'presence', category: 'meta', change_type: templateKey.replace(`_${source}`, ''),
+            data_type: 'text', previous: false, current: true, details: { message: 'enters' }
+        };
+    }
+    
+    if (templateKey.startsWith('item_')) {
+         return {
+            source, character: 'Eria', key: '护盾', category: 'CV', change_type: templateKey.replace(`_${source}`, ''),
+            data_type: 'numeric', previous: null, current: ['100'], details: { value: ['100'] }
+        };
+    }
+
+    // Fallback
+    return {
+        source, character: '示例角色', key: '示例项', category: 'Misc', change_type: 'unknown',
+        data_type: 'text', previous: ['旧值'], current: ['新值'], details: {}
+    };
+};
+
+// Component to render the preview
+const MockPreview: React.FC<{ templateKey: string, templateValue: string }> = ({ templateKey, templateValue }) => {
+    // We reuse the real `generateNarrative` logic but inject a specific single template override
+    // This is a bit tricky since `generateNarrative` reads from global state/localStorage.
+    // Instead, we will simulate the replacement logic locally using the regex from `generateNarrative`.
+    
+    const previewText = useMemo(() => {
+        try {
+            // Import private helper logic by duplicating it here or exposing it.
+            // Since we can't easily import `formatPlaceholder` without exporting it, we'll assume it's exported or we strictly use the regex here.
+            // Actually, `generateNarrative` uses `getNarrativeTemplates`.
+            // Let's do a simplified local render that mimics `utils/snapshotGenerator.ts`.
+            
+            const event = getMockEvent(templateKey);
+            
+            // This regex MUST match the one in `utils/snapshotGenerator.ts`
+            // Support unicode variable names
+            return templateValue.replace(/\{([\u4e00-\u9fa5a-zA-Z0-9_]+)\}/g, (match, placeholder) => {
+                // We need a mini formatPlaceholder here.
+                // For simplicity in this UI component, we'll implement a mapping based on the mock event.
+                const { details, character, key } = event;
+                
+                if (['角色名', 'name'].includes(placeholder)) return character || '';
+                if (['键名', 'key'].includes(placeholder)) return key;
+                if (['前缀', 'prefix'].includes(placeholder)) return `${character}的`;
+                
+                if (event.data_type === 'numeric') {
+                    if (['旧值', 'old'].includes(placeholder)) return String(details.from);
+                    if (['新值', 'new'].includes(placeholder)) return String(details.to);
+                    if (['变化量', 'diff'].includes(placeholder)) return details.change > 0 ? `+${details.change}` : `${details.change}`;
+                    if (['原因', 'reason'].includes(placeholder)) return details.reason;
+                }
+                
+                if (event.data_type === 'array') {
+                    if (['新增项', 'added'].includes(placeholder)) return (details.added || []).join('、');
+                    if (['移除项', 'removed'].includes(placeholder)) return (details.removed || []).join('、');
+                    if (['新列表', 'list_new'].includes(placeholder)) return (event.current || []).join('、');
+                }
+                
+                if (event.data_type === 'text') {
+                    if (['旧值', 'old'].includes(placeholder)) return String(details.from);
+                    if (['新值', 'new', 'value'].includes(placeholder)) return String(details.to);
+                }
+
+                return match; // Fallback
+            });
+        } catch (e) {
+            return "预览生成错误";
+        }
+    }, [templateKey, templateValue]);
+
+    return (
+        <div className="snapshot-mock-preview">
+            <div className="snapshot-mock-preview__label"><Terminal size={12} /> 实时预览</div>
+            <div className="snapshot-mock-preview__content">{previewText}</div>
+        </div>
+    );
+};
+
 
 interface SnapshotSettingsProps {
   data: StatusBarData;
@@ -49,6 +178,7 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState('');
   
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -90,14 +220,10 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   };
 
   const handleSaveTemplate = (key: string) => {
-      // Check if we are editing a built-in config
       const activeConfig = configs.find(c => c.id === activeConfigId);
       if (activeConfig?.isBuiltIn) {
-          // Use window.confirm assuming it's supported, otherwise we might need a custom modal later
           if (confirm(`默认配置 "${activeConfig.name}" 不可直接修改。\n是否创建该配置的副本并进行编辑？`)) {
               handleCreateConfig(`${activeConfig.name} (副本)`, activeConfig.templates);
-              
-              // Apply the pending change to the newly created copy after a slight delay
               setTimeout(() => {
                   const newTemplates = { ...getNarrativeTemplates(), [key]: tempValue };
                   saveNarrativeTemplates(newTemplates);
@@ -121,10 +247,28 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       if (activeConfig?.isBuiltIn) return;
 
       const newTemplates = { ...templates };
-      delete newTemplates[key]; // Removing it makes it fall back to default
+      delete newTemplates[key];
       setTemplates(newTemplates);
       saveNarrativeTemplates(newTemplates);
       toast.info('已恢复该条默认');
+  };
+
+  // --- Insert Variable Helper ---
+  const insertVariable = (variable: string) => {
+      if (!textAreaRef.current) return;
+      const start = textAreaRef.current.selectionStart;
+      const end = textAreaRef.current.selectionEnd;
+      const text = tempValue;
+      const newText = text.substring(0, start) + `{${variable}}` + text.substring(end);
+      setTempValue(newText);
+      
+      // Restore focus and cursor
+      setTimeout(() => {
+          if (textAreaRef.current) {
+              textAreaRef.current.focus();
+              textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = start + variable.length + 2;
+          }
+      }, 0);
   };
 
   // --- Configuration Management ---
@@ -132,18 +276,15 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const handleSwitchConfig = (id: string) => {
       setActiveNarrativeConfigId(id);
       setActiveConfigId(id);
-      // Templates will update via useEffect
   };
 
   const handleCreateConfig = (nameInput?: string, baseTemplates?: Record<string, string>) => {
       if (nameInput) {
-          // Direct creation (used for copying)
           const config = createNarrativeConfig(nameInput, baseTemplates);
           setActiveNarrativeConfigId(config.id);
           refreshConfigs();
           toast.success(`配置 "${nameInput}" 已创建并激活`);
       } else {
-          // UI Trigger
           setIsCreating(true);
           setNewConfigName('');
       }
@@ -174,7 +315,7 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       if (config && !config.isBuiltIn) {
           if (confirm(`确定要删除配置 "${config.name}" 吗？此操作不可撤销。`)) {
               deleteNarrativeConfig(activeConfigId);
-              refreshConfigs(); // Will fall back to default
+              refreshConfigs(); 
               toast.info("配置已删除");
           }
       }
@@ -328,7 +469,6 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                           const isEditing = editingKey === key;
                           const currentValue = isEditing ? tempValue : (templates[key] || DEFAULT_TEMPLATES[key]);
                           
-                          // Check if modified in CURRENT config
                           const isModified = activeConfig && !activeConfig.isBuiltIn && activeConfig.templates[key] !== undefined;
 
                           return (
@@ -349,16 +489,31 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                                   </div>
                                   
                                   {isEditing ? (
-                                      <div className="template-item__editor">
+                                      <div className="template-item__editor animate-fade-in">
+                                          <div className="template-item__vars">
+                                              <span>点击插入变量: </span>
+                                              {info.vars.map(v => (
+                                                  <button 
+                                                    key={v} 
+                                                    className="template-item__var-chip"
+                                                    onClick={() => insertVariable(v)}
+                                                    title={`插入 {${v}}`}
+                                                  >
+                                                      {v}
+                                                  </button>
+                                              ))}
+                                          </div>
+                                          
                                           <textarea 
+                                              ref={textAreaRef}
                                               value={tempValue} 
                                               onChange={e => setTempValue(e.target.value)}
                                               className="template-item__textarea"
                                               autoFocus
                                           />
-                                          <div className="template-item__vars">
-                                              可用变量: {info.vars.map(v => <code key={v}>{`{${v}}`}</code>)}
-                                          </div>
+                                          
+                                          <MockPreview templateKey={key} templateValue={tempValue} />
+
                                           <div className="template-item__footer">
                                               <button onClick={() => setEditingKey(null)} className="btn btn--ghost">取消</button>
                                               <button onClick={() => handleSaveTemplate(key)} className="btn btn--primary"><Save size={14}/> 保存</button>

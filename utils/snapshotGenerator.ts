@@ -6,9 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * 叙事生成器 (Narrative Engine)
  * 负责对比状态数据的变化，并生成自然语言描述。
- * v6.7 Refactor: Supports Flat Array Structure (Definition-Driven)
- * v9.9 Update: Customizable Templates & User/AI Differentiation
- * v10.0 Update: Multi-Configuration Support (Preset System for Narratives)
+ * v10.1 Refactor: Atomic Bilingual Variables & Mock Support
  */
 
 // 叙事配置接口
@@ -27,74 +25,82 @@ const STORAGE_KEY_CONFIGS = 'th_narrative_configs_v1';
 const STORAGE_KEY_ACTIVE_ID = 'th_narrative_active_id_v1';
 const LEGACY_STORAGE_KEY = 'th_narrative_templates_v1';
 
-// 默认叙事模板库
+// --- 默认叙事模板库 (v10.1 原子化变量) ---
 export const DEFAULT_TEMPLATES: Record<string, string> = {
   // --- 数值变化 (Numeric) ---
-  'numeric_dramatic_increase': '一股强大的力量涌入，{prefix}{key}{changeClause}！',
-  'numeric_dramatic_increase_user': '犹如神迹降临，{prefix}{key}突然暴涨！{changeClause}。',
+  'numeric_dramatic_increase': '一股力量涌入，{角色名}的{键名}因为“{原因}”，从 {旧值} 激增到了 {新值}（{变化量}）！',
+  'numeric_dramatic_increase_user': '犹如神迹降临，{角色名}的{键名}被强制修改，从 {旧值} 暴涨至 {新值}。',
   
-  'numeric_dramatic_decrease': '某种重要的东西被剥离了，{prefix}{key}{changeClause}。',
-  'numeric_dramatic_decrease_user': '世界意志不仅无情，{prefix}{key}遭到了降维打击，{changeClause}。',
+  'numeric_dramatic_decrease': '{角色名}的{键名}遭遇重创，因为“{原因}”，从 {旧值} 骤降至 {新值}（{变化量}）。',
+  'numeric_dramatic_decrease_user': '世界意志无情地剥夺了{角色名}的{键名}，数值从 {旧值} 跌落至 {新值}。',
   
-  'numeric_subtle_increase': '{prefix}{key}似乎有了一些提升，{changeClause}。',
-  'numeric_subtle_increase_user': '{prefix}{key}被神秘力量微调上升，{changeClause}。',
+  'numeric_subtle_increase': '{角色名}的{键名}略微上升了，变为 {新值}（{变化量}）。',
+  'numeric_subtle_increase_user': '{角色名}的{键名}被微调上升，现为 {新值}。',
   
-  'numeric_subtle_decrease': '{prefix}{key}好像被消耗了少许，{changeClause}。',
-  'numeric_subtle_decrease_user': '{prefix}{key}被神秘力量悄然削弱，{changeClause}。',
+  'numeric_subtle_decrease': '{角色名}的{键名}略微下降了，变为 {新值}（{变化量}）。',
+  'numeric_subtle_decrease_user': '{角色名}的{键名}被微调下降，现为 {新值}。',
 
   // --- 集合变化 (Array/List) ---
-  'array_items_added': '{prefix}{key}中，增添了新的内容：{addedItems}。',
-  'array_items_added_user': '命运的剧本被改写，{prefix}{key}凭空出现了：{addedItems}。',
+  'array_items_added': '{角色名}的{键名}中新增了：{新增项}。当前列表：{新列表}。',
+  'array_items_added_user': '命运的剧本被改写，{角色名}获得了 {新增项}。',
   
-  'array_items_removed': '一些{key}从{prefix}生命中消失了，似乎是：{removedItems}。',
-  'array_items_removed_user': '存在本身被抹去，{prefix}{key}中的 {removedItems} 彻底消失了。',
+  'array_items_removed': '{角色名}失去了以下{键名}：{移除项}。',
+  'array_items_removed_user': '存在被抹去，{角色名}的{键名}中少了：{移除项}。',
   
-  'array_items_replaced': '{prefix}{key}发生了变化：旧的 {removedItems} 不见了，取而代之的是新的 {addedItems}。',
-  'array_items_replaced_user': '{prefix}{key}被强制重构：{removedItems} 变为 {addedItems}。',
+  'array_items_replaced': '{角色名}的{键名}发生了更替：{移除项} 变为 {新增项}。',
+  'array_items_replaced_user': '{角色名}的{键名}被重构：{移除项} 被替换为 {新增项}。',
 
   // --- 文本变化 (Text) ---
-  'text_change': '{prefix}关于“{key}”的状态描述更新为：“{value}”。',
-  'text_change_user': '现实被重塑，{prefix}“{key}”现在的状态是：“{value}”。',
+  'text_change': '{角色名}的“{键名}”状态更新为：“{新值}”（原为：{旧值}）。',
+  'text_change_user': '现实被重塑，{角色名}的“{键名}”现在是：“{新值}”。',
 
   // --- 角色/物品进出场 (Meta/Lifecycle) ---
-  'character_enters': '场景中，{character}的身影出现了。',
-  'character_enters_user': '导演将镜头转向了{character}，他/她已在场。',
+  'character_enters': '场景中，{角色名}的身影出现了。',
+  'character_enters_user': '导演将镜头转向了{角色名}，他/她已在场。',
   
-  'character_leaves': '{character}离开了这里，消失在视野中。',
-  'character_leaves_user': '{character}被移出了当前舞台。',
+  'character_leaves': '{角色名}离开了这里，消失在视野中。',
+  'character_leaves_user': '{角色名}被移出了当前舞台。',
   
-  'item_added': '{character}出现了，{initialChangeClause}{prefix}{key}的初始状态被设定为：{value}。',
-  'item_added_user': '随着{character}的登场，{prefix}{key}被设定为：{value}。',
+  'item_added': '{角色名}拥有了新的{键名}，初始值为：{新值}。',
+  'item_added_user': '随着{角色名}的登场，{键名}被设定为：{新值}。',
   
-  'item_removed': '{prefix}的{key}（{previousValue}）被移除了。',
-  'item_removed_user': '{prefix}的{key}（{previousValue}）被强制清除了。',
+  'item_removed': '{角色名}的{键名}（{旧值}）已移除。',
+  'item_removed_user': '{角色名}的{键名}（{旧值}）被强制清除。',
   
-  'data_type_changed': '{prefix}{key}的数据类型发生了根本性的变化。',
+  'data_type_changed': '{角色名}的{键名}数据结构发生了根本性的变化。',
 };
+
+// 变量定义元数据 (用于 UI 提示与 Mock)
+const VARS_COMMON = ['角色名', '键名', 'name', 'key'];
+const VARS_NUMERIC = ['旧值', '新值', '变化量', '变化量绝对值', '原因', 'old', 'new', 'diff', 'diff_abs', 'reason'];
+const VARS_ARRAY = ['新增项', '移除项', '新列表', '旧列表', 'added', 'removed', 'list_new', 'list_old'];
+const VARS_TEXT = ['旧值', '新值', 'old', 'new'];
 
 // 模板元数据 (用于 UI 显示)
 export const TEMPLATE_INFO: Record<string, { label: string, vars: string[] }> = {
-    'numeric_dramatic_increase': { label: '数值剧增 (AI)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_dramatic_increase_user': { label: '数值剧增 (用户)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_dramatic_decrease': { label: '数值骤降 (AI)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_dramatic_decrease_user': { label: '数值骤降 (用户)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_subtle_increase': { label: '数值微升 (AI)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_subtle_increase_user': { label: '数值微升 (用户)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_subtle_decrease': { label: '数值微降 (AI)', vars: ['prefix', 'key', 'changeClause'] },
-    'numeric_subtle_decrease_user': { label: '数值微降 (用户)', vars: ['prefix', 'key', 'changeClause'] },
+    'numeric_dramatic_increase': { label: '数值剧增 (AI)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_dramatic_increase_user': { label: '数值剧增 (用户)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_dramatic_decrease': { label: '数值骤降 (AI)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_dramatic_decrease_user': { label: '数值骤降 (用户)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_subtle_increase': { label: '数值微升 (AI)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_subtle_increase_user': { label: '数值微升 (用户)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_subtle_decrease': { label: '数值微降 (AI)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
+    'numeric_subtle_decrease_user': { label: '数值微降 (用户)', vars: [...VARS_COMMON, ...VARS_NUMERIC] },
     
-    'array_items_added': { label: '获得物品/标签 (AI)', vars: ['prefix', 'key', 'addedItems'] },
-    'array_items_added_user': { label: '获得物品/标签 (用户)', vars: ['prefix', 'key', 'addedItems'] },
-    'array_items_removed': { label: '失去物品/标签 (AI)', vars: ['prefix', 'key', 'removedItems'] },
-    'array_items_removed_user': { label: '失去物品/标签 (用户)', vars: ['prefix', 'key', 'removedItems'] },
+    'array_items_added': { label: '获得物品/标签 (AI)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
+    'array_items_added_user': { label: '获得物品/标签 (用户)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
+    'array_items_removed': { label: '失去物品/标签 (AI)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
+    'array_items_removed_user': { label: '失去物品/标签 (用户)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
+    'array_items_replaced': { label: '物品/标签更替 (AI)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
+    'array_items_replaced_user': { label: '物品/标签更替 (用户)', vars: [...VARS_COMMON, ...VARS_ARRAY] },
     
-    'text_change': { label: '文本描述变更 (AI)', vars: ['prefix', 'key', 'value', 'previousValue'] },
-    'text_change_user': { label: '文本描述变更 (用户)', vars: ['prefix', 'key', 'value'] },
+    'text_change': { label: '文本描述变更 (AI)', vars: [...VARS_COMMON, ...VARS_TEXT] },
+    'text_change_user': { label: '文本描述变更 (用户)', vars: [...VARS_COMMON, ...VARS_TEXT] },
     
-    'character_enters': { label: '角色进场 (AI)', vars: ['character'] },
-    'character_enters_user': { label: '角色进场 (用户)', vars: ['character'] },
-    'character_leaves': { label: '角色退场 (AI)', vars: ['character'] },
-    'character_leaves_user': { label: '角色退场 (用户)', vars: ['character'] },
+    'character_enters': { label: '角色进场 (AI)', vars: ['角色名', 'name'] },
+    'character_enters_user': { label: '角色进场 (用户)', vars: ['角色名', 'name'] },
+    'character_leaves': { label: '角色退场 (AI)', vars: ['角色名', 'name'] },
+    'character_leaves_user': { label: '角色退场 (用户)', vars: ['角色名', 'name'] },
 };
 
 // --- Config Management ---
@@ -203,10 +209,6 @@ export function getNarrativeTemplates(): Record<string, string> {
     return { ...DEFAULT_TEMPLATES, ...(activeConfig?.templates || {}) };
 }
 
-/**
- * 遗留兼容函数：保存用户自定义模板
- * 现在它会更新当前激活的配置 (如果是自定义的)，或者创建一个新配置
- */
 export function saveNarrativeTemplates(templates: Record<string, string>) {
     const activeId = getActiveNarrativeConfigId();
     const configs = getNarrativeConfigs();
@@ -216,34 +218,22 @@ export function saveNarrativeTemplates(templates: Record<string, string>) {
         config.templates = templates;
         updateNarrativeConfig(config);
     } else {
-        // 如果当前是默认配置，则无法直接保存，理论上 UI 应该处理这种情况
-        // 这里作为 fallback，我们不做任何事或抛出错误
         console.warn('Attempted to save templates to a built-in config via legacy method.');
     }
 }
 
-/**
- * 重置所有模板 -> 实际上是切回默认配置
- */
 export function resetNarrativeTemplates() {
     setActiveNarrativeConfigId('default');
 }
 
 // --- Snapshot Logic ---
 
-/**
- * 纯数值解析器
- * 不再处理 @ 分隔，只处理单个字符串是否为数字
- */
 function parseSingleNumber(str: string): number | null {
     if (typeof str !== 'string' || !str.trim()) return null;
     const match = str.match(/^(-?\d+(?:\.\d+)?)/); // Match start of string number
     return match ? parseFloat(match[1]) : null;
 }
 
-/**
- * 获取数值结构映射
- */
 function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { current: number | null, max: number | null, reason: string | null, change: number | null } {
     const values = (item.values || []) as string[];
     
@@ -254,7 +244,6 @@ function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { curre
     let rsnIdx = 3;
 
     if (def?.structure?.parts) {
-        // FIX: Use findIndex on ItemDefinitionPart[]
         currIdx = def.structure.parts.findIndex(p => p.key === 'current');
         if (currIdx === -1) currIdx = def.structure.parts.findIndex(p => p.key === 'value');
         maxIdx = def.structure.parts.findIndex(p => p.key === 'max');
@@ -270,9 +259,6 @@ function getNumericStructure(item: StatusBarItem, def?: ItemDefinition): { curre
     return { current, max, change, reason };
 }
 
-/**
- * 辅助格式化器
- */
 const formatters = {
   numeric(val: number, max: number | null) {
     if (max !== null && max > 0) return `${val}/${max}`;
@@ -282,19 +268,14 @@ const formatters = {
     if (!Array.isArray(value)) return String(value);
     
     return value.map(item => {
-        // Handle Object (List-of-objects item)
         if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
             const vals = Object.values(item).filter(v => v !== undefined && v !== '');
             if (vals.length === 0) return '';
             const first = vals[0];
             if (vals.length === 1) return String(first);
-            return `${first} (${vals.slice(1).join('/')})`;
+            return `${first}`; // Simplified for narrative
         }
-        // Handle Nested Array
-        if (Array.isArray(item)) {
-             return `(${item.join('，')})`;
-        }
-        // Handle Primitive
+        if (Array.isArray(item)) return `(${item.join('，')})`;
         return String(item);
     }).join('、');
   },
@@ -303,9 +284,6 @@ const formatters = {
   },
 };
 
-/**
- * 处理单个条目的变化
- */
 function processItemChange(
   oldItem: StatusBarItem | undefined,
   newItem: StatusBarItem | undefined,
@@ -317,66 +295,40 @@ function processItemChange(
 ) {
   const def = itemDefs[key];
   
-  // 判定数据类型 (Priority: Definition > Heuristic)
   const determineDataType = (item: StatusBarItem): 'numeric' | 'text' | 'array' => {
-      // FIX: The snapshot generator treats 'list-of-objects' as a type of 'array' for narrative purposes.
       if (def?.type) {
-        if (def.type === 'list-of-objects') {
-            return 'array';
-        }
+        if (def.type === 'list-of-objects') return 'array';
         return def.type;
       }
-      // Fallback heuristics
       const val0 = item.values[0];
-      if (parseSingleNumber(val0 as string) !== null && item.values.length > 1) return 'numeric'; // Likely numeric structure
+      if (parseSingleNumber(val0 as string) !== null && item.values.length > 1) return 'numeric'; 
       if (SINGLE_STRUCTURE_CATEGORIES.has(category) || (item.values.length > 1 && !parseSingleNumber(val0 as string))) return 'array';
       return 'text';
   };
 
   const dataType = newItem ? determineDataType(newItem) : (oldItem ? determineDataType(oldItem) : 'text');
 
-  // 1. 新增条目
+  // 1. 新增
   if (!oldItem && newItem) {
     const event: SnapshotEvent = {
       source: newItem.user_modified ? 'user' : 'ai',
-      character,
-      category,
-      key,
-      change_type: 'item_added',
-      data_type: dataType,
-      previous: null,
-      current: newItem.values,
-      details: { value: newItem.values },
+      character, category, key, change_type: 'item_added', data_type: dataType,
+      previous: null, current: newItem.values, details: { value: newItem.values },
     };
-    
-    if (dataType === 'numeric') {
-        const { change, reason } = getNumericStructure(newItem, def);
-        if (change !== null) event.details!.change = change;
-        if (reason) event.details!.reason = reason;
-    }
     detectedEvents.push(event);
     return;
   }
 
-  // 2. 删除条目
+  // 2. 删除
   if (oldItem && !newItem) {
-    // 假设删除通常由 AI 触发，除非是编辑器操作（这里暂无法区分编辑器删除，默认为 AI）
-    // 如果需要区分，需在逻辑层传递操作来源
     detectedEvents.push({
-      source: 'ai', 
-      character,
-      category,
-      key,
-      change_type: 'item_removed',
-      data_type: dataType,
-      previous: oldItem.values,
-      current: null,
-      details: { value: oldItem.values },
+      source: 'ai', character, category, key, change_type: 'item_removed', data_type: dataType,
+      previous: oldItem.values, current: null, details: { value: oldItem.values },
     });
     return;
   }
 
-  // 3. 对比现有条目
+  // 3. 对比
   if (!newItem || !oldItem || _.isEqual(newItem.values, oldItem.values)) return;
 
   const source = newItem.user_modified ? 'user' : 'ai';
@@ -385,8 +337,8 @@ function processItemChange(
       const oldStruct = getNumericStructure(oldItem, def);
       const newStruct = getNumericStructure(newItem, def);
       
-      if (oldStruct.current === null || newStruct.current === null) return; // Cannot compare non-numbers
-      if (oldStruct.current === newStruct.current) return; // Value didn't change (maybe description did, ignore for now)
+      if (oldStruct.current === null || newStruct.current === null) return;
+      if (oldStruct.current === newStruct.current) return;
 
       const diff = newStruct.current - oldStruct.current;
       const base = oldStruct.current === 0 ? (newStruct.current !== 0 ? 1 : 100) : oldStruct.current;
@@ -405,7 +357,7 @@ function processItemChange(
             from: oldStruct.current, 
             to: newStruct.current, 
             change: diff, 
-            reason: newStruct.reason,
+            reason: newStruct.reason || (newItem.values[3] as string), // Try generic reason index
             ratio 
         }
       });
@@ -413,7 +365,6 @@ function processItemChange(
   }
 
   if (dataType === 'array') {
-    // FIX: Use _.differenceWith for arrays of objects.
     const added = _.differenceWith(newItem.values, oldItem.values, _.isEqual).filter(v => v);
     const removed = _.differenceWith(oldItem.values, newItem.values, _.isEqual).filter(v => v);
 
@@ -440,14 +391,10 @@ function processItemChange(
   }
 }
 
-/**
- * 核心函数：检测变化
- */
 export function detectChanges(oldData: StatusBarData, newData: StatusBarData): SnapshotEvent[] {
   const detectedEvents: SnapshotEvent[] = [];
   const definitions = newData.item_definitions || {};
 
-  // 1. 处理共享数据
   const allSharedCats = new Set([...Object.keys(oldData.shared || {}), ...Object.keys(newData.shared || {})]);
   allSharedCats.forEach(cat => {
     const oldItems = oldData.shared?.[cat] || [];
@@ -461,12 +408,7 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
     });
   });
 
-  // 2. 处理角色数据
-  const allCharIds = new Set([
-      ...Object.keys(oldData.id_map || {}), 
-      ...Object.keys(newData.id_map || {})
-  ]);
-
+  const allCharIds = new Set([...Object.keys(oldData.id_map || {}), ...Object.keys(newData.id_map || {})]);
   allCharIds.forEach(charId => {
     const oldMeta = oldData.character_meta?.[charId];
     const newMeta = newData.character_meta?.[charId];
@@ -474,25 +416,18 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
     const newPresent = newMeta?.isPresent !== false;
     const charName = newData.id_map[charId] || oldData.id_map[charId] || charId;
 
-    // 进退场检测
     if (!oldPresent && newPresent) {
-      // 假设 Meta 变更通常也是 AI 行为，除非有明确标志（暂无）
-      // 如果是通过 DataCenter 手动切换，我们视为 'user'
-      // 但这里我们没有 Meta Item 的 user_modified 状态传递，只能暂定 ai 或 user (后续可优化)
       detectedEvents.push({
-        source: 'user', // 默认进退场为导演/用户行为更合理
-        character: charName, category: 'meta', key: 'presence', change_type: 'character_enters',
+        source: 'user', character: charName, category: 'meta', key: 'presence', change_type: 'character_enters',
         data_type: 'text', previous: false, current: true, details: { message: `${charName} enters.` }
       });
     } else if (oldPresent && !newPresent) {
       detectedEvents.push({
-        source: 'user', 
-        character: charName, category: 'meta', key: 'presence', change_type: 'character_leaves',
+        source: 'user', character: charName, category: 'meta', key: 'presence', change_type: 'character_leaves',
         data_type: 'text', previous: true, current: false, details: { message: `${charName} leaves.` }
       });
     }
 
-    // 数据变更
     const oldChar = oldData.characters?.[charId];
     const newChar = newData.characters?.[charId];
     const allCats = new Set([...Object.keys(oldChar || {}), ...Object.keys(newChar || {})]);
@@ -514,62 +449,52 @@ export function detectChanges(oldData: StatusBarData, newData: StatusBarData): S
 }
 
 /**
- * 格式化占位符
+ * 格式化占位符 (v10.1 Refactor)
+ * 支持中英文双语变量，逻辑扁平化
  */
 function formatPlaceholder(placeholder: string, event: SnapshotEvent): string {
   const { details, character, key, current, previous, data_type } = event;
   const charName = character === 'User' ? '{{user}}' : character || '世界';
-  const prefix = character ? (character === 'User' ? '{{user}}的' : `${character}的`) : '';
-
-  // 处理特殊子句
-  if (placeholder === 'changeClause') {
-    const { reason, from, to, change } = details || {};
-    const fromStr = formatters.numeric(from, null);
-    const toStr = formatters.numeric(to, null);
-    const chgVal = change as number;
-    const changeText = chgVal > 0 ? `增加了${chgVal}` : `减少了${Math.abs(chgVal)}`;
-    const reasonText = reason ? `因为“${reason}”，` : '';
-    return `，${reasonText}从${fromStr}${changeText}，达到了${toStr}`;
-  }
   
-  if (placeholder === 'initialChangeClause') {
-     const { reason, change } = details || {};
-     if (!change) return '';
-     const reasonText = reason ? `因为“${reason}”，` : '';
-     const chgVal = change as number;
-     const changeText = chgVal > 0 ? `在增加了${chgVal}后，` : `在减少了${Math.abs(chgVal)}后，`;
-     return `${reasonText}${changeText}`;
+  // 1. 通用变量
+  if (['name', '角色名'].includes(placeholder)) return charName;
+  if (['key', '键名'].includes(placeholder)) return key;
+  if (['prefix', '前缀'].includes(placeholder)) return character ? (character === 'User' ? '{{user}}的' : `${character}的`) : '';
+
+  // 2. 数值型
+  if (data_type === 'numeric') {
+      const { from, to, change, reason } = details || {};
+      if (['old', '旧值'].includes(placeholder)) return formatters.numeric(from, null);
+      if (['new', '新值'].includes(placeholder)) return formatters.numeric(to, null);
+      if (['diff', '变化量'].includes(placeholder)) return change > 0 ? `+${change}` : `${change}`;
+      if (['diff_abs', '变化量绝对值'].includes(placeholder)) return String(Math.abs(change));
+      if (['reason', '原因'].includes(placeholder)) return reason || '未知原因';
+      
+      // Legacy Support
+      if (placeholder === 'changeClause') {
+          const changeText = change > 0 ? `增加了${change}` : `减少了${Math.abs(change)}`;
+          const reasonText = reason ? `因为“${reason}”，` : '';
+          return `，${reasonText}从${formatters.numeric(from, null)}${changeText}，达到了${formatters.numeric(to, null)}`;
+      }
   }
 
-  if (placeholder === 'character') return charName;
-  if (placeholder === 'prefix') return prefix;
-  if (placeholder === 'key') return key;
-
-  // 数据映射
-  let sourceData: any;
-
-  switch (placeholder) {
-    case 'value': sourceData = current; break;
-    case 'previousValue': sourceData = previous; break;
-    case 'addedItems': sourceData = details?.added; break;
-    case 'removedItems': sourceData = details?.removed; break;
-    default: return `{${placeholder}}`;
+  // 3. 数组/列表型
+  if (data_type === 'array') {
+      const { added, removed } = details || {};
+      const listNew = current;
+      const listOld = previous;
+      
+      if (['added', '新增项'].includes(placeholder)) return formatters.array(added || []);
+      if (['removed', '移除项'].includes(placeholder)) return formatters.array(removed || []);
+      if (['list_new', '新列表'].includes(placeholder)) return formatters.array(listNew || []);
+      if (['list_old', '旧列表'].includes(placeholder)) return formatters.array(listOld || []);
   }
 
-  if (sourceData === undefined || sourceData === null) return '';
+  // 4. 文本型
+  if (['old', '旧值', 'previousValue'].includes(placeholder)) return formatters.default(previous);
+  if (['new', '新值', 'value'].includes(placeholder)) return formatters.default(current);
 
-  switch (data_type) {
-    case 'numeric':
-       // For text narrative, we usually just want the current value
-       return String(Array.isArray(sourceData) ? sourceData[0] : sourceData);
-    case 'array':
-      return formatters.array(sourceData);
-    case 'text':
-       const str = String(sourceData);
-       return str.length > 20 ? str.slice(0, 20) + '...' : str;
-    default:
-      return formatters.default(sourceData);
-  }
+  return `{${placeholder}}`;
 }
 
 /**
@@ -583,11 +508,9 @@ export function generateNarrative(events: SnapshotEvent[]): string {
   events.forEach(event => {
     if (EXCLUDED_KEYS.has(event.key)) return;
     
-    // 1. 优先尝试查找带有来源后缀的模板 (e.g., numeric_dramatic_increase_user)
     let templateKey = `${event.change_type}_${event.source}`;
     let template = templates[templateKey];
     
-    // 2. 如果未找到，回退到通用基础模板 (e.g., numeric_dramatic_increase)
     if (!template) {
         templateKey = event.change_type;
         template = templates[templateKey];
@@ -595,7 +518,8 @@ export function generateNarrative(events: SnapshotEvent[]): string {
 
     if (!template) return;
 
-    const description = template.replace(/{(\w+)}/g, (match, placeholder) => 
+    // 支持 Unicode 字符作为变量名 (e.g., {旧值})
+    const description = template.replace(/\{([\u4e00-\u9fa5a-zA-Z0-9_]+)\}/g, (match, placeholder) => 
       formatPlaceholder(placeholder, event)
     );
     descriptions.push(description);
