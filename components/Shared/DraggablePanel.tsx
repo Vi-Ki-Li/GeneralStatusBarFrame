@@ -52,7 +52,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
     setTimeout(checkBounds, 0);
   }, [isMobile]); 
 
-  // --- Dragging Logic ---
+  // --- Dragging Logic (Mouse) ---
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile) return;
     if (e.target instanceof Element && e.target.closest('button')) return;
@@ -95,7 +95,51 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
     document.body.style.userSelect = '';
   };
 
-  // --- Resizing Logic ---
+  // --- Dragging Logic (Touch) ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobile) return; // If explicitly in mobile sheet mode, don't drag
+    if (e.target instanceof Element && e.target.closest('button')) return;
+
+    isDragging.current = true;
+    const touch = e.touches[0];
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (rect) {
+        dragOffset.current = {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+    
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (isDragging.current) {
+        e.preventDefault(); // Prevent scrolling
+        const touch = e.touches[0];
+        let newX = touch.clientX - dragOffset.current.x;
+        let newY = touch.clientY - dragOffset.current.y;
+
+        const panelWidth = panelRef.current?.offsetWidth || size.width;
+        const panelHeight = panelRef.current?.offsetHeight || size.height;
+        const maxX = window.innerWidth - panelWidth;
+        const maxY = window.innerHeight - panelHeight;
+
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+
+        setPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+  };
+
+  // --- Resizing Logic (Mouse) ---
   const handleResizeDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
@@ -132,6 +176,41 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
       document.body.style.cursor = '';
   };
 
+  // --- Resizing Logic (Touch) ---
+  const handleResizeTouchStart = (e: React.TouchEvent) => {
+      e.stopPropagation();
+      isResizing.current = true;
+      const touch = e.touches[0];
+      resizeStart.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          w: size.width,
+          h: size.height
+      };
+      document.addEventListener('touchmove', handleResizeTouchMove, { passive: false });
+      document.addEventListener('touchend', handleResizeTouchEnd);
+  };
+
+  const handleResizeTouchMove = (e: TouchEvent) => {
+      if (isResizing.current) {
+          e.preventDefault(); // Prevent scrolling
+          const touch = e.touches[0];
+          const deltaX = touch.clientX - resizeStart.current.x;
+          const deltaY = touch.clientY - resizeStart.current.y;
+          
+          const newWidth = Math.max(250, resizeStart.current.w + deltaX);
+          const newHeight = Math.max(300, resizeStart.current.h + deltaY);
+          
+          setSize({ width: newWidth, height: newHeight });
+      }
+  };
+
+  const handleResizeTouchEnd = () => {
+      isResizing.current = false;
+      document.removeEventListener('touchmove', handleResizeTouchMove);
+      document.removeEventListener('touchend', handleResizeTouchEnd);
+  };
+
   const content = isMobile ? (
       <div className={`draggable-panel mobile-sheet ${className}`} ref={panelRef}>
           <div className="draggable-panel__header">
@@ -158,7 +237,12 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
             height: size.height
         }}
     >
-      <div className="draggable-panel__header" onMouseDown={handleMouseDown}>
+      <div 
+        className="draggable-panel__header" 
+        onMouseDown={handleMouseDown} 
+        onTouchStart={handleTouchStart}
+        style={{ touchAction: 'none' }} // Prevent scrolling when dragging header
+      >
         <div className="draggable-panel__title">
             <GripHorizontal size={14} />
             {title}
@@ -174,7 +258,12 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         {children}
       </div>
       {/* Resize Handle */}
-      <div className="draggable-panel__resize-handle" onMouseDown={handleResizeDown}>
+      <div 
+        className="draggable-panel__resize-handle" 
+        onMouseDown={handleResizeDown}
+        onTouchStart={handleResizeTouchStart}
+        style={{ touchAction: 'none' }} // Prevent scrolling when resizing
+      >
           <ArrowDownRight size={16} />
       </div>
     </div>
