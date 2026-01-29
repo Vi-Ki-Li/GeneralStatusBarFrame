@@ -42,6 +42,7 @@
   flex-direction: column;
   flex-shrink: 0;
   z-index: 10; 
+  overflow: hidden;
 }
 
 .palette-section {
@@ -74,6 +75,22 @@
   align-items: center;
 }
 
+.btn--icon-only {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn--icon-only:hover {
+    color: var(--text-primary);
+    background: var(--chip-bg);
+    border-radius: 4px;
+}
+
 .palette-search {
   display: flex;
   align-items: center;
@@ -81,7 +98,8 @@
   border: 1px solid var(--chip-border);
   border-radius: var(--radius-sm);
   padding: 2px 6px;
-  width: 60%;
+  width: 100%;
+  margin-right: 8px;
 }
 .palette-search input {
   border: none;
@@ -231,6 +249,7 @@
   flex-direction: column;
   overflow-y: auto;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .layout-inspector--empty {

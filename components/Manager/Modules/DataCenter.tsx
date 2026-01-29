@@ -10,7 +10,7 @@ import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import DefinitionDrawer from '../Definitions/DefinitionDrawer';
 import CategoryDrawer from '../Definitions/CategoryDrawer'; 
 import { tavernService } from '../../../services/mockTavernService';
-import { Plus, Save, RotateCcw, AlertCircle } from 'lucide-react';
+import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import './DataCenter.css';
@@ -28,6 +28,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
   const [selectedId, setSelectedId] = useState<string>('SHARED');
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Sidebar collapse state
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
@@ -234,8 +235,19 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
     <div className="data-center">
         <div className={`data-center__main-layout ${isMobile ? 'data-center__main-layout--mobile' : ''}`}>
             
-            {!isMobile ? (
-                <div className="data-center__sidebar">
+            {!isMobile && (
+                <div 
+                    className="data-center__sidebar" 
+                    style={{ 
+                        width: isSidebarCollapsed ? '0' : '220px', 
+                        minWidth: isSidebarCollapsed ? '0' : '220px',
+                        opacity: isSidebarCollapsed ? 0 : 1,
+                        padding: isSidebarCollapsed ? 0 : undefined,
+                        borderRight: isSidebarCollapsed ? 'none' : undefined,
+                        transition: 'all 0.3s ease',
+                        overflow: 'hidden' 
+                    }}
+                >
                   <CharacterListSidebar 
                       characters={charList} 
                       selectedId={selectedId}
@@ -243,9 +255,12 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                       onAddCharacter={handleAddCharacter}
                       onResetData={handleResetData}
                       onTogglePresence={handleTogglePresence}
+                      onClose={() => setIsSidebarCollapsed(true)}
                   />
                 </div>
-            ) : (
+            )}
+            
+            {isMobile && (
                 <div className="data-center__mobile-tabs">
                     <button onClick={() => setSelectedId('SHARED')} className={`data-center__mobile-tab ${selectedId === 'SHARED' ? 'active' : ''}`}>共享</button>
                     {charList.map(c => (
@@ -257,9 +272,20 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
 
             <div className="data-center__editor-pane">
                 <div className="data-center__editor-header">
-                    <h2 className="data-center__editor-title">
-                        {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {isSidebarCollapsed && !isMobile && (
+                            <button 
+                                onClick={() => setIsSidebarCollapsed(false)} 
+                                className="panel-toggle-btn desktop-only"
+                                title="展开侧边栏"
+                            >
+                                <PanelLeftOpen size={16} />
+                            </button>
+                        )}
+                        <h2 className="data-center__editor-title">
+                            {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
+                        </h2>
+                    </div>
                     <div className="data-center__editor-subtitle">
                         {hasUnsavedChanges && <span className="data-center__unsaved-indicator">[未保存] </span>}
                         ID: {selectedId}

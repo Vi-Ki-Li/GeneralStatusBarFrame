@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush } from 'lucide-react';
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush, Eye, Edit3 } from 'lucide-react'; // 此处修改1行
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import StyleGuiControls from './StyleGuiControls';
@@ -168,7 +168,18 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   const [showDocs, setShowDocs] = useState(false);
   const [showGui, setShowGui] = useState(true);
   const [activeSelector, setActiveSelector] = useState<string | null>(null);
+  
+  // Mobile Tab State
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   const toast = useToast();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -185,7 +196,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
         setPreviewKey('');
       }
       setActiveSelector(null);
-
+      setActiveTab('edit'); // Reset to edit tab on open
     }
   }, [isOpen, styleToEdit, initialPreviewKey]); 
   
@@ -266,10 +277,27 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                 <button onClick={onClose} className="style-editor__close-btn"><X size={20} /></button>
             </div>
 
+            {isMobile && (
+                <div className="style-editor__mobile-tabs">
+                    <button 
+                        className={`style-editor__mobile-tab ${activeTab === 'edit' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('edit')}
+                    >
+                        <Settings size={16} /> 配置
+                    </button>
+                    <button 
+                        className={`style-editor__mobile-tab ${activeTab === 'preview' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('preview')}
+                    >
+                        <Eye size={16} /> 预览
+                    </button>
+                </div>
+            )}
+
             <div className="style-editor__main-layout">
-                <div className="style-editor__left-pane">
+                <div className={`style-editor__left-pane ${isMobile && activeTab !== 'edit' ? 'hidden' : ''}`}>
                     <div className="style-editor__form-group">
-                        <label className="style-editor__label"><Settings size={14}/> 配置</label>
+                        <label className="style-editor__label"><Edit3 size={14}/> 基础属性</label>
                         <input className="style-editor__input" placeholder="样式名称 (e.g. 渐变生命条)" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                         <div className="style-editor__type-row">
                             <select className="style-editor__input" value={formData.dataType || 'numeric'} onChange={(e) => handleChange('dataType', e.target.value as StyleDefinition['dataType'])}>
@@ -294,6 +322,15 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         </div>
                     )}
 
+                    <div className="style-editor__docs-container">
+                        <button onClick={() => setShowGui(!showGui)} className="style-editor__docs-toggle"><Brush size={14} /><span>可视化配置 (GUI)</span><ChevronRight size={16} className={`icon-selector__arrow ${showGui ? 'open' : ''}`} /></button>
+                        {showGui && formData.dataType !== 'theme' && (
+                            <div className="animate-fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
+                                <StyleGuiControls guiConfig={formData.guiConfig} onUpdate={(newConfig) => handleChange('guiConfig', newConfig)} dataType={formData.dataType!} activeSelector={activeSelector} />
+                            </div>
+                        )}
+                    </div>
+
                     <div className="style-editor__form-group">
                         <label className="style-editor__label"><Code size={14}/> HTML 模板 (可选)</label>
                         <textarea className="style-editor__textarea style-editor__textarea--html" placeholder="使用 {{placeholder}} 语法... (留空则使用默认结构)" value={formData.html || ''} onChange={(e) => handleChange('html', e.target.value)} />
@@ -305,15 +342,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                             <div className="style-editor__placeholder-tags">{availablePlaceholders.map(ph => (<code key={ph} className="style-editor__placeholder-tag" onClick={() => handleCopy(`{{${ph}}}`)} title="点击复制">&#123;&#123;{ph}&#125;&#125;</code>))}</div>
                         </div>
                     )}
-                    
-                    <div className="style-editor__docs-container">
-                        <button onClick={() => setShowGui(!showGui)} className="style-editor__docs-toggle"><Brush size={14} /><span>可视化配置 (GUI)</span><ChevronRight size={16} className={`icon-selector__arrow ${showGui ? 'open' : ''}`} /></button>
-                        {showGui && formData.dataType !== 'theme' && (
-                            <div className="animate-fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
-                                <StyleGuiControls guiConfig={formData.guiConfig} onUpdate={(newConfig) => handleChange('guiConfig', newConfig)} dataType={formData.dataType!} activeSelector={activeSelector} />
-                            </div>
-                        )}
-                    </div>
                     
                     <div className="style-editor__form-group">
                         <label className="style-editor__label"><Code size={14}/> 手动 CSS 代码</label>
@@ -328,7 +356,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                     )}
                 </div>
 
-                <div className="style-editor__right-pane">
+                <div className={`style-editor__right-pane ${isMobile && activeTab !== 'preview' ? 'hidden' : ''}`}>
                     <div className="style-editor__preview-container">
                        {formData.dataType === 'theme' ? (
                            <div className="style-editor__theme-preview-placeholder"><Palette size={32} /><h4>全局主题预览</h4><p>全局主题将直接应用于整个应用。<br/>请在主界面点击“应用”按钮查看效果。</p></div>
@@ -336,6 +364,11 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                            <RealtimePreview style={{ ...formData, css: combinedCss }} previewDefinition={allDefinitions.find(d => d.key === previewKey) || null} onElementSelect={setActiveSelector} activeSelector={activeSelector} />
                        )}
                     </div>
+                    {isMobile && activeTab === 'preview' && (
+                        <div className="style-editor__preview-hint">
+                            👆 点击元素选中，然后在“配置”页修改样式
+                        </div>
+                    )}
                 </div>
             </div>
 

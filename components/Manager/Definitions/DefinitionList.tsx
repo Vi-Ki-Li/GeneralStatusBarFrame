@@ -11,10 +11,10 @@ import './DefinitionList.css';
 interface DefinitionListProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
-  onGoToStyleEditor: (itemKey: string) => void; // 此处添加1行
+  onGoToStyleEditor: (itemKey: string) => void;
 }
 
-const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToStyleEditor }) => { // 此处修改1行
+const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToStyleEditor }) => {
   const toast = useToast();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories');
@@ -176,7 +176,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
               })}
           </div>
           <div className="def-studio__sidebar-footer">
-              <button onClick={() => { setEditingCatDef(null); setIsCatDrawerOpen(true); }} className="def-studio__add-cat-btn">
+              <button onClick={() => { setEditingCatDef(null); setIsCatDrawerOpen(true); }} className="def-studio__add-cat-btn" title="新建分类">
                   <Plus size={16} /> 新建分类
               </button>
           </div>
@@ -201,13 +201,13 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
               <div className="def-studio__header-actions">
                   <button onClick={handleInjectAll} className="btn btn--ghost" disabled={isInjectingAll || filteredItems.length === 0}>
                       {isInjectingAll ? <Loader size={16} className="spinner" /> : <UploadCloud size={16} />}
-                      {injectButtonText}
+                      <span className="desktop-only">{injectButtonText}</span>
                   </button>
                   <button 
                     className="btn btn--primary" 
                     onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}
                   >
-                      <Plus size={16} /> 新建条目规则
+                      <Plus size={16} /> <span className="desktop-only">新建条目规则</span>
                   </button>
               </div>
           </div>

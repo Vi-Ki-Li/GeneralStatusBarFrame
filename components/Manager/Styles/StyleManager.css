@@ -7,6 +7,44 @@
   position: relative;
 }
 
+.style-atelier.mobile-layout {
+    flex-direction: column;
+}
+
+/* --- Mobile Tabs (New Segmented Control) --- */
+.style-atelier__mobile-tabs {
+    display: flex;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--glass-bg);
+    border-bottom: 1px solid var(--chip-border);
+    flex-shrink: 0;
+    gap: var(--spacing-md);
+}
+
+.style-atelier__mobile-tab {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.style-atelier__mobile-tab.active {
+    background: var(--chip-bg);
+    border-color: var(--chip-border);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
 /* --- Sidebar Styles --- */
 .style-atelier__sidebar {
   width: 260px;
@@ -16,6 +54,16 @@
   flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md);
   flex-shrink: 0;
+  transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+  overflow: hidden; /* CRITICAL for true collapse */
+  min-width: 0;     /* CRITICAL for true collapse */
+}
+
+/* Mobile Sidebar Override */
+.style-atelier.mobile-layout .style-atelier__sidebar {
+    width: 100% !important;
+    border-right: none;
+    flex: 1;
 }
 
 .style-atelier__sidebar-header {
@@ -25,12 +73,32 @@
   margin-bottom: var(--spacing-lg);
   padding: 0 var(--spacing-sm);
   color: var(--text-primary);
+  height: 28px; 
+}
+
+/* Common Toggle Button (Placeholder, should be global but defined here for now if not global) */
+.panel-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: var(--transition-fast);
+}
+.panel-toggle-btn:hover {
+    background: var(--chip-bg);
+    color: var(--text-primary);
 }
 
 .style-atelier__header-left {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  white-space: nowrap; /* Prevent wrap during collapse transition */
 }
 .style-atelier__header-left svg { color: var(--color-primary); }
 .style-atelier__header-left h3 { font-size: 1rem; font-weight: var(--font-weight-semibold); }
@@ -63,6 +131,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  /* Hide scrollbar when collapsed to prevent flicker */
+  scrollbar-width: thin; 
 }
 
 /* --- Theme Section --- */
@@ -83,6 +153,7 @@
   border: 1px solid var(--chip-border);
   transition: var(--transition-fast);
 }
+
 .theme-item:hover {
   background: var(--chip-bg);
 }
@@ -103,6 +174,8 @@
   color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
   font-size: 0.9rem;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .theme-item.active .theme-item__info {
   color: var(--color-primary);
@@ -163,6 +236,7 @@
   margin-bottom: var(--spacing-sm);
   padding-left: var(--spacing-sm);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .style-atelier__item-wrapper {
@@ -197,12 +271,16 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  overflow: hidden;
 }
 
 .style-atelier__item-name {
   color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
   font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .style-atelier__item-wrapper:hover .style-atelier__item-name {
   color: var(--text-primary);
@@ -273,6 +351,10 @@
   margin-top: auto;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--chip-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  white-space: nowrap;
 }
 
 .style-atelier__footer-row {
@@ -345,6 +427,12 @@
   overflow: hidden;
   min-width: 0;
   padding: var(--spacing-lg);
+  position: relative;
+}
+
+.style-atelier.mobile-layout .style-atelier__main-preview {
+    flex: 1;
+    padding: var(--spacing-lg);
 }
 
 .style-atelier__preview-header {
@@ -354,6 +442,7 @@
   margin-bottom: var(--spacing-lg);
   color: var(--text-secondary);
   padding: 0 var(--spacing-sm);
+  min-height: 28px;
 }
 .style-atelier__preview-header h4 { font-weight: var(--font-weight-semibold); }
 

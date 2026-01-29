@@ -14,6 +14,11 @@
   flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md);
   flex-shrink: 0;
+  transition: width 0.3s ease;
+}
+
+.def-studio.sidebar-collapsed .def-studio__sidebar {
+    padding: var(--spacing-lg) 4px;
 }
 
 .def-studio__sidebar-header {
@@ -23,7 +28,13 @@
   margin-bottom: var(--spacing-lg);
   padding: 0 var(--spacing-sm);
   color: var(--text-primary);
+  height: 24px;
 }
+.def-studio.sidebar-collapsed .def-studio__sidebar-header {
+    justify-content: center;
+    padding: 0;
+}
+
 .def-studio__sidebar-header h3 { 
   font-size: 1rem; 
   font-weight: var(--font-weight-semibold); 
@@ -80,6 +91,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.def-studio.sidebar-collapsed .def-studio__cat-item {
+    justify-content: center;
+    padding: var(--spacing-sm) 0;
 }
 
 .def-studio__cat-item-wrapper:hover .def-studio__cat-item {
@@ -153,6 +169,9 @@
   margin-top: auto;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--chip-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .def-studio__add-cat-btn {
@@ -172,6 +191,24 @@
 .def-studio__add-cat-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.def-studio__collapse-btn {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.def-studio.sidebar-collapsed .def-studio__collapse-btn {
+    justify-content: center;
+}
+.def-studio__collapse-btn:hover {
+    color: var(--text-primary);
 }
 
 /* --- Main Content Area --- */
@@ -354,7 +391,7 @@
   }
 
   .def-studio__sidebar, .def-studio__main {
-    width: 100%;
+    width: 100% !important; /* Force width on mobile */
     height: 100%;
     border-right: none;
     flex-shrink: 0;
@@ -393,7 +430,7 @@
   }
 }
 
-@media (max-width: 480px) { /* 此处开始添加5行 */
+@media (max-width: 480px) {
   .def-studio__item-grid {
     grid-template-columns: 1fr;
   }
