@@ -740,10 +740,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragData(event.active.data.current as DragDataState);
-        // Mobile UX: Auto collapse panel when drag starts to show drop zones
-        if (isMobile && event.active.data.current?.from === 'palette') {
-            setLeftOpen(false);
-        }
+        // REMOVED: Auto collapse logic to fix drag drop issue on mobile
     };
 
     const handleDragEnd = (event: DragEndEvent) => {

@@ -653,30 +653,30 @@
         position: absolute;
         top: 48px; /* Below header */
         left: 0;
-        width: 100% !important;
-        max-height: 50vh; /* Half height to allow drop space */
+        width: 50vw !important; /* 50% width */
+        height: calc(100% - 48px); /* Full remaining height */
+        max-height: none; /* Reset constraint */
         overflow-y: auto;
         background: var(--bg-app);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        border-bottom: 1px solid var(--chip-border);
+        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+        border-right: 1px solid var(--chip-border);
+        border-bottom: none;
         transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-        transform-origin: top;
+        transform-origin: left;
     }
     
     /* Mobile Closed State */
     .layout-composer__left-pane.closed {
-        transform: scaleY(0);
+        transform: translateX(-100%); /* Slide out to left */
         opacity: 0;
         pointer-events: none;
-        height: 0; /* Force height 0 */
     }
     
     /* Mobile Open State */
     .layout-composer__left-pane.open {
-        transform: scaleY(1);
+        transform: translateX(0); /* Slide in */
         opacity: 1;
         pointer-events: auto;
-        height: auto;
     }
     
     .layout-composer__palette { 
@@ -701,6 +701,7 @@
         background: var(--glass-bg);
         border-bottom: 1px solid var(--chip-border);
         z-index: 15; /* Above canvas, below overlay */
+        position: relative; /* Context for absolute title */
     }
 
     .layout-composer__mobile-toggle {
@@ -723,6 +724,10 @@
     .layout-composer__mobile-title {
         font-size: 0.9rem;
         color: var(--text-tertiary);
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
     }
 
     .layout-composer__mobile-action {
