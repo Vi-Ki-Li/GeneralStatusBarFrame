@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { StatusBarData, SnapshotMeta } from '../../../types';
-import { detectChanges, generateNarrative } from '../../../utils/snapshotGenerator';
-import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../../services/definitionRegistry';
-import { Camera, Zap, FileText, Info, History } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { StatusBarData, SnapshotMeta } from '../../types';
+import { detectChanges, generateNarrative, getNarrativeTemplates, saveNarrativeTemplates, resetNarrativeTemplates, TEMPLATE_INFO, DEFAULT_TEMPLATES } from '../../utils/snapshotGenerator';
+import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
+import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check } from 'lucide-react';
+import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
 interface SnapshotSettingsProps {
@@ -15,6 +17,20 @@ interface SnapshotSettingsProps {
 const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onToggle, meta }) => {
   const [lastSnapshot, setLastSnapshot] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Template Editor State
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [tempValue, setTempValue] = useState('');
+  
+  const toast = useToast();
+
+  useEffect(() => {
+      if (showTemplateEditor) {
+          setTemplates(getNarrativeTemplates());
+      }
+  }, [showTemplateEditor]);
 
   const handleManualTrigger = () => {
     setIsGenerating(true);
@@ -32,6 +48,27 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
         setLastSnapshot(narrative || "（当前状态下没有检测到值得记录的信息）");
         setIsGenerating(false);
     }, 500);
+  };
+
+  const handleEditTemplate = (key: string) => {
+      setEditingKey(key);
+      setTempValue(templates[key] || DEFAULT_TEMPLATES[key] || '');
+  };
+
+  const handleSaveTemplate = (key: string) => {
+      const newTemplates = { ...templates, [key]: tempValue };
+      setTemplates(newTemplates);
+      saveNarrativeTemplates(newTemplates);
+      setEditingKey(null);
+      toast.success('模板已更新');
+  };
+
+  const handleResetAllTemplates = () => {
+      if (confirm('确定要重置所有叙事模板到默认状态吗？您的自定义将丢失。')) {
+          resetNarrativeTemplates();
+          setTemplates(DEFAULT_TEMPLATES);
+          toast.info('已恢复默认模板');
+      }
   };
 
   return (
@@ -88,6 +125,75 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                     </div>
                 </div>
              </div>
+          )}
+
+          {/* Template Configuration Toggle */}
+          <div className="snapshot-settings__separator">
+              <button 
+                className="btn btn--ghost" 
+                onClick={() => setShowTemplateEditor(!showTemplateEditor)}
+              >
+                  <Edit size={16} /> {showTemplateEditor ? '隐藏模板配置' : '配置叙事模板'}
+              </button>
+          </div>
+
+          {showTemplateEditor && (
+              <div className="snapshot-settings__template-editor glass-panel animate-fade-in">
+                  <div className="snapshot-settings__template-header">
+                      <h4>自定义叙事风格</h4>
+                      <button onClick={handleResetAllTemplates} className="btn btn--ghost btn--delete">
+                          <RotateCcw size={14} /> 重置所有
+                      </button>
+                  </div>
+                  <p className="snapshot-settings__template-desc">
+                      系统会根据变更来源（AI自然演变 vs 用户手动修改）选择不同的模板。您可以为这两种情况编写截然不同的描述风格（例如：自然演变平实客观，用户修改充满神迹感）。
+                  </p>
+                  
+                  <div className="snapshot-settings__template-list">
+                      {Object.keys(TEMPLATE_INFO).map(key => {
+                          const info = TEMPLATE_INFO[key];
+                          const isEditing = editingKey === key;
+                          const currentValue = isEditing ? tempValue : (templates[key] || DEFAULT_TEMPLATES[key]);
+                          const isUserModified = currentValue !== DEFAULT_TEMPLATES[key];
+
+                          return (
+                              <div key={key} className={`template-item ${isEditing ? 'editing' : ''}`}>
+                                  <div className="template-item__header">
+                                      <span className="template-item__label">{info.label}</span>
+                                      {!isEditing && (
+                                          <div className="template-item__actions">
+                                              {isUserModified && <span className="template-item__modified-tag">已修改</span>}
+                                              <button onClick={() => handleEditTemplate(key)} className="btn btn--ghost icon-only"><Edit size={14}/></button>
+                                          </div>
+                                      )}
+                                  </div>
+                                  
+                                  {isEditing ? (
+                                      <div className="template-item__editor">
+                                          <textarea 
+                                              value={tempValue} 
+                                              onChange={e => setTempValue(e.target.value)}
+                                              className="template-item__textarea"
+                                              autoFocus
+                                          />
+                                          <div className="template-item__vars">
+                                              可用变量: {info.vars.map(v => <code key={v}>{`{${v}}`}</code>)}
+                                          </div>
+                                          <div className="template-item__footer">
+                                              <button onClick={() => setEditingKey(null)} className="btn btn--ghost">取消</button>
+                                              <button onClick={() => handleSaveTemplate(key)} className="btn btn--primary"><Save size={14}/> 保存</button>
+                                          </div>
+                                      </div>
+                                  ) : (
+                                      <div className="template-item__preview" onClick={() => handleEditTemplate(key)}>
+                                          {currentValue}
+                                      </div>
+                                  )}
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
           )}
 
           <div className="snapshot-settings__grid">
