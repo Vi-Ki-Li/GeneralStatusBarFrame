@@ -1,6 +1,9 @@
 
 /* LayoutComposer.css - Grid-Stack Edition (WYSIWYG) */
 
+/* ... (Keep previous styles until Inspector Styling) ... */
+/* ... All previous styles are retained implicitly, I will just append the mobile tweaks at the end ... */
+
 .layout-composer {
   display: flex;
   height: 100%;
@@ -469,6 +472,7 @@
 }
 
 /* --- Row & Col in Canvas --- */
+/* ... (Keep existing Row/Col styles) ... */
 .layout-row {
   display: flex;
   gap: 8px;
@@ -736,9 +740,38 @@
         color: var(--text-secondary);
         padding: 6px;
     }
+
+    /* --- Mobile Font Adjustments for Inspector --- */
+    .layout-inspector {
+        font-size: 0.8rem;
+    }
+    .inspector-header {
+        padding: 8px 12px;
+    }
+    .inspector-title {
+        font-size: 0.85rem;
+    }
+    .inspector-control label {
+        font-size: 0.7rem;
+    }
+    .inspector-input-group input, 
+    .inspector-control select,
+    .inspector-control input {
+        font-size: 0.8rem;
+        padding: 4px 6px;
+        height: 28px;
+    }
+    .inspector-input-group {
+        padding: 0 6px;
+    }
+    .inspector-section__content {
+        padding: 12px;
+        gap: 8px;
+    }
 }
 
 /* --- Snapshot Modal Styles --- */
+/* ... (Keep existing Snapshot styles) ... */
 .layout-snapshot-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;

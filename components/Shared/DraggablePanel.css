@@ -9,8 +9,7 @@
   flex-direction: column;
   overflow: hidden;
   z-index: 10002; /* Higher than modal (9999) and toast (10000) */
-  min-width: 280px;
-  max-height: 80vh;
+  /* min-width and max-height controlled via inline styles or js state now */
   transition: opacity 0.2s; /* Removed transform transition to reduce lag */
 }
 
@@ -23,6 +22,7 @@
   align-items: center;
   cursor: grab;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .draggable-panel__header:active {
@@ -66,6 +66,26 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  /* Scrollbar styling for webkit */
+  scrollbar-width: thin;
+}
+
+.draggable-panel__resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    z-index: 10;
+    background: transparent;
+}
+.draggable-panel__resize-handle:hover {
+    color: var(--color-primary);
 }
 
 /* --- Mobile Bottom Sheet Mode --- */
@@ -76,8 +96,9 @@
   bottom: 0 !important;
   top: auto !important;
   width: 100% !important;
+  height: auto !important; /* Allow auto height based on content up to max */
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  max-height: 60vh;
+  max-height: 70vh; /* Increase max height for better visibility */
   transform: translateY(0);
   border: none;
   border-top: 1px solid var(--chip-border);
@@ -98,6 +119,10 @@
   border-radius: 2px;
   margin: 0 auto;
   margin-bottom: var(--spacing-sm);
+}
+
+.draggable-panel.mobile-sheet .draggable-panel__resize-handle {
+    display: none; /* No resizing handle on mobile */
 }
 
 @keyframes slideUpPanel {

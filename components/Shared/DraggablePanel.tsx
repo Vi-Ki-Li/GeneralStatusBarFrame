@@ -1,26 +1,32 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, GripHorizontal } from 'lucide-react';
+import { X, GripHorizontal, ArrowDownRight } from 'lucide-react'; // Changed ChevronDownRight to ArrowDownRight
 import './DraggablePanel.css';
 
 interface DraggablePanelProps {
   title?: string;
   children: React.ReactNode;
   initialPosition?: { x: number; y: number };
+  initialSize?: { width: number; height: number }; // New prop
   onClose: () => void;
   isMobile?: boolean;
   className?: string;
-  extraControls?: React.ReactNode; // Added extra controls
+  extraControls?: React.ReactNode;
 }
 
 const DraggablePanel: React.FC<DraggablePanelProps> = ({ 
-  title, children, initialPosition, onClose, isMobile, className = '', extraControls
+  title, children, initialPosition, initialSize, onClose, isMobile, className = '', extraControls
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(initialPosition || { x: 20, y: 80 });
+  const [size, setSize] = useState(initialSize || { width: 320, height: 500 }); // Default size state
+  
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+
+  const isResizing = useRef(false);
+  const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
   useEffect(() => {
     // Recenter if out of bounds on init/resize
@@ -44,11 +50,11 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         }
     };
     setTimeout(checkBounds, 0);
-  }, [isMobile]); // simplified dependency
+  }, [isMobile]); 
 
+  // --- Dragging Logic ---
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile) return;
-    // Allow interacting with controls in header without dragging
     if (e.target instanceof Element && e.target.closest('button')) return;
 
     isDragging.current = true;
@@ -66,21 +72,20 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging.current) return;
-    
-    let newX = e.clientX - dragOffset.current.x;
-    let newY = e.clientY - dragOffset.current.y;
+    if (isDragging.current) {
+        let newX = e.clientX - dragOffset.current.x;
+        let newY = e.clientY - dragOffset.current.y;
 
-    // Boundaries
-    const panelWidth = panelRef.current?.offsetWidth || 300;
-    const panelHeight = panelRef.current?.offsetHeight || 400;
-    const maxX = window.innerWidth - panelWidth;
-    const maxY = window.innerHeight - panelHeight;
+        const panelWidth = panelRef.current?.offsetWidth || size.width;
+        const panelHeight = panelRef.current?.offsetHeight || size.height;
+        const maxX = window.innerWidth - panelWidth;
+        const maxY = window.innerHeight - panelHeight;
 
-    newX = Math.max(0, Math.min(newX, maxX));
-    newY = Math.max(0, Math.min(newY, maxY));
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
 
-    setPosition({ x: newX, y: newY });
+        setPosition({ x: newX, y: newY });
+    }
   };
 
   const handleMouseUp = () => {
@@ -88,6 +93,43 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
     document.body.style.userSelect = '';
+  };
+
+  // --- Resizing Logic ---
+  const handleResizeDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      isResizing.current = true;
+      resizeStart.current = {
+          x: e.clientX,
+          y: e.clientY,
+          w: size.width,
+          h: size.height
+      };
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'nwse-resize';
+  };
+
+  const handleResizeMove = (e: MouseEvent) => {
+      if (isResizing.current) {
+          const deltaX = e.clientX - resizeStart.current.x;
+          const deltaY = e.clientY - resizeStart.current.y;
+          
+          const newWidth = Math.max(250, resizeStart.current.w + deltaX); // Min width 250
+          const newHeight = Math.max(300, resizeStart.current.h + deltaY); // Min height 300
+          
+          setSize({ width: newWidth, height: newHeight });
+      }
+  };
+
+  const handleResizeUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
   };
 
   const content = isMobile ? (
@@ -109,7 +151,12 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
     <div 
         className={`draggable-panel ${className}`}
         ref={panelRef}
-        style={{ left: position.x, top: position.y }}
+        style={{ 
+            left: position.x, 
+            top: position.y,
+            width: size.width,
+            height: size.height
+        }}
     >
       <div className="draggable-panel__header" onMouseDown={handleMouseDown}>
         <div className="draggable-panel__title">
@@ -126,10 +173,13 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
       <div className="draggable-panel__content">
         {children}
       </div>
+      {/* Resize Handle */}
+      <div className="draggable-panel__resize-handle" onMouseDown={handleResizeDown}>
+          <ArrowDownRight size={16} />
+      </div>
     </div>
   );
 
-  // Use Portal to attach to body, bypassing any parent transforms or overflow:hidden
   return createPortal(content, document.body);
 };
 
