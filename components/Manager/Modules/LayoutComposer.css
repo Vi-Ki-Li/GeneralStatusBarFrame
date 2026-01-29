@@ -17,8 +17,21 @@
   border-right: 1px solid var(--chip-border);
   flex-shrink: 0;
   z-index: 10;
-  /* Ensure width transition works smoothly */
+  transition: width 0.3s ease, opacity 0.2s ease;
   white-space: nowrap; 
+}
+
+/* Desktop open state */
+.layout-composer__left-pane.open {
+    width: 240px;
+    opacity: 1;
+}
+
+/* Desktop closed state */
+.layout-composer__left-pane.closed {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
 }
 
 /* Header inside Left Pane */
@@ -634,27 +647,93 @@
 /* Mobile Styles */
 @media (max-width: 768px) {
     .layout-composer { flex-direction: column; }
-    .layout-composer__left-pane {
-        width: 100%; border-right: none; border-bottom: 1px solid var(--chip-border);
-        transition: height 0.3s ease;
-        height: auto;
-    }
-    /* When closed on mobile, hide the list but keep header */
-    .layout-composer__left-pane.closed .palette-search,
-    .layout-composer__left-pane.closed .palette-content {
-        display: none;
+    
+    /* Left Pane - Mobile Overlay Mode */
+    .layout-composer__left-pane.mobile-overlay {
+        position: absolute;
+        top: 48px; /* Below header */
+        left: 0;
+        width: 100% !important;
+        max-height: 50vh; /* Half height to allow drop space */
+        overflow-y: auto;
+        background: var(--bg-app);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        border-bottom: 1px solid var(--chip-border);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        transform-origin: top;
     }
     
-    .layout-composer__palette { width: 100%; height: 200px; min-width: 0; }
+    /* Mobile Closed State */
+    .layout-composer__left-pane.closed {
+        transform: scaleY(0);
+        opacity: 0;
+        pointer-events: none;
+        height: 0; /* Force height 0 */
+    }
+    
+    /* Mobile Open State */
+    .layout-composer__left-pane.open {
+        transform: scaleY(1);
+        opacity: 1;
+        pointer-events: auto;
+        height: auto;
+    }
+    
+    .layout-composer__palette { 
+        width: 100%; 
+        height: auto; 
+        min-width: 0; 
+    }
     
     .layout-composer__right-pane { display: none; } /* Use floating panel on mobile */
     
     .layout-composer__canvas {
         padding: var(--spacing-md);
     }
+
+    /* Mobile Header */
+    .layout-composer__mobile-header {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        background: var(--glass-bg);
+        border-bottom: 1px solid var(--chip-border);
+        z-index: 15; /* Above canvas, below overlay */
+    }
+
+    .layout-composer__mobile-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-primary);
+        background: transparent;
+        border: 1px solid var(--chip-border);
+        border-radius: var(--radius-md);
+        padding: 4px 10px;
+        font-size: 0.9rem;
+    }
+    .layout-composer__mobile-toggle.active {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: var(--color-primary);
+    }
+
+    .layout-composer__mobile-title {
+        font-size: 0.9rem;
+        color: var(--text-tertiary);
+    }
+
+    .layout-composer__mobile-action {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 6px;
+    }
 }
 
-/* --- Snapshot Modal Styles (Missing in previous version) --- */
+/* --- Snapshot Modal Styles --- */
 .layout-snapshot-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;

@@ -6,7 +6,7 @@ import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import DraggablePanel from '../../Shared/DraggablePanel';
 import * as LucideIcons from 'lucide-react';
-import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon, Save, Download, FileJson, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, BringToFront } from 'lucide-react';
+import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon, Save, Download, FileJson, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, BringToFront, Settings } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -125,7 +125,8 @@ const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'catego
     });
     
     const Icon = (LucideIcons as any)[definition.icon || 'Box'] || Box;
-    const style = { opacity: isDragging ? 0.5 : 1, cursor: 'grab' };
+    // Fix: Add touchAction: none to enable dragging on mobile
+    const style = { opacity: isDragging ? 0.5 : 1, cursor: 'grab', touchAction: 'none' };
 
     return (
         <div ref={setNodeRef} style={style} className={`palette-item ${isOverlay ? 'overlay' : ''}`} {...listeners} {...attributes}>
@@ -206,6 +207,7 @@ const LayoutRowDraggable: React.FC<{
         transform: CSS.Transform.toString(transform), 
         transition, 
         opacity: isDragging ? 0.3 : 1,
+        touchAction: 'none', // Fix: Enable dragging on mobile
         ...(node.props?.style || {})
     };
 
@@ -360,6 +362,7 @@ const LayoutItemSortable: React.FC<{
         transform: CSS.Transform.toString(transform), 
         transition, 
         opacity: isDragging ? 0.6 : 1,
+        touchAction: 'none', // Fix: Enable dragging on mobile
         ...(node.props?.style || {})
     };
     
@@ -521,7 +524,8 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
     const [showSnapshotModal, setShowSnapshotModal] = useState(false);
     
     // UI State for Panels
-    const [leftOpen, setLeftOpen] = useState(true);
+    // Fix: Default leftOpen based on device
+    const [leftOpen, setLeftOpen] = useState(!isMobile);
     const [inspectorMode, setInspectorMode] = useState<'docked' | 'floating' | 'hidden'>('docked');
     
     // Initialize inspector mode based on screen width
@@ -542,13 +546,15 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
     useEffect(() => {
         if (isMobile) {
             setInspectorMode('hidden');
-            setLeftOpen(false);
+            setLeftOpen(false); // Default close on mobile start
         }
     }, [isMobile]);
 
     // Auto-open inspector when selecting a node (if hidden)
     useEffect(() => {
         if (selectedNodeId && inspectorMode === 'hidden') {
+            // Fix: On mobile, auto-open as floating (bottom sheet) instead of hidden
+            // Since we removed isMobile check in DraggablePanel, floating works for both.
             setInspectorMode('floating');
         }
     }, [selectedNodeId]);
@@ -734,6 +740,10 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragData(event.active.data.current as DragDataState);
+        // Mobile UX: Auto collapse panel when drag starts to show drop zones
+        if (isMobile && event.active.data.current?.from === 'palette') {
+            setLeftOpen(false);
+        }
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -971,86 +981,112 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             onDragEnd={handleDragEnd}
         >
             <div className={`layout-composer ${isMobile ? 'mobile' : ''}`}>
+                
+                {/* Mobile Header (Dedicated Toolbar) */}
+                {isMobile && (
+                    <div className="layout-composer__mobile-header">
+                        <button 
+                            className={`layout-composer__mobile-toggle ${leftOpen ? 'active' : ''}`}
+                            onClick={() => setLeftOpen(!leftOpen)}
+                        >
+                            <span>组件库</span>
+                            <ChevronDown size={14} style={{transform: leftOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s'}} />
+                        </button>
+                        
+                        <div className="layout-composer__mobile-title">Layout Canvas</div>
+                        
+                        <button 
+                            className="layout-composer__mobile-action"
+                            onClick={() => setInspectorMode(inspectorMode === 'floating' ? 'hidden' : 'floating')}
+                        >
+                            <Settings size={18} />
+                        </button>
+                    </div>
+                )}
+
                 <div 
-                    className="layout-composer__left-pane"
-                    style={{
-                        width: leftOpen ? '240px' : '0px',
-                        overflow: 'hidden',
-                        opacity: leftOpen ? 1 : 0,
-                        transition: 'all 0.3s ease'
-                    }}
+                    className={`layout-composer__left-pane ${leftOpen ? 'open' : 'closed'} ${isMobile ? 'mobile-overlay' : ''}`}
                 >
-                    <div className="layout-composer__pane-header">
-                        <span>组件库</span>
-                        <div className="actions">
-                            <button onClick={() => setShowSnapshotModal(true)} title="快照管理"><Save size={16}/></button>
-                            <button onClick={() => setLeftOpen(false)} title="收起"><PanelLeftClose size={16}/></button>
+                    {/* Desktop Header */}
+                    {!isMobile && (
+                        <div className="layout-composer__pane-header">
+                            <span>组件库</span>
+                            <div className="actions">
+                                <button onClick={() => setShowSnapshotModal(true)} title="快照管理"><Save size={16}/></button>
+                                <button onClick={() => setLeftOpen(!leftOpen)} title={leftOpen ? "收起" : "展开"}>
+                                    {leftOpen ? <PanelLeftClose size={16}/> : <PanelLeftOpen size={16}/>}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                     
-                    {/* Palette content only visible if open to prevent layout issues */}
-                    <div className="layout-composer__palette" style={{ display: leftOpen ? 'flex' : 'none' }}>
-                            <div className="palette-search">
-                                <Search size={14} />
-                                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
-                            </div>
-                            <div className="palette-content">
-                                {categories.map(cat => (
-                                    <div key={cat.key} className="palette-section">
-                                        <div className="palette-section-header" onClick={() => toggleCat(cat.key)}>
-                                            {expandedCats.has(cat.key) ? <ChevronDown size={14}/> : <ChevronDown size={14} style={{transform:'rotate(-90deg)'}}/>}
-                                            {cat.name}
+                    {/* Palette content only visible if open (Mobile Logic: Overlay) */}
+                    {(leftOpen || !isMobile) && (
+                        <div className="layout-composer__palette" style={{ display: leftOpen ? 'flex' : 'none' }}>
+                                <div className="palette-search">
+                                    <Search size={14} />
+                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
+                                </div>
+                                <div className="palette-content">
+                                    {categories.map(cat => (
+                                        <div key={cat.key} className="palette-section">
+                                            <div className="palette-section-header" onClick={() => toggleCat(cat.key)}>
+                                                {expandedCats.has(cat.key) ? <ChevronDown size={14}/> : <ChevronDown size={14} style={{transform:'rotate(-90deg)'}}/>}
+                                                {cat.name}
+                                            </div>
+                                            {expandedCats.has(cat.key) && (
+                                            <div className="palette-list">
+                                                <PaletteItem 
+                                                    definition={{key: cat.key, name: cat.name, icon: cat.icon, type: 'text'} as ItemDefinition} 
+                                                    type="category" 
+                                                    label={`${cat.name} (分类)`} 
+                                                />
+                                                {(itemsByCategory[cat.key] || []).map(def => (
+                                                    <PaletteItem key={def.key} definition={def} type="item" />
+                                                ))}
+                                            </div>
+                                            )}
                                         </div>
-                                        {expandedCats.has(cat.key) && (
-                                        <div className="palette-list">
-                                            <PaletteItem 
-                                                definition={{key: cat.key, name: cat.name, icon: cat.icon, type: 'text'} as ItemDefinition} 
-                                                type="category" 
-                                                label={`${cat.name} (分类)`} 
-                                            />
-                                            {(itemsByCategory[cat.key] || []).map(def => (
-                                                <PaletteItem key={def.key} definition={def} type="item" />
-                                            ))}
-                                        </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                    </div>
+                                    ))}
+                                </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="layout-composer__canvas-area" onClick={() => setSelectedNodeId(null)}>
-                    {/* Header Toolbar for Canvas */}
-                    <div style={{
-                        height: '48px', 
-                        borderBottom: '1px solid var(--chip-border)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        padding: '0 12px',
-                        background: 'var(--glass-bg)',
-                        flexShrink: 0
-                    }}>
-                        {!leftOpen && (
-                            <button onClick={() => setLeftOpen(true)} className="btn btn--ghost" title="展开组件库">
-                                <PanelLeftOpen size={16} /> 展开组件库
-                            </button>
-                        )}
-                        <span style={{marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-tertiary)'}}>
-                            Layout Canvas
-                        </span>
-                        
-                        {/* Right Sidebar Recall Button */}
-                        {inspectorMode === 'hidden' && (
-                            <button 
-                                onClick={() => setInspectorMode('docked')} 
-                                className="btn btn--ghost" 
-                                title="打开属性面板"
-                                style={{marginLeft: 'auto'}}
-                            >
-                                属性面板 <PanelRightOpen size={16} />
-                            </button>
-                        )}
-                    </div>
+                    {/* Header Toolbar for Canvas (Desktop Only) */}
+                    {!isMobile && (
+                        <div style={{
+                            height: '48px', 
+                            borderBottom: '1px solid var(--chip-border)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            padding: '0 12px',
+                            background: 'var(--glass-bg)',
+                            flexShrink: 0
+                        }}>
+                            {!leftOpen && (
+                                <button onClick={() => setLeftOpen(true)} className="btn btn--ghost" title="展开组件库">
+                                    <PanelLeftOpen size={16} /> 展开组件库
+                                </button>
+                            )}
+                            <span style={{marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-tertiary)'}}>
+                                Layout Canvas
+                            </span>
+                            
+                            {/* Right Sidebar Recall Button */}
+                            {inspectorMode === 'hidden' && (
+                                <button 
+                                    onClick={() => setInspectorMode('docked')} 
+                                    className="btn btn--ghost" 
+                                    title="打开属性面板"
+                                    style={{marginLeft: 'auto'}}
+                                >
+                                    属性面板 <PanelRightOpen size={16} />
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     <div className="layout-composer__canvas">
                         <LayoutCreatorZone />
@@ -1104,14 +1140,17 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     onClose={() => setInspectorMode('hidden')}
                     initialPosition={{ x: window.innerWidth - 320, y: 100 }}
                     className="layout-inspector-panel"
+                    // Removed isMobile={isMobile} to enforce floating window on mobile
                     extraControls={
-                        <button 
-                            onClick={() => setInspectorMode('docked')} 
-                            className="draggable-panel__btn" 
-                            title="停靠面板"
-                        >
-                            <BringToFront size={14} />
-                        </button>
+                        !isMobile && ( // Only show dock button on desktop
+                            <button 
+                                onClick={() => setInspectorMode('docked')} 
+                                className="draggable-panel__btn" 
+                                title="停靠面板"
+                            >
+                                <BringToFront size={14} />
+                            </button>
+                        )
                     }
                 >
                     <LayoutInspector 
@@ -1122,7 +1161,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                         onSelectParent={(id) => setSelectedNodeId(id)}
                         onAddColumn={() => selectedNode?.type === 'row' && addColumnToRow(selectedNode.id)}
                         onRemoveColumn={() => selectedNode?.type === 'row' && removeColumnFromRow(selectedNode.id)}
-                        // Note: We DO NOT pass onClose or onToggleDock here to prevent inner duplicates
                     />
                 </DraggablePanel>
             )}
