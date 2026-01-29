@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { LayoutNode } from '../../../types/layout';
 import { ItemDefinition } from '../../../types';
-import { Settings, Trash2, ArrowUp, AlignLeft, AlignCenter, AlignRight, Type, Palette, VenetianMask, Layout, Plus, Minus, Columns } from 'lucide-react';
+import { Settings, Trash2, ArrowUp, AlignLeft, AlignCenter, AlignRight, Type, Palette, VenetianMask, Layout, Plus, Minus, Columns, PanelRightClose } from 'lucide-react';
 import './LayoutComposer.css'; 
 
 interface LayoutInspectorProps {
@@ -11,8 +10,9 @@ interface LayoutInspectorProps {
   onDelete: (id: string) => void;
   allDefinitions: { [key: string]: ItemDefinition };
   onSelectParent: (id: string) => void; 
-  onAddColumn?: () => void; // New
-  onRemoveColumn?: () => void; // New
+  onAddColumn?: () => void; 
+  onRemoveColumn?: () => void;
+  onClose?: () => void; // New prop
 }
 
 const ControlSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
@@ -74,12 +74,17 @@ const ColorInput: React.FC<{ label: string; value: any; onChange: (val: any) => 
   </div>
 );
 
-const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDelete, allDefinitions, onAddColumn, onRemoveColumn }) => {
+const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDelete, allDefinitions, onAddColumn, onRemoveColumn, onClose }) => {
   if (!node) {
     return (
       <div className="layout-inspector layout-inspector--empty">
-        <Settings size={48} />
-        <p>选择画布中的元素以编辑属性</p>
+        <div style={{width: '100%', display: 'flex', justifyContent: 'flex-end', padding: '8px'}}>
+             {onClose && <button className="inspector-btn" onClick={onClose}><PanelRightClose size={16} /></button>}
+        </div>
+        <div style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
+            <Settings size={48} />
+            <p>选择画布中的元素以编辑属性</p>
+        </div>
       </div>
     );
   }
@@ -107,6 +112,23 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
       });
   };
 
+  // Helper for Header Actions
+  const renderHeaderActions = () => (
+      <div className="inspector-actions">
+          <button onClick={() => onDelete(node.id)} className="inspector-btn delete" title="删除">
+              <Trash2 size={16} />
+          </button>
+          {onClose && (
+              <>
+                <div className="inspector-divider" />
+                <button onClick={onClose} className="inspector-btn" title="收起面板">
+                    <PanelRightClose size={16} />
+                </button>
+              </>
+          )}
+      </div>
+  );
+
   const renderRowSettings = () => (
     <>
       <div className="inspector-header">
@@ -114,9 +136,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
             <AlignLeft size={18} />
             <span>行容器 (Row)</span>
         </div>
-        <button onClick={() => onDelete(node.id)} className="inspector-delete-btn" title="删除行">
-            <Trash2 size={16} />
-        </button>
+        {renderHeaderActions()}
       </div>
 
       <ControlSection title="列管理 (Columns)" icon={Columns}>
@@ -181,9 +201,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
             <AlignCenter size={18} />
             <span>列容器 (Column)</span>
         </div>
-        <button onClick={() => onDelete(node.id)} className="inspector-delete-btn" title="删除列">
-            <Trash2 size={16} />
-        </button>
+        {renderHeaderActions()}
       </div>
 
       <ControlSection title="布局" icon={Layout}>
@@ -217,9 +235,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
                 <AlignRight size={18} />
                 <span>组件 (Item)</span>
             </div>
-            <button onClick={() => onDelete(node.id)} className="inspector-delete-btn" title="移除组件">
-                <Trash2 size={16} />
-            </button>
+            {renderHeaderActions()}
           </div>
 
           <div className="inspector-info-card">

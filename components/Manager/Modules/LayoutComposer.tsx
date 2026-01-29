@@ -891,13 +891,18 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     }}
                 >
                     <div className="palette-section flex-grow">
-                        <div className="palette-header">
-                            <span>数据组件</span>
-                            <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                                <div className="palette-search"><Search size={12} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索..." /></div>
-                                <button className="panel-toggle-btn" onClick={() => setLeftOpen(false)}><PanelLeftClose size={16}/></button>
-                            </div>
+                        {/* New 2-Row Header Layout */}
+                        <div className="palette-header-row">
+                            <div className="palette-title"><Box size={16} /> 组件库</div>
+                            <button className="panel-toggle-btn" onClick={() => setLeftOpen(false)}><PanelLeftClose size={16}/></button>
                         </div>
+                        <div className="palette-search-row">
+                             <div className="palette-search">
+                                 <Search size={14} />
+                                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
+                             </div>
+                        </div>
+
                         <div className="palette-content">
                             {categories.map(cat => (
                                 <div key={cat.key} className="palette-category-group">
@@ -917,7 +922,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                             ))}
                         </div>
                     </div>
-                    {/* New: Snapshot Button in Palette Footer */}
                     <div className="palette-section palette-footer">
                         <button className="btn btn--ghost w-100" onClick={() => setShowSnapshotModal(true)}>
                             <FileJson size={16} /> 管理布局快照
@@ -927,7 +931,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
                 <div className="layout-composer__canvas" onClick={() => setSelectedNodeId(null)}>
                     
-                    {/* Toggle Buttons Overlay for Canvas */}
+                    {/* Left Toggle Button (Only visible when closed) */}
                     <div style={{position: 'absolute', top: 12, left: 12, zIndex: 50}}>
                         {!leftOpen && (
                             <button className="panel-toggle-btn" onClick={() => setLeftOpen(true)} title="展开组件库">
@@ -935,6 +939,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                             </button>
                         )}
                     </div>
+                    {/* Right Toggle Button (Only visible when closed) */}
                     <div style={{position: 'absolute', top: 12, right: 12, zIndex: 50}}>
                         {!rightOpen && (
                             <button className="panel-toggle-btn" onClick={() => setRightOpen(true)} title="展开属性面板">
@@ -1000,9 +1005,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                         overflow: 'hidden'
                     }}
                 >
-                    <div style={{ padding: '8px', borderBottom: '1px solid var(--chip-border)', display: 'flex', justifyContent: 'flex-end' }}>
-                         <button className="panel-toggle-btn" onClick={() => setRightOpen(false)}><PanelRightClose size={16}/></button>
-                    </div>
+                    {/* Removed top independent button */}
                     <LayoutInspector 
                         node={selectedNode} 
                         onUpdate={handleNodeUpdate} 
@@ -1011,6 +1014,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                         onSelectParent={(id) => setSelectedNodeId(id)}
                         onAddColumn={() => selectedNodeId && addColumnToRow(selectedNodeId)}
                         onRemoveColumn={() => selectedNodeId && removeColumnFromRow(selectedNodeId)}
+                        onClose={() => setRightOpen(false)} // Pass close handler
                     />
                 </div>
 
