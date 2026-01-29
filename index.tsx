@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -30,7 +29,11 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
             console.log('[SafeMode] Toxic style tag removed from DOM.');
         }
 
-        // 3. Inject Safe Mode Overlay (Emergency UI)
+        // 3. Notify React Components (Fix for Sync Issue)
+        // This allows components like StyleManager to update their UI state immediately
+        window.dispatchEvent(new CustomEvent('th:safe-mode-triggered')); // 此处添加1行
+
+        // 4. Inject Safe Mode Overlay (Emergency UI)
         // We use inline styles with !important to ensure visibility even if global CSS is broken
         const overlayId = 'th-safe-mode-overlay';
         if (!document.getElementById(overlayId)) {

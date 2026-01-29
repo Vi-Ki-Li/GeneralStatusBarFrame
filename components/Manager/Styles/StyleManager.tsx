@@ -120,6 +120,17 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         setStagedData(_.cloneDeep(data)); 
     }, [data]);
 
+    // v9.9 Safe Mode Sync: Listen for global safe mode triggers
+    useEffect(() => {
+        const handleSafeMode = () => {
+            setActiveThemeId(null);
+            loadUserStyles(); // Reload styles in case of deeper resets
+            toast.warning("安全模式触发：主题状态已重置");
+        };
+        window.addEventListener('th:safe-mode-triggered', handleSafeMode);
+        return () => window.removeEventListener('th:safe-mode-triggered', handleSafeMode);
+    }, []); // 此处开始添加8行
+
     useEffect(() => {
         if (!stagedData || !data) {
             setHasChanges(false);
