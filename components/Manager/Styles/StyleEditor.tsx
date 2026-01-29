@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
@@ -268,6 +269,17 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   const docEntries = formData.dataType ? STYLE_CLASS_DOCUMENTATION[formData.dataType] : [];
   const currentTemplates = formData.dataType ? TEMPLATES[formData.dataType] : [];
 
+  const renderGuiControls = () => (
+      <div className="animate-fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
+          <StyleGuiControls 
+              guiConfig={formData.guiConfig} 
+              onUpdate={(newConfig) => handleChange('guiConfig', newConfig)} 
+              dataType={formData.dataType!} 
+              activeSelector={activeSelector} 
+          />
+      </div>
+  );
+
   return (
     <div className="style-editor-wrapper open">
         <div className="style-editor__overlay" onClick={onClose} />
@@ -324,11 +336,8 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
 
                     <div className="style-editor__docs-container">
                         <button onClick={() => setShowGui(!showGui)} className="style-editor__docs-toggle"><Brush size={14} /><span>可视化配置 (GUI)</span><ChevronRight size={16} className={`icon-selector__arrow ${showGui ? 'open' : ''}`} /></button>
-                        {showGui && formData.dataType !== 'theme' && (
-                            <div className="animate-fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
-                                <StyleGuiControls guiConfig={formData.guiConfig} onUpdate={(newConfig) => handleChange('guiConfig', newConfig)} dataType={formData.dataType!} activeSelector={activeSelector} />
-                            </div>
-                        )}
+                        {/* Only show here on Desktop */}
+                        {showGui && !isMobile && formData.dataType !== 'theme' && renderGuiControls()}
                     </div>
 
                     <div className="style-editor__form-group">
@@ -365,9 +374,17 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                        )}
                     </div>
                     {isMobile && activeTab === 'preview' && (
-                        <div className="style-editor__preview-hint">
-                            👆 点击元素选中，然后在“配置”页修改样式
-                        </div>
+                        <>
+                            <div className="style-editor__preview-hint">
+                                👆 点击上方元素选中，即可在下方调整样式
+                            </div>
+                            {/* Render GUI Controls here on Mobile */}
+                            {formData.dataType !== 'theme' && (
+                                <div className="style-editor__mobile-gui-wrapper">
+                                    {renderGuiControls()}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

@@ -365,6 +365,12 @@
     text-align: center;
 }
 
+/* --- Mobile GUI Wrapper --- */
+.style-editor__mobile-gui-wrapper {
+    margin-top: var(--spacing-md);
+    padding-bottom: var(--spacing-xl);
+}
+
 /* --- Footer --- */
 .style-editor__footer {
   display: flex;
@@ -404,5 +410,18 @@
   .style-editor__left-pane.hidden,
   .style-editor__right-pane.hidden {
       display: none;
+  }
+  
+  /* Update Right Pane for Mobile to allow scrolling */
+  .style-editor__right-pane {
+    overflow-y: auto;
+    display: block; /* Remove flex column to allow natural flow */
+    padding-bottom: 80px; /* Space for footer */
+  }
+  
+  .style-editor__preview-container {
+    height: 250px; /* Fixed height for preview on mobile */
+    min-height: 250px;
+    flex: none; /* Don't flex */
   }
 }
