@@ -4,7 +4,8 @@ import { Preset, ItemDefinition, StyleDefinition } from '../../../types';
 import { LayoutNode } from '../../../types/layout';
 import { useToast } from '../../Toast/ToastContext';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
-import { X, Save, Search, Box, LayoutTemplate } from 'lucide-react';
+import { getNarrativeConfigs, NarrativeConfig } from '../../../utils/snapshotGenerator';
+import { X, Save, Search, Box, LayoutTemplate, MessageSquareQuote } from 'lucide-react';
 import './PresetEditorModal.css';
 
 interface PresetEditorModalProps {
@@ -25,21 +26,28 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
   const [selectedItemKeys, setSelectedItemKeys] = useState<Set<string>>(new Set());
   const [styleOverrides, setStyleOverrides] = useState<{ [key: string]: string }>({});
   const [includeLayout, setIncludeLayout] = useState(false);
+  const [selectedNarrativeId, setSelectedNarrativeId] = useState<string>('');
+  
+  const [narrativeConfigs, setNarrativeConfigs] = useState<NarrativeConfig[]>([]);
   
   const toast = useToast();
 
   useEffect(() => {
     if (isOpen) {
+      setNarrativeConfigs(getNarrativeConfigs());
+      
       if (presetToEdit) {
         setName(presetToEdit.name);
         setSelectedItemKeys(new Set(presetToEdit.itemKeys));
         setStyleOverrides(presetToEdit.styleOverrides || {});
         setIncludeLayout(!!presetToEdit.layout && presetToEdit.layout.length > 0);
+        setSelectedNarrativeId(presetToEdit.narrativeConfigId || '');
       } else {
         setName('');
         setSelectedItemKeys(new Set());
         setStyleOverrides({});
         setIncludeLayout(false);
+        setSelectedNarrativeId('');
       }
       setSearch('');
     }
@@ -111,6 +119,7 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
       timestamp: Date.now(),
       itemKeys: Array.from(selectedItemKeys),
       styleOverrides,
+      narrativeConfigId: selectedNarrativeId || undefined,
     };
 
     if (includeLayout) {
@@ -151,6 +160,24 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
             placeholder="例如: 魔法世界观"
             className="preset-editor__input"
           />
+        </div>
+        
+        <div className="preset-editor__form-group">
+            <label className="preset-editor__label">绑定叙事风格</label>
+            <div className="preset-editor__select-wrapper">
+                <MessageSquareQuote size={16} style={{position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)'}} />
+                <select 
+                    value={selectedNarrativeId} 
+                    onChange={e => setSelectedNarrativeId(e.target.value)}
+                    className="preset-editor__input"
+                    style={{paddingLeft: '34px'}}
+                >
+                    <option value="">(不绑定) 保持当前风格</option>
+                    {narrativeConfigs.map(config => (
+                        <option key={config.id} value={config.id}>{config.name} {config.isBuiltIn ? '(内置)' : ''}</option>
+                    ))}
+                </select>
+            </div>
         </div>
         
         <div className="preset-editor__form-group">

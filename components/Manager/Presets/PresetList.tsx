@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { Preset, StatusBarData, ItemDefinition, StyleDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
+import { setActiveNarrativeConfigId, getNarrativeConfigs } from '../../../utils/snapshotGenerator';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
@@ -72,6 +74,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       
       const isDeactivating = newData._meta.activePresetIds?.[0] === preset.id;
       let layoutMsg = "";
+      let narrativeMsg = "";
 
       // Toggle logic
       if (isDeactivating) {
@@ -83,6 +86,12 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
           if (preset.layout && preset.layout.length > 0) {
               newData.layout = preset.layout;
               layoutMsg = " & 布局";
+          }
+          
+          // Apply Narrative Config if present
+          if (preset.narrativeConfigId) {
+              setActiveNarrativeConfigId(preset.narrativeConfigId);
+              narrativeMsg = " & 叙事风格";
           }
       }
 
@@ -114,7 +123,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
               description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
           });
       } else {
-          toast.success(`配置 "${preset.name}" 已应用 (定义${layoutMsg})`, {
+          toast.success(`配置 "${preset.name}" 已应用 (定义${layoutMsg}${narrativeMsg})`, {
               description: changesMade > 0 ? `同步 ${changesMade} 个世界书条目` : undefined
           });
       }
@@ -131,6 +140,9 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
 
   const renderEntryDetails = (preset: Preset) => {
       const includedEntries = allDefinitions.filter(def => preset.itemKeys.includes(def.key));
+      const narrativeConfigName = preset.narrativeConfigId 
+        ? getNarrativeConfigs().find(c => c.id === preset.narrativeConfigId)?.name 
+        : null;
       
       return (
           <div className="preset-item__details-container">
@@ -138,6 +150,12 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                   <div className="preset-item__layout-indicator">
                       <LayoutTemplate size={14} />
                       <span>包含自定义布局结构 ({preset.layout.length} 行)</span>
+                  </div>
+              )}
+              {narrativeConfigName && (
+                  <div className="preset-item__layout-indicator" style={{color: 'var(--color-primary)', background: 'rgba(99, 102, 241, 0.05)'}}>
+                      <MessageSquareQuote size={14} />
+                      <span>叙事风格: {narrativeConfigName}</span>
                   </div>
               )}
               {includedEntries.length === 0 ? (
@@ -181,6 +199,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                      const isActive = activePresetId === preset.id;
                      const isApplying = applyingPresetId === preset.id;
                      const hasLayout = !!preset.layout && preset.layout.length > 0;
+                     const hasNarrative = !!preset.narrativeConfigId;
 
                      return (
                         <div key={preset.id} className={`preset-item glass-panel ${isExpanded ? 'preset-item--expanded' : ''} ${isActive ? 'preset-item--active' : ''}`} onClick={() => toggleDetails(preset.id)}>
@@ -192,6 +211,11 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                                         {hasLayout && (
                                             <span title="包含布局" style={{ display: 'inline-flex', alignItems: 'center' }}>
                                                 <LayoutTemplate size={14} className="preset-item__layout-icon" />
+                                            </span>
+                                        )}
+                                        {hasNarrative && (
+                                            <span title="包含叙事风格" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                                <MessageSquareQuote size={14} className="preset-item__layout-icon" style={{color: 'var(--color-primary)'}} />
                                             </span>
                                         )}
                                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

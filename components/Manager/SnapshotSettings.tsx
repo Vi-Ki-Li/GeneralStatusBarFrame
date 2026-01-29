@@ -18,7 +18,7 @@ import {
     DEFAULT_TEMPLATES 
 } from '../../utils/snapshotGenerator';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
-import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X, Terminal } from 'lucide-react'; 
+import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X, Terminal, Download, Upload } from 'lucide-react'; 
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
@@ -93,24 +93,10 @@ const getMockEvent = (templateKey: string): SnapshotEvent => {
 
 // Component to render the preview
 const MockPreview: React.FC<{ templateKey: string, templateValue: string }> = ({ templateKey, templateValue }) => {
-    // We reuse the real `generateNarrative` logic but inject a specific single template override
-    // This is a bit tricky since `generateNarrative` reads from global state/localStorage.
-    // Instead, we will simulate the replacement logic locally using the regex from `generateNarrative`.
-    
     const previewText = useMemo(() => {
         try {
-            // Import private helper logic by duplicating it here or exposing it.
-            // Since we can't easily import `formatPlaceholder` without exporting it, we'll assume it's exported or we strictly use the regex here.
-            // Actually, `generateNarrative` uses `getNarrativeTemplates`.
-            // Let's do a simplified local render that mimics `utils/snapshotGenerator.ts`.
-            
             const event = getMockEvent(templateKey);
-            
-            // This regex MUST match the one in `utils/snapshotGenerator.ts`
-            // Support unicode variable names
             return templateValue.replace(/\{([\u4e00-\u9fa5a-zA-Z0-9_]+)\}/g, (match, placeholder) => {
-                // We need a mini formatPlaceholder here.
-                // For simplicity in this UI component, we'll implement a mapping based on the mock event.
                 const { details, character, key } = event;
                 
                 if (['角色名', 'name'].includes(placeholder)) return character || '';
@@ -179,6 +165,7 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const [tempValue, setTempValue] = useState('');
   
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -321,6 +308,59 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       }
   };
 
+  // --- Import / Export ---
+  const handleExportConfig = () => {
+      const config = configs.find(c => c.id === activeConfigId);
+      if (!config) return;
+      
+      const exportData = {
+          name: config.name,
+          templates: config.templates,
+          exportedAt: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `narrative_config_${config.name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("配置导出成功");
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const content = event.target?.result as string;
+              const parsed = JSON.parse(content);
+              
+              if (!parsed.templates || typeof parsed.templates !== 'object') {
+                  throw new Error("无效的配置文件格式");
+              }
+              
+              const newName = (parsed.name || "Imported Config") + " (导入)";
+              const config = createNarrativeConfig(newName, parsed.templates);
+              setActiveNarrativeConfigId(config.id);
+              refreshConfigs();
+              toast.success(`配置 "${newName}" 已导入并激活`);
+          } catch (err) {
+              console.error(err);
+              toast.error("导入失败：文件格式错误");
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // Reset
+  };
+
   const activeConfig = configs.find(c => c.id === activeConfigId);
 
   return (
@@ -410,6 +450,14 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                       </div>
                       
                       <div className="snapshot-settings__config-actions">
+                          <button onClick={handleExportConfig} className="btn btn--ghost icon-only" title="导出当前配置">
+                              <Download size={14} />
+                          </button>
+                          <button onClick={handleImportClick} className="btn btn--ghost icon-only" title="导入配置">
+                              <Upload size={14} />
+                          </button>
+                          <div className="snapshot-settings__divider" />
+                          
                           {activeConfig && !activeConfig.isBuiltIn ? (
                               isRenaming ? (
                                   <div className="snapshot-settings__rename-group">
@@ -458,6 +506,8 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                           )}
                       </div>
                   </div>
+                  
+                  <input type="file" ref={fileInputRef} style={{display:'none'}} accept=".json" onChange={handleFileImport} />
 
                   <p className="snapshot-settings__template-desc">
                       系统会根据变更来源（AI自然演变 vs 用户手动修改）选择不同的模板。您可以为这两种情况编写截然不同的描述风格（例如：自然演变平实客观，用户修改充满神迹感）。

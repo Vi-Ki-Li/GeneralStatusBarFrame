@@ -168,6 +168,7 @@ export interface Preset {
     [itemKey: string]: string; // Key: ItemDefinition.key, Value: StyleDefinition.id
   };
   layout?: LayoutNode[]; // v9.8: Layout Snapshot
+  narrativeConfigId?: string; // v10.2: 绑定的叙事风格ID
 }
 
 export interface AppOptions {
