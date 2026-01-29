@@ -1,5 +1,6 @@
 
 
+
 :root {
   /* --- 核心调色板 (Palette) --- */
   --color-primary: #6366f1; /* Indigo 500 */
@@ -82,7 +83,7 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   transition: color 0.3s ease;
-  overflow-y: scroll; /* Prevent layout shift */
+  overflow-y: overlay; /* Try to use overlay scrollbar where supported */
 }
 
 /* --- 深色模式 (Dark Mode) --- */
@@ -112,7 +113,8 @@ body.dark-mode {
   padding: var(--spacing-xl); 
 }
 
-/* --- 自定义滚动条 (Webkit) --- */
+/* --- 自定义滚动条 (Webkit Overlay) --- */
+/* Makes scrollbar mostly transparent and floating */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -123,12 +125,14 @@ body.dark-mode {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
+  background-color: rgba(156, 163, 175, 0.3);
   border-radius: 4px;
+  border: 2px solid transparent; /* Creates padding effect */
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.5);
+  background-color: rgba(156, 163, 175, 0.5);
 }
 
 ::-webkit-scrollbar-corner {

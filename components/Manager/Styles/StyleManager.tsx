@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
@@ -589,7 +590,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                 />
             </div>
             
-            <DragOverlay modifiers={[snapCenterToCursor]} zIndex={20000}>
+            <DragOverlay modifiers={[snapCenterToCursor]} zIndex={20000} style={{ pointerEvents: 'none' }}>
                 {draggingStyle ? (
                     <div className="style-atelier__drag-overlay">
                         <Palette size={14} />

@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { LayoutNode } from '../../../types/layout';
 import { ItemDefinition } from '../../../types';
-import { Settings, Trash2, ArrowUp, AlignLeft, AlignCenter, AlignRight, Type, Palette, VenetianMask, Layout, Plus, Minus, Columns, PanelRightClose } from 'lucide-react';
+import { Settings, Trash2, AlignLeft, AlignCenter, AlignRight, Layout, Plus, Minus, Columns, PanelRightClose, BringToFront, PanelRightOpen } from 'lucide-react'; // Added icons
+import { Palette, VenetianMask } from 'lucide-react'; // Ensure imports match usage
 import './LayoutComposer.css'; 
 
 interface LayoutInspectorProps {
@@ -12,7 +14,9 @@ interface LayoutInspectorProps {
   onSelectParent: (id: string) => void; 
   onAddColumn?: () => void; 
   onRemoveColumn?: () => void;
-  onClose?: () => void; // New prop
+  onClose?: () => void; 
+  onToggleDock?: () => void; // New prop
+  isDocked?: boolean;        // New prop
 }
 
 const ControlSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
@@ -74,11 +78,18 @@ const ColorInput: React.FC<{ label: string; value: any; onChange: (val: any) => 
   </div>
 );
 
-const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDelete, allDefinitions, onAddColumn, onRemoveColumn, onClose }) => {
+const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDelete, allDefinitions, onAddColumn, onRemoveColumn, onClose, onToggleDock, isDocked }) => {
+  
+  // Render empty state if no node
   if (!node) {
     return (
       <div className="layout-inspector layout-inspector--empty">
-        <div style={{width: '100%', display: 'flex', justifyContent: 'flex-end', padding: '8px'}}>
+        <div style={{width: '100%', display: 'flex', justifyContent: 'flex-end', padding: '8px', gap: '4px'}}>
+             {onToggleDock && (
+                 <button className="inspector-btn" onClick={onToggleDock} title={isDocked ? "脱离面板 (浮窗)" : "停靠面板"}>
+                     {isDocked ? <BringToFront size={16} /> : <PanelRightOpen size={16} />}
+                 </button>
+             )}
              {onClose && <button className="inspector-btn" onClick={onClose}><PanelRightClose size={16} /></button>}
         </div>
         <div style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
@@ -118,13 +129,19 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
           <button onClick={() => onDelete(node.id)} className="inspector-btn delete" title="删除">
               <Trash2 size={16} />
           </button>
+          
+          <div className="inspector-divider" />
+          
+          {onToggleDock && (
+             <button onClick={onToggleDock} className="inspector-btn" title={isDocked ? "脱离面板 (浮窗)" : "停靠面板"}>
+                 {isDocked ? <BringToFront size={16} /> : <PanelRightOpen size={16} />}
+             </button>
+          )}
+          
           {onClose && (
-              <>
-                <div className="inspector-divider" />
-                <button onClick={onClose} className="inspector-btn" title="收起面板">
-                    <PanelRightClose size={16} />
-                </button>
-              </>
+              <button onClick={onClose} className="inspector-btn" title="关闭/收起">
+                  <PanelRightClose size={16} />
+              </button>
           )}
       </div>
   );

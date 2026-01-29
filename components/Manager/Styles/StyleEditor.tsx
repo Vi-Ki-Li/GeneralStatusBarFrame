@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush, Eye, Edit3 } from 'lucide-react'; // 此处修改1行
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush, Eye, Edit3 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import StyleGuiControls from './StyleGuiControls';
@@ -238,7 +238,31 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     if (!formData.name?.trim()) {
       toast.error("样式名称不能为空"); return;
     }
-    onSave({ ...formData, id: formData.id || uuidv4() } as StyleDefinition);
+
+    // --- Strategy A: CSS Safety Check ---
+    const cssContent = combinedCss || '';
+    const dangerousPatterns = [
+        /(\*|body|html)\s*\{[^}]*display\s*:\s*none/i,
+        /(\*|body|html)\s*\{[^}]*opacity\s*:\s*0/i,
+        /(\*|body|html)\s*\{[^}]*visibility\s*:\s*hidden/i,
+        /:root\s*\{[^}]*display\s*:\s*none/i
+    ];
+
+    const isDangerous = dangerousPatterns.some(pattern => pattern.test(cssContent));
+
+    if (isDangerous) {
+        const confirmSave = window.confirm(
+            "⚠️ 严重安全警告\n\n" +
+            "您的 CSS 代码包含可能导致整个应用不可见的规则 (如全局 display: none)。\n" +
+            "这可能导致界面白屏，只能通过【安全模式】恢复。\n\n" +
+            "如果是无意的，请点击【取消】并检查代码。\n" +
+            "如果确定要执行，请点击【确定】。"
+        );
+        if (!confirmSave) return;
+    }
+    // -------------------------------------
+
+    onSave({ ...formData, css: combinedCss, id: formData.id || uuidv4() } as StyleDefinition);
     onClose();
   };
 

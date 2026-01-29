@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { tavernService } from './services/mockTavernService';
 import { styleService } from './services/styleService';
-import { StatusBarData, SnapshotMeta, LorebookEntry } from './types';
+import { StatusBarData, SnapshotMeta } from './types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './services/definitionRegistry';
 import { Moon, Sun, LayoutDashboard, Wrench, FastForward, Menu, X } from 'lucide-react';
 import LogicTester from './components/DevTools/LogicTester';
@@ -56,7 +57,7 @@ const AppContent = () => {
   const prevDataRef = useRef<StatusBarData | null>(null);
   const batchStartDataRef = useRef<StatusBarData | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  
   const toast = useToast();
 
   // 数据初始化与迁移逻辑
