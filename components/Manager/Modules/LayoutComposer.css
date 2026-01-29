@@ -653,3 +653,109 @@
         padding: var(--spacing-md);
     }
 }
+
+/* --- Snapshot Modal Styles (Missing in previous version) --- */
+.layout-snapshot-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+}
+
+.layout-snapshot-modal {
+    width: 90%;
+    max-width: 500px;
+    background: var(--bg-app);
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.layout-snapshot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--chip-border);
+}
+.layout-snapshot-header h3 {
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+}
+.layout-snapshot-header button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+}
+
+.layout-snapshot-save-row {
+    padding: var(--spacing-lg);
+    display: flex;
+    gap: var(--spacing-md);
+    background: rgba(0,0,0,0.02);
+    border-bottom: 1px solid var(--chip-border);
+}
+
+.layout-snapshot-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-md);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    outline: none;
+}
+.layout-snapshot-input:focus {
+    border-color: var(--color-primary);
+}
+
+.layout-snapshot-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.layout-snapshot-empty {
+    text-align: center;
+    color: var(--text-tertiary);
+    padding: var(--spacing-lg);
+    font-style: italic;
+}
+
+.layout-snapshot-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border: 1px solid var(--chip-border);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+}
+
+.layout-snapshot-info {
+    display: flex;
+    flex-direction: column;
+}
+.layout-snapshot-info .name {
+    font-weight: var(--font-weight-medium);
+}
+.layout-snapshot-info .date {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.layout-snapshot-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}

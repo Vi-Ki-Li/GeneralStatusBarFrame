@@ -13,23 +13,15 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
         e.preventDefault();
         e.stopPropagation();
         
-        const confirmed = window.confirm(
-            "🛡️【安全模式】检测到紧急重置指令。\n\n" +
-            "这通常用于修复由自定义CSS导致的界面白屏、不可见或无法交互的情况。\n\n" +
-            "点击【确定】将清除当前应用的自定义主题并刷新页面。\n" +
-            "您的数据（角色、定义等）不会丢失。"
-        );
-
-        if (confirmed) {
-            console.warn('[SafeMode] Triggered via Keyboard Shortcut. Clearing active theme...');
-            try {
-                styleService.clearActiveTheme();
-                console.log('[SafeMode] Theme cleared. Reloading...');
-                window.location.reload();
-            } catch (err) {
-                console.error('[SafeMode] Failed to clear theme:', err);
-                alert("重置失败，请尝试手动清除 LocalStorage。");
-            }
+        console.warn('[SafeMode] Triggered via Keyboard Shortcut. Clearing active theme...');
+        try {
+            // Build环境iframe可能拦截confirm，直接执行清理
+            styleService.clearActiveTheme();
+            console.log('[SafeMode] Theme cleared. Reloading...');
+            window.location.reload();
+        } catch (err) {
+            console.error('[SafeMode] Failed to clear theme:', err);
+            // alert("重置失败，请尝试手动清除 LocalStorage。"); // alert也可能被拦截，只打印log
         }
     }
 });

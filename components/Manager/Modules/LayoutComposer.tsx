@@ -572,17 +572,40 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
     const { categories, itemsByCategory } = useMemo(() => {
         const sortedCats = (Object.values(data.categories) as CategoryDefinition[]).sort((a,b) => a.order - b.order);
-        const grouped: Record<string, ItemDefinition[]> = {};
         const lowerSearch = search.toLowerCase();
         
-        (Object.values(data.item_definitions) as ItemDefinition[]).forEach(def => {
-            if (search && !def.key.toLowerCase().includes(lowerSearch) && !def.name?.toLowerCase().includes(lowerSearch)) return;
-            const cat = def.defaultCategory || 'Other';
-            if (!grouped[cat]) grouped[cat] = [];
-            grouped[cat].push(def);
+        const filteredCategories: CategoryDefinition[] = [];
+        const filteredItemsByCat: Record<string, ItemDefinition[]> = {};
+
+        sortedCats.forEach(cat => {
+            // Find items for this category
+            const allDefinitions = Object.values(data.item_definitions) as ItemDefinition[];
+            const catItems = allDefinitions.filter(def => {
+                const itemCat = def.defaultCategory || 'Other';
+                return itemCat === cat.key;
+            });
+
+            // Filter items based on search
+            const matchingItems = catItems.filter(def => 
+                !search || 
+                def.key.toLowerCase().includes(lowerSearch) || 
+                (def.name && def.name.toLowerCase().includes(lowerSearch))
+            );
+
+            // Check if category name matches
+            const catNameMatches = cat.name.toLowerCase().includes(lowerSearch) || cat.key.toLowerCase().includes(lowerSearch);
+
+            // Include category if:
+            // 1. Search is empty (show all)
+            // 2. Category name matches
+            // 3. Category has matching items
+            if (!search || catNameMatches || matchingItems.length > 0) {
+                filteredCategories.push(cat);
+                filteredItemsByCat[cat.key] = matchingItems;
+            }
         });
         
-        return { categories: sortedCats, itemsByCategory: grouped };
+        return { categories: filteredCategories, itemsByCategory: filteredItemsByCat };
     }, [data, search]);
 
     // Move allDefinitionsMap to top level to avoid conditional hook calls
