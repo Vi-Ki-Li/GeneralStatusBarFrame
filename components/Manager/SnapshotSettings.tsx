@@ -313,9 +313,15 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       const config = configs.find(c => c.id === activeConfigId);
       if (!config) return;
       
+      // 修复：如果是内置配置（默认配置），templates 为空对象，此时应导出 DEFAULT_TEMPLATES
+      // 这样用户导出的 JSON 才会包含实际的模板内容，便于备份或修改
+      const templatesToExport = (config.isBuiltIn || Object.keys(config.templates).length === 0) 
+          ? DEFAULT_TEMPLATES 
+          : config.templates;
+      
       const exportData = {
           name: config.name,
-          templates: config.templates,
+          templates: templatesToExport,
           exportedAt: new Date().toISOString()
       };
       
