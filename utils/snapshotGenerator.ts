@@ -1,18 +1,31 @@
 
 import { StatusBarData, StatusBarItem, SnapshotEvent, CharacterData, ItemDefinition } from '../types';
 import _ from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * 叙事生成器 (Narrative Engine)
  * 负责对比状态数据的变化，并生成自然语言描述。
  * v6.7 Refactor: Supports Flat Array Structure (Definition-Driven)
  * v9.9 Update: Customizable Templates & User/AI Differentiation
+ * v10.0 Update: Multi-Configuration Support (Preset System for Narratives)
  */
+
+// 叙事配置接口
+export interface NarrativeConfig {
+  id: string;
+  name: string;
+  templates: Record<string, string>; // 仅存储覆盖项，未定义的key回退到默认
+  isBuiltIn?: boolean;
+}
 
 // 常量定义
 const SINGLE_STRUCTURE_CATEGORIES = new Set(['CP', 'CR', 'CS', 'AE']);
 const NUMERIC_RELATIVE_THRESHOLD = 0.3; // 判定为“剧烈变化”的阈值 (30%)
-const STORAGE_KEY = 'th_narrative_templates_v1';
+
+const STORAGE_KEY_CONFIGS = 'th_narrative_configs_v1';
+const STORAGE_KEY_ACTIVE_ID = 'th_narrative_active_id_v1';
+const LEGACY_STORAGE_KEY = 'th_narrative_templates_v1';
 
 // 默认叙事模板库
 export const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -84,32 +97,139 @@ export const TEMPLATE_INFO: Record<string, { label: string, vars: string[] }> = 
     'character_leaves_user': { label: '角色退场 (用户)', vars: ['character'] },
 };
 
+// --- Config Management ---
+
+function loadConfigs(): NarrativeConfig[] {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY_CONFIGS);
+        if (stored) return JSON.parse(stored);
+    } catch(e) { console.error(e); }
+    return [];
+}
+
+function saveConfigsList(configs: NarrativeConfig[]) {
+    localStorage.setItem(STORAGE_KEY_CONFIGS, JSON.stringify(configs));
+}
+
 /**
- * 获取当前生效的模板 (合并默认与用户自定义)
+ * 获取所有可用配置 (包含迁移逻辑)
+ */
+export function getNarrativeConfigs(): NarrativeConfig[] {
+    let configs = loadConfigs();
+    if (configs.length === 0) {
+        // Init Defaults & Migrate
+        const defaultConfig: NarrativeConfig = {
+            id: 'default',
+            name: '系统默认 (System)',
+            templates: {},
+            isBuiltIn: true
+        };
+        configs.push(defaultConfig);
+
+        try {
+            const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (legacy) {
+                const legacyTemplates = JSON.parse(legacy);
+                configs.push({
+                    id: 'custom_legacy',
+                    name: '自定义 (旧版迁移)',
+                    templates: legacyTemplates,
+                    isBuiltIn: false
+                });
+                setActiveNarrativeConfigId('custom_legacy');
+                localStorage.removeItem(LEGACY_STORAGE_KEY);
+                console.log('[Narrative] Migrated legacy templates.');
+            } else {
+                setActiveNarrativeConfigId('default');
+            }
+        } catch (e) { console.error(e); }
+        saveConfigsList(configs);
+    }
+    return configs;
+}
+
+export function getActiveNarrativeConfigId(): string {
+    return localStorage.getItem(STORAGE_KEY_ACTIVE_ID) || 'default';
+}
+
+export function setActiveNarrativeConfigId(id: string) {
+    localStorage.setItem(STORAGE_KEY_ACTIVE_ID, id);
+}
+
+export function createNarrativeConfig(name: string, baseTemplates: Record<string, string> = {}): NarrativeConfig {
+    const configs = getNarrativeConfigs();
+    const newConfig: NarrativeConfig = {
+        id: uuidv4(),
+        name,
+        templates: baseTemplates,
+        isBuiltIn: false
+    };
+    configs.push(newConfig);
+    saveConfigsList(configs);
+    return newConfig;
+}
+
+export function updateNarrativeConfig(config: NarrativeConfig) {
+    const configs = getNarrativeConfigs();
+    const idx = configs.findIndex(c => c.id === config.id);
+    if (idx >= 0) {
+        if (configs[idx].isBuiltIn) return; // Protect default
+        configs[idx] = config;
+        saveConfigsList(configs);
+    }
+}
+
+export function deleteNarrativeConfig(id: string) {
+    let configs = getNarrativeConfigs();
+    const configToDelete = configs.find(c => c.id === id);
+    if (configToDelete?.isBuiltIn) return;
+
+    configs = configs.filter(c => c.id !== id);
+    saveConfigsList(configs);
+    
+    if (getActiveNarrativeConfigId() === id) {
+        setActiveNarrativeConfigId('default');
+    }
+}
+
+/**
+ * 获取当前生效的模板 (合并默认与激活配置的覆盖项)
  */
 export function getNarrativeTemplates(): Record<string, string> {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            return { ...DEFAULT_TEMPLATES, ...JSON.parse(stored) };
-        }
-    } catch(e) { console.error(e); }
-    return DEFAULT_TEMPLATES;
+    const configs = getNarrativeConfigs();
+    const activeId = getActiveNarrativeConfigId();
+    const activeConfig = configs.find(c => c.id === activeId) || configs.find(c => c.id === 'default');
+    
+    return { ...DEFAULT_TEMPLATES, ...(activeConfig?.templates || {}) };
 }
 
 /**
- * 保存用户自定义模板
+ * 遗留兼容函数：保存用户自定义模板
+ * 现在它会更新当前激活的配置 (如果是自定义的)，或者创建一个新配置
  */
 export function saveNarrativeTemplates(templates: Record<string, string>) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+    const activeId = getActiveNarrativeConfigId();
+    const configs = getNarrativeConfigs();
+    let config = configs.find(c => c.id === activeId);
+
+    if (config && !config.isBuiltIn) {
+        config.templates = templates;
+        updateNarrativeConfig(config);
+    } else {
+        // 如果当前是默认配置，则无法直接保存，理论上 UI 应该处理这种情况
+        // 这里作为 fallback，我们不做任何事或抛出错误
+        console.warn('Attempted to save templates to a built-in config via legacy method.');
+    }
 }
 
 /**
- * 重置所有模板
+ * 重置所有模板 -> 实际上是切回默认配置
  */
 export function resetNarrativeTemplates() {
-    localStorage.removeItem(STORAGE_KEY);
+    setActiveNarrativeConfigId('default');
 }
+
+// --- Snapshot Logic ---
 
 /**
  * 纯数值解析器

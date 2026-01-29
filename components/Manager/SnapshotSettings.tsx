@@ -1,9 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../types';
-import { detectChanges, generateNarrative, getNarrativeTemplates, saveNarrativeTemplates, resetNarrativeTemplates, TEMPLATE_INFO, DEFAULT_TEMPLATES } from '../../utils/snapshotGenerator';
+import { 
+    detectChanges, 
+    generateNarrative, 
+    getNarrativeTemplates, 
+    saveNarrativeTemplates, 
+    resetNarrativeTemplates, 
+    getNarrativeConfigs,
+    getActiveNarrativeConfigId,
+    setActiveNarrativeConfigId,
+    createNarrativeConfig,
+    updateNarrativeConfig,
+    deleteNarrativeConfig,
+    NarrativeConfig,
+    TEMPLATE_INFO, 
+    DEFAULT_TEMPLATES 
+} from '../../utils/snapshotGenerator';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
-import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check } from 'lucide-react';
+import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X } from 'lucide-react'; // Added X icon
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
@@ -18,6 +33,16 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const [lastSnapshot, setLastSnapshot] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   
+  // Config Management State
+  const [configs, setConfigs] = useState<NarrativeConfig[]>([]);
+  const [activeConfigId, setActiveConfigId] = useState<string>('default');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState('');
+  
+  // New Config State
+  const [isCreating, setIsCreating] = useState(false);
+  const [newConfigName, setNewConfigName] = useState('');
+
   // Template Editor State
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [templates, setTemplates] = useState<Record<string, string>>({});
@@ -27,10 +52,19 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const toast = useToast();
 
   useEffect(() => {
+      refreshConfigs();
+  }, []);
+
+  useEffect(() => {
       if (showTemplateEditor) {
           setTemplates(getNarrativeTemplates());
       }
-  }, [showTemplateEditor]);
+  }, [showTemplateEditor, activeConfigId]);
+
+  const refreshConfigs = () => {
+      setConfigs(getNarrativeConfigs());
+      setActiveConfigId(getActiveNarrativeConfigId());
+  };
 
   const handleManualTrigger = () => {
     setIsGenerating(true);
@@ -56,6 +90,25 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   };
 
   const handleSaveTemplate = (key: string) => {
+      // Check if we are editing a built-in config
+      const activeConfig = configs.find(c => c.id === activeConfigId);
+      if (activeConfig?.isBuiltIn) {
+          // Use window.confirm assuming it's supported, otherwise we might need a custom modal later
+          if (confirm(`默认配置 "${activeConfig.name}" 不可直接修改。\n是否创建该配置的副本并进行编辑？`)) {
+              handleCreateConfig(`${activeConfig.name} (副本)`, activeConfig.templates);
+              
+              // Apply the pending change to the newly created copy after a slight delay
+              setTimeout(() => {
+                  const newTemplates = { ...getNarrativeTemplates(), [key]: tempValue };
+                  saveNarrativeTemplates(newTemplates);
+                  setTemplates(newTemplates);
+                  setEditingKey(null);
+                  toast.success('已创建副本并保存修改');
+              }, 100);
+          }
+          return;
+      }
+
       const newTemplates = { ...templates, [key]: tempValue };
       setTemplates(newTemplates);
       saveNarrativeTemplates(newTemplates);
@@ -63,13 +116,71 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       toast.success('模板已更新');
   };
 
-  const handleResetAllTemplates = () => {
-      if (confirm('确定要重置所有叙事模板到默认状态吗？您的自定义将丢失。')) {
-          resetNarrativeTemplates();
-          setTemplates(DEFAULT_TEMPLATES);
-          toast.info('已恢复默认模板');
+  const handleResetTemplate = (key: string) => {
+      const activeConfig = configs.find(c => c.id === activeConfigId);
+      if (activeConfig?.isBuiltIn) return;
+
+      const newTemplates = { ...templates };
+      delete newTemplates[key]; // Removing it makes it fall back to default
+      setTemplates(newTemplates);
+      saveNarrativeTemplates(newTemplates);
+      toast.info('已恢复该条默认');
+  };
+
+  // --- Configuration Management ---
+
+  const handleSwitchConfig = (id: string) => {
+      setActiveNarrativeConfigId(id);
+      setActiveConfigId(id);
+      // Templates will update via useEffect
+  };
+
+  const handleCreateConfig = (nameInput?: string, baseTemplates?: Record<string, string>) => {
+      if (nameInput) {
+          // Direct creation (used for copying)
+          const config = createNarrativeConfig(nameInput, baseTemplates);
+          setActiveNarrativeConfigId(config.id);
+          refreshConfigs();
+          toast.success(`配置 "${nameInput}" 已创建并激活`);
+      } else {
+          // UI Trigger
+          setIsCreating(true);
+          setNewConfigName('');
       }
   };
+
+  const confirmCreateConfig = () => {
+      if (!newConfigName.trim()) return;
+      const config = createNarrativeConfig(newConfigName.trim());
+      setActiveNarrativeConfigId(config.id);
+      refreshConfigs();
+      setIsCreating(false);
+      toast.success(`配置 "${config.name}" 已创建`);
+  };
+
+  const handleRenameConfig = () => {
+      if (!newName.trim()) return;
+      const config = configs.find(c => c.id === activeConfigId);
+      if (config && !config.isBuiltIn) {
+          updateNarrativeConfig({ ...config, name: newName });
+          refreshConfigs();
+          setIsRenaming(false);
+          toast.success("重命名成功");
+      }
+  };
+
+  const handleDeleteConfig = () => {
+      const config = configs.find(c => c.id === activeConfigId);
+      if (config && !config.isBuiltIn) {
+          if (confirm(`确定要删除配置 "${config.name}" 吗？此操作不可撤销。`)) {
+              deleteNarrativeConfig(activeConfigId);
+              refreshConfigs(); // Will fall back to default
+              toast.info("配置已删除");
+          }
+      }
+  };
+
+  const activeConfig = configs.find(c => c.id === activeConfigId);
 
   return (
     <div className="snapshot-settings">
@@ -133,18 +244,80 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                 className="btn btn--ghost" 
                 onClick={() => setShowTemplateEditor(!showTemplateEditor)}
               >
-                  <Edit size={16} /> {showTemplateEditor ? '隐藏模板配置' : '配置叙事模板'}
+                  <Edit size={16} /> {showTemplateEditor ? '隐藏配置面板' : '配置叙事风格'}
               </button>
           </div>
 
           {showTemplateEditor && (
               <div className="snapshot-settings__template-editor glass-panel animate-fade-in">
-                  <div className="snapshot-settings__template-header">
-                      <h4>自定义叙事风格</h4>
-                      <button onClick={handleResetAllTemplates} className="btn btn--ghost btn--delete">
-                          <RotateCcw size={14} /> 重置所有
-                      </button>
+                  
+                  {/* --- Configuration Toolbar --- */}
+                  <div className="snapshot-settings__config-bar">
+                      <div className="snapshot-settings__config-selector">
+                          <label><Settings size={14} /> 风格预设</label>
+                          <select 
+                            value={activeConfigId} 
+                            onChange={(e) => handleSwitchConfig(e.target.value)}
+                            className="snapshot-settings__config-select"
+                          >
+                              {configs.map(c => (
+                                  <option key={c.id} value={c.id}>
+                                      {c.name} {c.isBuiltIn ? '(内置)' : ''}
+                                  </option>
+                              ))}
+                          </select>
+                      </div>
+                      
+                      <div className="snapshot-settings__config-actions">
+                          {activeConfig && !activeConfig.isBuiltIn ? (
+                              isRenaming ? (
+                                  <div className="snapshot-settings__rename-group">
+                                      <input 
+                                        value={newName} 
+                                        onChange={e => setNewName(e.target.value)} 
+                                        className="snapshot-settings__rename-input"
+                                        placeholder={activeConfig.name}
+                                        autoFocus
+                                      />
+                                      <button onClick={handleRenameConfig} className="btn btn--ghost icon-only"><Check size={14}/></button>
+                                      <button onClick={() => setIsRenaming(false)} className="btn btn--ghost icon-only"><RotateCcw size={14}/></button>
+                                  </div>
+                              ) : (
+                                  <>
+                                    <button onClick={() => { setIsRenaming(true); setNewName(activeConfig.name); }} className="btn btn--ghost" title="重命名">
+                                        <Edit size={14} />
+                                    </button>
+                                    <button onClick={handleDeleteConfig} className="btn btn--ghost btn--delete" title="删除配置">
+                                        <Trash2 size={14} />
+                                    </button>
+                                  </>
+                              )
+                          ) : (
+                              <span className="snapshot-settings__read-only-tag">只读</span>
+                          )}
+                          <div className="snapshot-settings__divider" />
+                          
+                          {isCreating ? (
+                              <div className="snapshot-settings__rename-group">
+                                  <input 
+                                    value={newConfigName} 
+                                    onChange={e => setNewConfigName(e.target.value)} 
+                                    className="snapshot-settings__rename-input"
+                                    placeholder="新配置名称"
+                                    autoFocus
+                                    onKeyDown={(e) => { if (e.key === 'Enter') confirmCreateConfig(); }}
+                                  />
+                                  <button onClick={confirmCreateConfig} className="btn btn--ghost icon-only"><Check size={14}/></button>
+                                  <button onClick={() => setIsCreating(false)} className="btn btn--ghost icon-only"><X size={14}/></button>
+                              </div>
+                          ) : (
+                              <button onClick={() => handleCreateConfig()} className="btn btn--primary" title="新建/复制配置">
+                                  <Plus size={14} /> 新建
+                              </button>
+                          )}
+                      </div>
                   </div>
+
                   <p className="snapshot-settings__template-desc">
                       系统会根据变更来源（AI自然演变 vs 用户手动修改）选择不同的模板。您可以为这两种情况编写截然不同的描述风格（例如：自然演变平实客观，用户修改充满神迹感）。
                   </p>
@@ -154,7 +327,9 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                           const info = TEMPLATE_INFO[key];
                           const isEditing = editingKey === key;
                           const currentValue = isEditing ? tempValue : (templates[key] || DEFAULT_TEMPLATES[key]);
-                          const isUserModified = currentValue !== DEFAULT_TEMPLATES[key];
+                          
+                          // Check if modified in CURRENT config
+                          const isModified = activeConfig && !activeConfig.isBuiltIn && activeConfig.templates[key] !== undefined;
 
                           return (
                               <div key={key} className={`template-item ${isEditing ? 'editing' : ''}`}>
@@ -162,7 +337,12 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                                       <span className="template-item__label">{info.label}</span>
                                       {!isEditing && (
                                           <div className="template-item__actions">
-                                              {isUserModified && <span className="template-item__modified-tag">已修改</span>}
+                                              {isModified && <span className="template-item__modified-tag">已覆盖</span>}
+                                              {isModified && (
+                                                  <button onClick={() => handleResetTemplate(key)} className="btn btn--ghost icon-only" title="恢复默认">
+                                                      <RotateCcw size={14}/>
+                                                  </button>
+                                              )}
                                               <button onClick={() => handleEditTemplate(key)} className="btn btn--ghost icon-only"><Edit size={14}/></button>
                                           </div>
                                       )}

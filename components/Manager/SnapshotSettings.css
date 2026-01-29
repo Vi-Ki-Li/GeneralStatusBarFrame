@@ -1,4 +1,5 @@
 
+
 .snapshot-settings {
   padding: var(--spacing-xl);
   color: var(--text-primary);
@@ -171,16 +172,76 @@ body.dark-mode .snapshot-settings__status-summary {
     background: var(--bg-app);
 }
 
-.snapshot-settings__template-header {
+/* New Config Bar (v10.0) */
+.snapshot-settings__config-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--chip-border);
 }
-.snapshot-settings__template-header h4 {
-    font-weight: var(--font-weight-semibold);
+
+.snapshot-settings__config-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+.snapshot-settings__config-selector label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.snapshot-settings__config-select {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--chip-border);
+    background: var(--bg-app);
     color: var(--text-primary);
+    font-size: 0.9rem;
+    min-width: 150px;
 }
+
+.snapshot-settings__config-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.snapshot-settings__rename-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.snapshot-settings__rename-input {
+    padding: 4px 8px;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    width: 120px;
+}
+
+.snapshot-settings__read-only-tag {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    background: var(--bar-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.snapshot-settings__divider {
+    width: 1px;
+    height: 16px;
+    background: var(--chip-border);
+    margin: 0 4px;
+}
+
+/* End Config Bar */
 
 .snapshot-settings__template-desc {
     font-size: 0.85rem;
@@ -314,5 +375,14 @@ body.dark-mode .snapshot-settings__status-summary {
   }
   .snapshot-settings__grid {
     grid-template-columns: 1fr;
+  }
+  .snapshot-settings__config-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+  }
+  .snapshot-settings__config-actions {
+      width: 100%;
+      justify-content: space-between;
   }
 }
