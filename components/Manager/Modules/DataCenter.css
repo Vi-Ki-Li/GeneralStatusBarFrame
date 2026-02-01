@@ -17,11 +17,22 @@
 }
 
 .data-center__sidebar {
-  width: var(--sidebar-width); /* Consistent Width */
+  width: var(--sidebar-width); /* Consistent Width 260px */
+  min-width: var(--sidebar-width);
   height: 100%;
   border-right: 1px solid var(--border-base);
   flex-shrink: 0;
   background: rgba(0,0,0,0.02); /* Slight tint for sidebar area */
+  transition: all 0.3s ease;
+  overflow: hidden;
+  opacity: 1;
+}
+
+.data-center__sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  border-right: none;
 }
 
 /* Mobile Tabs */

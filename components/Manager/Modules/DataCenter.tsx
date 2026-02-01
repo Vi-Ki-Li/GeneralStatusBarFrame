@@ -236,18 +236,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
         <div className={`data-center__main-layout ${isMobile ? 'data-center__main-layout--mobile' : ''}`}>
             
             {!isMobile && (
-                <div 
-                    className="data-center__sidebar" 
-                    style={{ 
-                        width: isSidebarCollapsed ? '0' : '220px', 
-                        minWidth: isSidebarCollapsed ? '0' : '220px',
-                        opacity: isSidebarCollapsed ? 0 : 1,
-                        padding: isSidebarCollapsed ? 0 : undefined,
-                        borderRight: isSidebarCollapsed ? 'none' : undefined,
-                        transition: 'all 0.3s ease',
-                        overflow: 'hidden' 
-                    }}
-                >
+                <div className={`data-center__sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
                   <CharacterListSidebar 
                       characters={charList} 
                       selectedId={selectedId}
