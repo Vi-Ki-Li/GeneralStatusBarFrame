@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
 import { LayoutNode, LayoutSnapshot } from '../../../types/layout';
@@ -1017,57 +1016,47 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                         </div>
                     )}
                     
-                    {/* Palette content only visible if open (Mobile Logic: Overlay) */}
-                    {(leftOpen || !isMobile) && (
-                        <div className="layout-composer__palette" style={{ display: leftOpen ? 'flex' : 'none' }}>
-                                <div className="palette-search">
-                                    <Search size={14} />
-                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
-                                </div>
-                                <div className="palette-content">
-                                    {categories.map(cat => (
-                                        <div key={cat.key} className="palette-section">
-                                            <div className="palette-section-header" onClick={() => toggleCat(cat.key)}>
-                                                {expandedCats.has(cat.key) ? <ChevronDown size={14}/> : <ChevronDown size={14} style={{transform:'rotate(-90deg)'}}/>}
-                                                {cat.name}
-                                            </div>
-                                            {expandedCats.has(cat.key) && (
-                                            <div className="palette-list">
-                                                <PaletteItem 
-                                                    definition={{key: cat.key, name: cat.name, icon: cat.icon, type: 'text'} as ItemDefinition} 
-                                                    type="category" 
-                                                    label={`${cat.name} (分类)`} 
-                                                />
-                                                {(itemsByCategory[cat.key] || []).map(def => (
-                                                    <PaletteItem key={def.key} definition={def} type="item" />
-                                                ))}
-                                            </div>
-                                            )}
+                    {/* Palette content - using class for visibility instead of inline style */}
+                    <div className={`layout-composer__palette ${!leftOpen && !isMobile ? 'hidden' : ''}`}>
+                            <div className="palette-search">
+                                <Search size={14} />
+                                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
+                            </div>
+                            <div className="palette-content">
+                                {categories.map(cat => (
+                                    <div key={cat.key} className="palette-section">
+                                        <div className="palette-section-header" onClick={() => toggleCat(cat.key)}>
+                                            {expandedCats.has(cat.key) ? <ChevronDown size={14}/> : <ChevronDown size={14} style={{transform:'rotate(-90deg)'}}/>}
+                                            {cat.name}
                                         </div>
-                                    ))}
-                                </div>
-                        </div>
-                    )}
+                                        {expandedCats.has(cat.key) && (
+                                        <div className="palette-list">
+                                            <PaletteItem 
+                                                definition={{key: cat.key, name: cat.name, icon: cat.icon, type: 'text'} as ItemDefinition} 
+                                                type="category" 
+                                                label={`${cat.name} (分类)`} 
+                                            />
+                                            {(itemsByCategory[cat.key] || []).map(def => (
+                                                <PaletteItem key={def.key} definition={def} type="item" />
+                                            ))}
+                                        </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                    </div>
                 </div>
 
                 <div className="layout-composer__canvas-area" onClick={() => setSelectedNodeId(null)}>
                     {/* Header Toolbar for Canvas (Desktop Only) */}
                     {!isMobile && (
-                        <div style={{
-                            height: '48px', 
-                            borderBottom: '1px solid var(--chip-border)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            padding: '0 12px',
-                            background: 'var(--glass-bg)',
-                            flexShrink: 0
-                        }}>
+                        <div className="layout-composer__canvas-toolbar">
                             {!leftOpen && (
                                 <button onClick={() => setLeftOpen(true)} className="btn btn--ghost" title="展开组件库">
                                     <PanelLeftOpen size={16} /> 展开组件库
                                 </button>
                             )}
-                            <span style={{marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-tertiary)'}}>
+                            <span className="layout-composer__canvas-title">
                                 Layout Canvas
                             </span>
                             
@@ -1125,7 +1114,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
                 {/* Right Pane (Always rendered, animated via CSS class) */}
                 <div className={`layout-composer__right-pane ${inspectorMode === 'docked' ? 'open' : 'closed'}`}>
-                    <div style={{minWidth: '300px', height: '100%'}}>
+                    <div className="layout-composer__inspector-wrapper">
                         {inspectorMode === 'docked' && inspectorPanel}
                     </div>
                 </div>

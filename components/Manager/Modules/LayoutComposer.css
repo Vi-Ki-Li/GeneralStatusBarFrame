@@ -1,9 +1,6 @@
 
 /* LayoutComposer.css - Grid-Stack Edition (WYSIWYG) */
 
-/* ... (Keep previous styles until Inspector Styling) ... */
-/* ... All previous styles are retained implicitly, I will just append the mobile tweaks at the end ... */
-
 .layout-composer {
   display: flex;
   height: 100%;
@@ -26,7 +23,7 @@
 
 /* Desktop open state */
 .layout-composer__left-pane.open {
-    width: 240px;
+    width: var(--sidebar-width); /* Standardized Width */
     opacity: 1;
 }
 
@@ -84,7 +81,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-width: 240px; /* Fixed width content inside resizable pane container */
+  min-width: var(--sidebar-width); /* Standardized Width */
+}
+
+.layout-composer__palette.hidden {
+    display: none;
 }
 
 .palette-search {
@@ -186,6 +187,22 @@
   z-index: 1;
 }
 
+.layout-composer__canvas-toolbar {
+  height: 48px;
+  border-bottom: 1px solid var(--chip-border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--glass-bg);
+  flex-shrink: 0;
+}
+
+.layout-composer__canvas-title {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
 .layout-composer__canvas {
   flex: 1;
   padding: var(--spacing-xl);
@@ -244,6 +261,11 @@
     width: 0;
     opacity: 0;
     border-left: none;
+}
+
+.layout-composer__inspector-wrapper {
+    min-width: 300px;
+    height: 100%;
 }
 
 /* --- Inspector Styling --- */

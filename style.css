@@ -109,6 +109,10 @@
   --bar-bg: rgba(0, 0, 0, 0.06);
   --chip-bg: rgba(255, 255, 255, 0.9);
   --chip-border: rgba(0, 0, 0, 0.08);
+  
+  /* Scrollbar Colors (Standard) */
+  --scrollbar-thumb: rgba(156, 163, 175, 0.5);
+  --scrollbar-track: transparent;
 }
 
 /* --- Dark Mode Overrides (Zinc / Neutral Tone) --- */
@@ -140,10 +144,21 @@ body.dark-mode {
   --bar-bg: rgba(255, 255, 255, 0.08);
   --chip-bg: rgba(255, 255, 255, 0.05);
   --chip-border: rgba(255, 255, 255, 0.1);
+  
+  /* Scrollbar Colors (Dark) */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
 }
 
 /* --- Global Reset & Base --- */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  
+  /* Global Thin Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
 
 body {
   font-family: var(--font-family-base);
@@ -182,7 +197,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* --- Component: Scrollbars --- */
+/* --- Component: Scrollbars (Webkit Fallback) --- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -191,13 +206,13 @@ body {
   background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
+  background-color: var(--scrollbar-thumb);
   border-radius: var(--radius-full);
   border: 1px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+  background-color: var(--text-tertiary);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;

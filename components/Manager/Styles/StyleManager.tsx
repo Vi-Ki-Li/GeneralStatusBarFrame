@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
@@ -129,7 +128,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         };
         window.addEventListener('th:safe-mode-triggered', handleSafeMode);
         return () => window.removeEventListener('th:safe-mode-triggered', handleSafeMode);
-    }, []); // 此处开始添加8行
+    }, []); 
 
     useEffect(() => {
         if (!stagedData || !data) {
@@ -360,9 +359,17 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         other: '其他',
     };
 
-    // View Logic
-    const showSidebar = !isMobile || (isMobile && mobileTab === 'library');
-    const showPreview = !isMobile || (isMobile && mobileTab === 'preview');
+    // Calculate Classes
+    const sidebarClasses = [
+        'style-atelier__sidebar',
+        !isMobile && isSidebarCollapsed ? 'collapsed' : '',
+        isMobile && mobileTab !== 'library' ? 'mobile-hidden' : ''
+    ].filter(Boolean).join(' ');
+
+    const previewClasses = [
+        'style-atelier__main-preview',
+        isMobile && mobileTab !== 'preview' ? 'mobile-hidden' : ''
+    ].filter(Boolean).join(' ');
 
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
@@ -387,17 +394,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                 )}
 
                 {/* Sidebar (Library) */}
-                <div 
-                    className="style-atelier__sidebar" 
-                    style={{ 
-                        display: showSidebar ? 'flex' : 'none',
-                        // Desktop Collapse Logic
-                        width: !isMobile && isSidebarCollapsed ? '0' : '260px',
-                        padding: !isMobile && isSidebarCollapsed ? '0' : undefined,
-                        borderRight: !isMobile && isSidebarCollapsed ? 'none' : undefined,
-                        opacity: !isMobile && isSidebarCollapsed ? 0 : 1,
-                    }}
-                >
+                <div className={sidebarClasses}>
                     <div className="style-atelier__sidebar-header">
                         <div className="style-atelier__header-left">
                             <Palette size={18}/>
@@ -512,12 +509,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                 </div>
 
                 {/* Main Preview Area */}
-                <div 
-                    className="style-atelier__main-preview"
-                    style={{
-                        display: showPreview ? 'flex' : 'none'
-                    }}
-                >
+                <div className={previewClasses}>
                     <div className="style-atelier__preview-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {isSidebarCollapsed && !isMobile && (
