@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft, PanelLeftOpen, PanelLeftClose, Download, Upload } from 'lucide-react';
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
 import * as LucideIcons from 'lucide-react';
@@ -30,6 +30,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
   const [confirmDeleteItemKey, setConfirmDeleteItemKey] = useState<string | null>(null);
   const [isInjectingAll, setIsInjectingAll] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = window.innerWidth <= 768; // Simple check
 
   const categories = (Object.values(data.categories || {}) as CategoryDefinition[]).sort((a, b) => a.order - b.order);
@@ -129,6 +130,49 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
     }
   };
 
+  // --- Export Logic ---
+  const handleExportDefinition = (def: ItemDefinition, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const json = JSON.stringify(def, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `def_${def.key}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`规则 "${def.key}" 已导出`);
+  };
+
+  // --- Import Logic ---
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+          try {
+              const content = ev.target?.result as string;
+              const imported = JSON.parse(content) as ItemDefinition;
+              
+              if (!imported.key || !imported.type) {
+                  throw new Error("Invalid format");
+              }
+
+              const newData = { ...data, item_definitions: { ...data.item_definitions, [imported.key]: imported } };
+              onUpdate(newData);
+              toast.success(`规则 "${imported.key}" 导入成功`);
+          } catch (err) {
+              toast.error("导入失败: 格式错误");
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+  };
+
   const injectButtonText = isInjectingAll
     ? '同步中...' 
     : selectedCategory 
@@ -216,6 +260,9 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
                       </p>
                   </div>
                   <div className="th-manager__toolbar" style={{borderTop: 'none', background: 'transparent', padding: 0, marginLeft: 'auto'}}>
+                      <button onClick={handleImportClick} className="btn btn--ghost" title="导入单个规则">
+                          <Download size={16} /> <span className="desktop-only">导入</span>
+                      </button>
                       <button onClick={handleInjectAll} className="btn btn--ghost" disabled={isInjectingAll || filteredItems.length === 0}>
                           {isInjectingAll ? <Loader size={16} className="spinner" /> : <UploadCloud size={16} />}
                           <span className="desktop-only">{injectButtonText}</span>
@@ -226,6 +273,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
                       >
                           <Plus size={16} /> <span className="desktop-only">新建规则</span>
                       </button>
+                      <input type="file" ref={fileInputRef} style={{display:'none'}} accept=".json" onChange={handleImportFile} />
                   </div>
               </div>
 
@@ -252,6 +300,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
                                                   </div>
                                               ) : (
                                                   <>
+                                                      <button onClick={(e) => handleExportDefinition(def, e)} className="th-manager__icon-btn" title="导出规则"><Upload size={16} /></button>
                                                       <button onClick={() => handleInject(def)} className="th-manager__icon-btn" title="注入/同步到世界书"><UploadCloud size={16} /></button>
                                                       <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="th-manager__icon-btn"><Edit2 size={16} /></button>
                                                       <button onClick={() => setConfirmDeleteItemKey(def.key)} className="th-manager__icon-btn th-manager__icon-btn--danger"><Trash2 size={16} /></button>

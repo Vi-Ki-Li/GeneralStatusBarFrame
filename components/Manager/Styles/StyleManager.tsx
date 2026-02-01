@@ -507,7 +507,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                                     </button>
                                     <div style={{flex: 1}} />
                                     <button onClick={handleExport} className="th-manager__icon-btn" title={`导出选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
-                                        <Download size={18}/>
+                                        <Upload size={18}/>
                                     </button>
                                     <button onClick={handleBulkDelete} className="th-manager__icon-btn th-manager__icon-btn--danger" title={`删除选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
                                         <Trash2 size={18}/>
@@ -521,10 +521,10 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                                     </button>
                                     <div className="style-atelier__io-actions">
                                         <button onClick={handleImportClick} className="th-manager__icon-btn" title="导入样式">
-                                            <Upload size={16}/>
+                                            <Download size={16}/>
                                         </button>
                                         <button onClick={handleExport} className="th-manager__icon-btn" title="导出所有用户样式">
-                                            <Download size={16}/>
+                                            <Upload size={16}/>
                                         </button>
                                     </div>
                                 </div>

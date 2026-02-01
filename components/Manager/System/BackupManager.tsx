@@ -93,7 +93,7 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
           {/* Export Card */}
           <section className="backup-section glass-panel">
             <div className="backup-section__header">
-                <div className="backup-section__icon-bg"><Download size={20} /></div>
+                <div className="backup-section__icon-bg"><Upload size={20} /></div>
                 <div className="backup-section__header-text">
                     <h3>数据导出</h3>
                     <p>创建当前配置的备份文件 (.json)</p>
@@ -131,7 +131,7 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
           {/* Import Card */}
           <section className="backup-section glass-panel">
             <div className="backup-section__header">
-                <div className="backup-section__icon-bg"><Upload size={20} /></div>
+                <div className="backup-section__icon-bg"><Download size={20} /></div>
                 <div className="backup-section__header-text">
                     <h3>数据导入</h3>
                     <p>从备份文件中恢复配置</p>

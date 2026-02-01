@@ -372,8 +372,8 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                       </div>
                       
                       <div className="actions-group">
-                          <button className="icon-btn" onClick={handleExportConfig} title="导出当前配置"><Download size={14} /></button>
-                          <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="导入配置"><Upload size={14} /></button>
+                          <button className="icon-btn" onClick={handleExportConfig} title="导出当前配置"><Upload size={14} /></button>
+                          <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="导入配置"><Download size={14} /></button>
                           <input type="file" ref={fileInputRef} style={{display:'none'}} accept=".json" onChange={handleImportConfig} />
                           
                           <div className="v-divider" />

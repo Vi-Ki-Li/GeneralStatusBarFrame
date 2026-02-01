@@ -1,11 +1,11 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Preset, StatusBarData, ItemDefinition, StyleDefinition } from '../../../types';
 import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { setActiveNarrativeConfigId, getNarrativeConfigs } from '../../../utils/snapshotGenerator';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check, Download, Upload } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
@@ -24,6 +24,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
   const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -63,6 +64,51 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
         toast.error("删除失败");
       }
     }
+  };
+
+  // --- Export Logic ---
+  const handleExportPreset = (preset: Preset, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const json = JSON.stringify(preset, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `preset_${preset.name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`预设 "${preset.name}" 已导出`);
+  };
+
+  // --- Import Logic ---
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+          try {
+              const content = ev.target?.result as string;
+              const imported = JSON.parse(content) as Preset;
+              
+              if (!imported.name || !imported.itemKeys) {
+                  throw new Error("Invalid format");
+              }
+
+              // Strip ID to create new entry
+              const newPreset = { ...imported, id: undefined, name: `${imported.name} (导入)` };
+              presetService.savePreset(newPreset as Preset);
+              loadPresets();
+              toast.success(`预设 "${newPreset.name}" 导入成功`);
+          } catch (err) {
+              toast.error("导入失败: 文件格式错误");
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
   };
 
   const handleApplyPreset = async (preset: Preset, e: React.MouseEvent) => {
@@ -186,9 +232,15 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
          <div className="preset-list__stats">
              已存储 {presets.length} 个预设
          </div>
-         <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
-            <Plus size={16} /> 新建预设
-        </button>
+         <div style={{display: 'flex', gap: '8px'}}>
+             <button className="btn btn--ghost" onClick={handleImportClick} title="导入配置预设">
+                 <Download size={16} /> 导入
+             </button>
+             <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
+                <Plus size={16} /> 新建预设
+            </button>
+         </div>
+         <input type="file" ref={fileInputRef} style={{display:'none'}} accept=".json" onChange={handleImportFile} />
       </div>
 
       <div className="preset-list__content">
@@ -232,10 +284,13 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                                         {isApplying ? <Loader size={14} className="spinner" /> : (isActive ? <span style={{fontSize: 12}}>停用</span> : <Check size={14} />)}
                                     </button>
                                     <div className="preset-card__menu">
-                                        <button className="th-manager__icon-btn" onClick={(e) => { e.stopPropagation(); setEditingPreset(preset); setIsEditorOpen(true); }}>
+                                        <button className="th-manager__icon-btn" onClick={(e) => handleExportPreset(preset, e)} title="导出">
+                                            <Upload size={16} />
+                                        </button>
+                                        <button className="th-manager__icon-btn" onClick={(e) => { e.stopPropagation(); setEditingPreset(preset); setIsEditorOpen(true); }} title="编辑">
                                             <Edit2 size={16} />
                                         </button>
-                                        <button className="th-manager__icon-btn th-manager__icon-btn--danger" onClick={(e) => requestDelete(preset, e)}>
+                                        <button className="th-manager__icon-btn th-manager__icon-btn--danger" onClick={(e) => requestDelete(preset, e)} title="删除">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
