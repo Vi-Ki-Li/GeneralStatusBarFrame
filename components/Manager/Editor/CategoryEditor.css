@@ -1,5 +1,6 @@
 .category-editor {
   margin-bottom: var(--spacing-2xl);
+  animation: fadeIn 0.3s ease;
 }
 
 .category-editor__header {
@@ -9,22 +10,30 @@
   margin-bottom: var(--spacing-md);
   color: var(--text-primary);
   font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-base);
-  position: relative; 
+  font-size: var(--font-size-lg);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.category-editor__header:hover {
+    border-bottom-color: var(--border-base);
 }
 
 .category-editor__header-icon {
   color: var(--color-primary);
+  opacity: 0.8;
 }
 
 .category-editor__header-name {
-  /* Main name style */
+  /* Main name */
 }
 
 .category-editor__header-key {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-tertiary);
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-normal);
+  font-family: var(--font-family-mono);
 }
 
 .category-editor__edit-btn { 
@@ -33,9 +42,14 @@
   color: var(--text-tertiary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   opacity: 0;
   transition: all 0.2s ease;
+  margin-left: auto;
+}
+.category-editor__edit-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
 }
 
 .category-editor__header:hover .category-editor__edit-btn {
@@ -45,6 +59,7 @@
 .category-editor__item-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .category-editor__add-btn {
@@ -52,20 +67,20 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: rgba(0,0,0,0.02);
-  border: 1px dashed var(--chip-border);
+  padding: 10px;
+  background: transparent;
+  border: 1px dashed var(--border-base);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: var(--transition-fast);
+  transition: all 0.2s;
   width: 100%;
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
 .category-editor__add-btn:hover {
-  background: rgba(99, 102, 241, 0.05);
+  background: var(--color-primary-subtle);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }

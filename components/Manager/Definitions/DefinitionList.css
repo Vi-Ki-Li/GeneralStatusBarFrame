@@ -7,9 +7,9 @@
 
 /* --- Sidebar --- */
 .def-studio__sidebar {
-  width: 240px;
+  width: var(--sidebar-width); /* Consistent Width */
   background: rgba(0,0,0,0.02);
-  border-right: 1px solid var(--chip-border);
+  border-right: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md);
@@ -48,7 +48,7 @@
   overflow-y: auto; 
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 /* Wrapper for category item and its actions */
@@ -59,17 +59,18 @@
   justify-content: space-between;
   border-radius: var(--radius-md);
   transition: var(--transition-fast);
+  border: 1px solid transparent;
 }
 .def-studio__cat-item-wrapper:hover {
-  background: var(--chip-bg);
+  background: var(--bg-surface-hover);
 }
 .def-studio__cat-item-wrapper.active {
-  background: var(--color-primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-subtle);
+  color: var(--color-primary);
 }
 .def-studio__cat-item-wrapper.active:hover {
-  background: var(--color-primary); /* Keep active color on hover */
+  background: var(--color-primary-subtle); 
 }
 
 /* The clickable part inside the wrapper */
@@ -79,7 +80,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 8px 12px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -102,7 +103,8 @@
   color: var(--text-primary);
 }
 .def-studio__cat-item-wrapper.active .def-studio__cat-item {
-  color: white;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Action buttons for category items */
@@ -113,12 +115,10 @@
   padding-right: var(--spacing-sm);
   opacity: 0;
   transition: var(--transition-fast);
-  pointer-events: none;
 }
-.def-studio__cat-item-wrapper:hover .def-studio__cat-item-actions,
-.def-studio__cat-item-wrapper.active .def-studio__cat-item-actions {
+/* Show actions on hover */
+.def-studio__cat-item-wrapper:hover .def-studio__cat-item-actions {
   opacity: 1;
-  pointer-events: auto;
 }
 
 .def-studio__cat-item-actions .btn--ghost {
@@ -127,48 +127,35 @@
   width: 24px;
   color: var(--text-tertiary);
 }
-.def-studio__cat-item-wrapper.active .def-studio__cat-item-actions .btn--ghost {
-  color: rgba(255, 255, 255, 0.8);
-}
-.def-studio__cat-item-wrapper.active .def-studio__cat-item-actions .btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-.def-studio__cat-item-wrapper:not(.active) .def-studio__cat-item-actions .btn--ghost:hover {
-  background: var(--bar-bg);
+.def-studio__cat-item-actions .btn--ghost:hover {
+  background: var(--bg-app);
   color: var(--text-primary);
 }
-.def-studio__cat-item-wrapper:not(.active) .def-studio__cat-item-actions .btn--delete:hover {
+.def-studio__cat-item-actions .btn--delete:hover {
   color: var(--color-danger);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-danger-bg);
 }
 
 .inline-confirm--sidebar {
   padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.2);
-}
-.def-studio__cat-item-wrapper:not(.active) .inline-confirm--sidebar {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
 }
 .inline-confirm--sidebar .inline-confirm__text {
   font-size: 0.75rem;
-  color: white;
-}
-.def-studio__cat-item-wrapper:not(.active) .inline-confirm--sidebar .inline-confirm__text {
   color: var(--color-danger);
 }
 .inline-confirm--sidebar .inline-confirm__btn {
   padding: 2px; height: 20px; width: 20px;
 }
-.inline-confirm--sidebar .inline-confirm__btn--yes { color: white; }
-.inline-confirm--sidebar .inline-confirm__btn--no { color: rgba(255, 255, 255, 0.7); }
-.def-studio__cat-item-wrapper:not(.active) .inline-confirm--sidebar .inline-confirm__btn--yes { color: var(--color-danger); }
-.def-studio__cat-item-wrapper:not(.active) .inline-confirm--sidebar .inline-confirm__btn--no { color: var(--text-secondary); }
+.inline-confirm--sidebar .inline-confirm__btn--yes { color: var(--color-danger); }
+.inline-confirm--sidebar .inline-confirm__btn--no { color: var(--text-secondary); }
 
 .def-studio__sidebar-footer {
   margin-top: auto;
   padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--chip-border);
+  border-top: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
@@ -177,7 +164,7 @@
 .def-studio__add-cat-btn {
   width: 100%;
   padding: var(--spacing-sm);
-  border: 1px dashed var(--chip-border);
+  border: 1px dashed var(--border-base);
   border-radius: var(--radius-md);
   background: transparent;
   display: flex;
@@ -191,6 +178,7 @@
 .def-studio__add-cat-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  background: var(--color-primary-subtle);
 }
 
 .def-studio__collapse-btn {
@@ -222,7 +210,7 @@
 
 .def-studio__main-header {
   padding: var(--spacing-lg) var(--spacing-xl);
-  border-bottom: 1px solid var(--chip-border);
+  border-bottom: 1px solid var(--border-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -285,7 +273,15 @@
 /* --- Reusable Definition Card Styles --- */
 .def-card {
   padding: var(--spacing-lg);
-  border: 1px solid var(--chip-border);
+  border: 1px solid var(--border-base);
+  /* Glass Panel Styles Inherited from class, refined here */
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+.def-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
 }
 
 .def-card--item {
@@ -307,7 +303,7 @@
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-base);
   color: var(--text-primary);
-  font-family: monospace;
+  font-family: var(--font-family-mono);
 }
 .def-card__actions {
   display: flex;
@@ -316,15 +312,16 @@
 }
 .btn--delete:hover {
   color: var(--color-danger);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-danger-bg);
 }
 
 .def-card__category-tag {
-  font-size: var(--font-size-xs);
+  font-size: 0.7rem;
   color: var(--text-tertiary);
   background: var(--bar-bg);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--chip-border);
 }
 .def-card__meta-group {
   display: flex;
@@ -340,11 +337,11 @@
   background: var(--bg-app);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--chip-border);
+  border: 1px solid var(--border-base);
 }
 .def-card__meta-chip.highlight {
-    background: rgba(16, 185, 129, 0.05);
-    border-color: rgba(16, 185, 129, 0.2);
+    background: var(--color-success-bg);
+    border-color: var(--color-success-bg);
     color: var(--color-success);
 }
 
@@ -358,7 +355,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-danger-bg);
   padding: 4px 8px;
   border-radius: var(--radius-md);
 }
@@ -375,7 +372,12 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.inline-confirm__btn:hover { background: rgba(0,0,0,0.1); }
 .inline-confirm__btn--yes { color: var(--color-danger); }
 .inline-confirm__btn--no { color: var(--text-secondary); }
 
@@ -398,7 +400,7 @@
   }
 
   .def-studio__main {
-    border-top: 1px solid var(--chip-border);
+    border-top: 1px solid var(--border-base);
   }
 
   .mobile-hidden {
