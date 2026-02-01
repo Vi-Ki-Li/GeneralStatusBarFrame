@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { LorebookEntry } from '../../../types';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder, ChevronDown, Filter } from 'lucide-react';
+import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder, ChevronDown, Filter, Edit2, X } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../../../services/definitionRegistry';
 import './EntryList.css';
 
@@ -17,6 +17,11 @@ const EntryList: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedUids, setExpandedUids] = useState<Set<number>>(new Set());
+  
+  // Edit State
+  const [editingEntry, setEditingEntry] = useState<LorebookEntry | null>(null);
+  const [editContent, setEditContent] = useState('');
+
   const toast = useToast();
 
   useEffect(() => { loadEntries(); }, []);
@@ -73,6 +78,22 @@ const EntryList: React.FC = () => {
   const getCategoryName = (catKey: string) => {
       const def = DEFAULT_CATEGORIES.find(d => d.key === catKey);
       return def ? def.name : catKey;
+  };
+
+  // --- Edit Logic ---
+  const handleEditClick = (e: React.MouseEvent, entry: LorebookEntry) => {
+      e.stopPropagation();
+      setEditingEntry(entry);
+      setEditContent(entry.content);
+  };
+
+  const handleSaveEdit = () => {
+      if (editingEntry) {
+          setEntries(prev => prev.map(e => e.uid === editingEntry.uid ? { ...e, content: editContent } : e));
+          setHasChanges(true);
+          setEditingEntry(null);
+          toast.info("条目内容已更新 (需点击应用更改以保存)");
+      }
   };
 
   const getGroupedEntries = () => {
@@ -151,12 +172,21 @@ const EntryList: React.FC = () => {
                                         <div className="checkbox">{entry.enabled && <Check size={12} />}</div>
                                         <span className="title">{entry.comment}</span>
                                     </div>
-                                    <button 
-                                        className="entry-card__toggle-btn" 
-                                        onClick={() => handleToggleExpand(entry.uid)}
-                                    >
-                                        <ChevronDown size={16} className={isExpanded ? 'rotated' : ''} />
-                                    </button>
+                                    <div style={{display: 'flex', alignItems: 'center'}}>
+                                        <button 
+                                            className="entry-card__action-btn"
+                                            onClick={(e) => handleEditClick(e, entry)}
+                                            title="编辑内容"
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button 
+                                            className="entry-card__toggle-btn" 
+                                            onClick={() => handleToggleExpand(entry.uid)}
+                                        >
+                                            <ChevronDown size={16} className={isExpanded ? 'rotated' : ''} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="entry-card__body" onClick={() => handleToggleExpand(entry.uid)}>
                                     {isExpanded ? (
@@ -176,6 +206,28 @@ const EntryList: React.FC = () => {
             </div>
         )))}
       </div>
+
+      {/* Inline Modal for Editing */}
+      {editingEntry && (
+          <div className="entry-editor-overlay animate-fade-in">
+              <div className="entry-editor-modal glass-panel">
+                  <div className="entry-editor-header">
+                      <h3>编辑条目: {editingEntry.comment}</h3>
+                      <button onClick={() => setEditingEntry(null)}><X size={20}/></button>
+                  </div>
+                  <textarea 
+                      className="entry-editor-textarea"
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      placeholder="条目内容..."
+                  />
+                  <div className="entry-editor-footer">
+                      <button className="btn btn--ghost" onClick={() => setEditingEntry(null)}>取消</button>
+                      <button className="btn btn--primary" onClick={handleSaveEdit}>确认修改</button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

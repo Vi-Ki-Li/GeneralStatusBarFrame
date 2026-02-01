@@ -151,6 +151,19 @@
 .entry-card__toggle-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 .entry-card__toggle-btn .rotated { transform: rotate(180deg); }
 
+.entry-card__action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    margin-right: 4px;
+}
+.entry-card__action-btn:hover { background: var(--bg-surface-hover); color: var(--color-primary); }
+
 .entry-card__preview-text {
     font-family: monospace;
     font-size: 0.8rem;
@@ -176,4 +189,73 @@
     text-align: center;
     margin-top: 40px;
     color: var(--text-tertiary);
+}
+
+/* --- Editor Modal --- */
+.entry-editor-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.entry-editor-modal {
+    width: 90%;
+    max-width: 600px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: scaleUp 0.2s ease;
+}
+
+.entry-editor-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-base);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-app);
+}
+.entry-editor-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.entry-editor-header button {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+}
+
+.entry-editor-textarea {
+    width: 100%;
+    min-height: 200px;
+    max-height: 50vh;
+    resize: vertical;
+    padding: var(--spacing-lg);
+    border: none;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-family: var(--font-family-mono);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    outline: none;
+}
+
+.entry-editor-footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-base);
+    background: var(--bg-app);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
 }

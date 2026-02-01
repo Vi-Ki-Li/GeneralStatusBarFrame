@@ -61,15 +61,15 @@
     border-color: var(--color-primary);
 }
 
-/* Console Style Preview */
+/* Console Style Preview - Now using CSS Vars */
 .snapshot-console-wrapper {
-    background: #1e1e1e;
+    background: var(--bg-app);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-base);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
     margin: 0 auto;
     width: 100%;
     max-width: 800px;
@@ -77,15 +77,15 @@
 }
 
 .snapshot-console-header {
-    background: #2d2d2d;
-    color: #a0a0a0;
+    background: var(--bar-bg);
+    color: var(--text-secondary);
     padding: 8px 12px;
     font-size: 0.75rem;
     display: flex;
     align-items: center;
     gap: 8px;
     font-family: var(--font-family-mono);
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-base);
 }
 
 .snapshot-console {
@@ -94,25 +94,53 @@
     font-family: var(--font-family-mono);
     font-size: 0.9rem;
     line-height: 1.6;
-    color: #d4d4d4;
+    color: var(--text-primary);
     white-space: pre-wrap;
     overflow-y: auto;
     min-height: 150px;
+    background: var(--bg-surface);
+}
+
+.snapshot-console__text {
+    animation: fadeIn 0.3s ease;
 }
 
 .snapshot-console__empty {
-    color: #666;
+    color: var(--text-tertiary);
 }
 
 .snapshot-last-log {
-    background: #252525;
-    color: #888;
+    background: var(--bg-app);
+    color: var(--text-tertiary);
     padding: 6px 12px;
     font-size: 0.7rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border-base);
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+/* Mock Preview in Editor */
+.snapshot-mock-preview {
+    margin-top: 8px;
+    padding: 10px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.snapshot-mock-preview__label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.snapshot-mock-preview__content {
+    font-style: italic;
+    line-height: 1.4;
 }
 
 /* Editor Styles */
@@ -147,7 +175,7 @@
 .tag { font-size: 0.75rem; background: var(--bar-bg); padding: 2px 8px; border-radius: 4px; color: var(--text-tertiary); }
 
 .rename-box { display: flex; gap: 4px; align-items: center; }
-.rename-box input { width: 120px; padding: 4px; border: 1px solid var(--color-primary); border-radius: 4px; font-size: 0.8rem; }
+.rename-box input { width: 120px; padding: 4px; border: 1px solid var(--color-primary); border-radius: 4px; font-size: 0.8rem; background: var(--bg-surface); color: var(--text-primary); }
 
 .snapshot-editor__list {
     flex: 1;

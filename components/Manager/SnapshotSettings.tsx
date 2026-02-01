@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StatusBarData, SnapshotMeta, SnapshotEvent } from '../../types';
+import { tavernService } from '../../../services/mockTavernService'; // 此处添加1行
 import { 
     detectChanges, 
     generateNarrative, 
@@ -17,7 +18,7 @@ import {
     DEFAULT_TEMPLATES 
 } from '../../utils/snapshotGenerator';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
-import { Camera, Zap, FileText, Info, History, Edit, RotateCcw, Save, Check, Plus, Trash2, Settings, X, Terminal, Play, Power } from 'lucide-react'; 
+import { Zap, History, Edit, RotateCcw, Check, Plus, Trash2, Settings, X, Terminal, Power, Save } from 'lucide-react'; 
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
@@ -92,9 +93,14 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
         const events = detectChanges(emptyData, data);
         const narrative = generateNarrative(events);
         
+        // Inject into Worldbook
+        if (narrative) {
+            tavernService.updateWorldbookEntry('[通用状态栏]', '[动态快照]', narrative);
+        }
+        
         setLastSnapshot(narrative || "（当前状态下没有检测到值得记录的信息）");
         setIsGenerating(false);
-        toast.success("快照生成完毕");
+        toast.success("快照已生成并写入世界书");
     }, 500);
   };
 
@@ -256,7 +262,8 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                       ) : (
                           <div className="snapshot-console__empty">
                               > 等待指令...<br/>
-                              > 点击上方“手动快照”可立即生成当前状态描述。
+                              > 点击上方“手动快照”可立即生成当前状态描述。<br/>
+                              > 生成的文本将自动写入世界书条目 [动态快照]。
                           </div>
                       )}
                   </div>
