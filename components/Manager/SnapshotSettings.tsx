@@ -22,17 +22,55 @@ import { Zap, History, Edit, RotateCcw, Check, Plus, Trash2, Settings, X, Termin
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
-// ... (Mock logic remains the same) ...
+// 模拟数据字典
+const MOCK_VAR_MAP: Record<string, string> = {
+    '角色名': 'Eria',
+    'name': 'Eria',
+    '键名': '体力',
+    'key': 'HP',
+    '前缀': 'Eria的',
+    'prefix': "Eria's",
+    
+    // 数值相关
+    '旧值': '20',
+    'old': '20',
+    '新值': '90',
+    'new': '90',
+    '变化量': '+70',
+    'diff': '+70',
+    '变化量绝对值': '70',
+    'diff_abs': '70',
+    '原因': '神圣治疗',
+    'reason': 'Divine Heal',
+    
+    // 列表相关
+    '新增项': '誓约胜利之剑',
+    'added': 'Excalibur',
+    '移除项': '断裂的木棍',
+    'removed': 'Broken Stick',
+    '新列表': '誓约胜利之剑、恢复药水',
+    'list_new': 'Excalibur, Potion',
+    '旧列表': '断裂的木棍、恢复药水',
+    'list_old': 'Broken Stick, Potion',
+    
+    // 文本相关
+    'value': '警惕',
+    'previousValue': '放松'
+};
+
 const MockPreview: React.FC<{ templateKey: string, templateValue: string }> = ({ templateKey, templateValue }) => {
     const previewText = useMemo(() => {
         try {
-            return templateValue.replace(/\{.*?\}/g, '(演示变量)');
+            // 使用正则替换所有 {variable} 为模拟值
+            return templateValue.replace(/\{([\u4e00-\u9fa5a-zA-Z0-9_]+)\}/g, (match, p1) => {
+                return MOCK_VAR_MAP[p1] || `(${p1})`;
+            });
         } catch (e) { return "预览错误"; }
     }, [templateKey, templateValue]);
 
     return (
         <div className="snapshot-mock-preview">
-            <div className="snapshot-mock-preview__label"><Terminal size={12} /> 实时预览</div>
+            <div className="snapshot-mock-preview__label"><Terminal size={12} /> 实时预览 (效果演示)</div>
             <div className="snapshot-mock-preview__content">{previewText}</div>
         </div>
     );
