@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StatusBarData, SnapshotMeta, SnapshotEvent } from '../../types';
-import { tavernService } from '../../../services/mockTavernService'; // 此处添加1行
+import { tavernService } from '../../../services/mockTavernService';
 import { 
     detectChanges, 
     generateNarrative, 
@@ -18,7 +18,7 @@ import {
     DEFAULT_TEMPLATES 
 } from '../../utils/snapshotGenerator';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from '../../services/definitionRegistry';
-import { Zap, History, Edit, RotateCcw, Check, Plus, Trash2, Settings, X, Terminal, Power, Save } from 'lucide-react'; 
+import { Zap, History, Edit, RotateCcw, Check, Plus, Trash2, Settings, X, Terminal, Power, Save, Download, Upload } from 'lucide-react'; 
 import { useToast } from '../Toast/ToastContext';
 import './SnapshotSettings.css';
 
@@ -63,6 +63,7 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
   const [tempValue, setTempValue] = useState('');
   
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -208,6 +209,50 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
       }
   };
 
+  const handleExportConfig = () => {
+      const config = configs.find(c => c.id === activeConfigId);
+      if (!config) return;
+      
+      const json = JSON.stringify(config, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `narrative_config_${config.name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("导出成功");
+  };
+
+  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const content = event.target?.result as string;
+              const importedConfig = JSON.parse(content) as NarrativeConfig;
+              
+              if (!importedConfig.templates) {
+                  throw new Error("Invalid format");
+              }
+              
+              const newConfigName = `导入: ${importedConfig.name || 'Unknown'}`;
+              const newConfig = createNarrativeConfig(newConfigName, importedConfig.templates);
+              setActiveNarrativeConfigId(newConfig.id);
+              refreshConfigs();
+              toast.success(`配置 "${newConfigName}" 导入成功`);
+          } catch (err) {
+              toast.error("导入失败: 文件格式错误");
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // Reset input
+  };
+
   const activeConfig = configs.find(c => c.id === activeConfigId);
 
   return (
@@ -289,6 +334,12 @@ const SnapshotSettings: React.FC<SnapshotSettingsProps> = ({ data, enabled, onTo
                       </div>
                       
                       <div className="actions-group">
+                          <button className="icon-btn" onClick={handleExportConfig} title="导出当前配置"><Download size={14} /></button>
+                          <button className="icon-btn" onClick={() => fileInputRef.current?.click()} title="导入配置"><Upload size={14} /></button>
+                          <input type="file" ref={fileInputRef} style={{display:'none'}} accept=".json" onChange={handleImportConfig} />
+                          
+                          <div className="v-divider" />
+
                           {activeConfig && !activeConfig.isBuiltIn ? (
                               isRenaming ? (
                                   <div className="rename-box">

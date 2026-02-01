@@ -1,6 +1,4 @@
 
-
-
 import { LorebookEntry, StatusBarData, ItemDefinition, CategoryDefinition } from '../types';
 import { getDefaultCategoriesMap, getDefaultItemDefinitionsMap } from './definitionRegistry';
 import { v4 as uuidv4 } from 'uuid';
@@ -149,6 +147,28 @@ class MockTavernService {
 
   async updateWorldbookEntry(bookName: string, entryName: string, content: string): Promise<void> {
     console.log(`[MockService] Update Worldbook: ${entryName}`);
+    
+    const existingIndex = this.lorebook.findIndex(e => e.comment === entryName);
+    
+    if (existingIndex !== -1) {
+        this.lorebook[existingIndex] = { ...this.lorebook[existingIndex], content };
+    } else {
+        const maxUid = this.lorebook.length > 0 ? Math.max(...this.lorebook.map(e => e.uid)) : 0;
+        const newEntry: LorebookEntry = {
+            uid: maxUid + 1,
+            key: [],
+            keysecondary: [],
+            comment: entryName,
+            content: content,
+            enabled: true,
+            position: this.lorebook.length,
+            constant: false,
+            selective: false
+        };
+        this.lorebook.push(newEntry);
+    }
+    
+    this.notifyListeners();
     return Promise.resolve();
   }
 
