@@ -5,7 +5,7 @@ import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { setActiveNarrativeConfigId, getNarrativeConfigs } from '../../../utils/snapshotGenerator';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check, Download, Upload } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check, Download, Upload, Search } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
@@ -20,6 +20,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
   const [applyingPresetId, setApplyingPresetId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   
   const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
@@ -35,6 +36,10 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
   const activePresetId = data._meta?.activePresetIds?.[0];
 
   const loadPresets = () => setPresets(presetService.getPresets());
+
+  const filteredPresets = presets.filter(p => 
+      p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleSavePreset = (preset: Preset) => {
     try {
@@ -66,7 +71,6 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
     }
   };
 
-  // --- Export Logic ---
   const handleExportPreset = (preset: Preset, e: React.MouseEvent) => {
       e.stopPropagation();
       const json = JSON.stringify(preset, null, 2);
@@ -82,7 +86,6 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       toast.success(`预设 "${preset.name}" 已导出`);
   };
 
-  // --- Import Logic ---
   const handleImportClick = () => fileInputRef.current?.click();
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +101,6 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
                   throw new Error("Invalid format");
               }
 
-              // Strip ID to create new entry
               const newPreset = { ...imported, id: undefined, name: `${imported.name} (导入)` };
               presetService.savePreset(newPreset as Preset);
               loadPresets();
@@ -122,26 +124,22 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       let layoutMsg = "";
       let narrativeMsg = "";
 
-      // Toggle logic
       if (isDeactivating) {
           newData._meta.activePresetIds = [];
       } else {
           newData._meta.activePresetIds = [preset.id];
           
-          // Apply Layout if present
           if (preset.layout && preset.layout.length > 0) {
               newData.layout = preset.layout;
               layoutMsg = " & 布局";
           }
           
-          // Apply Narrative Config if present
           if (preset.narrativeConfigId) {
               setActiveNarrativeConfigId(preset.narrativeConfigId);
               narrativeMsg = " & 叙事风格";
           }
       }
 
-      // --- Worldbook Sync Logic ---
       const allEntries = await tavernService.getLorebookEntries();
       const managedEntryKeys = new Set(Object.keys(data.item_definitions));
       let changesMade = 0;
@@ -160,7 +158,6 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       if (changesMade > 0) {
           await tavernService.setLorebookEntries(updatedEntries);
       }
-      // --- End Worldbook Sync Logic ---
       
       onUpdate(newData);
 
@@ -227,11 +224,23 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
 
   return (
     <div className="preset-list">
-      {/* Standard Toolbar */}
-      <div className="th-manager__toolbar" style={{borderTop: 'none', borderBottom: '1px solid var(--border-base)', justifyContent: 'space-between'}}>
-         <div className="preset-list__stats">
-             已存储 {presets.length} 个预设
+      {/* Standardized Toolbar */}
+      <div className="th-toolbar">
+         <div className="th-search-box">
+             <Search size={16} />
+             <input 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                placeholder="搜索预设..." 
+             />
          </div>
+         
+         <div className="preset-list__stats desktop-only">
+             {filteredPresets.length} 个预设
+         </div>
+
+         <div style={{flex: 1}} />
+
          <div style={{display: 'flex', gap: '8px'}}>
              <button className="btn btn--ghost" onClick={handleImportClick} title="导入配置预设">
                  <Download size={16} /> 导入
@@ -244,20 +253,24 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       </div>
 
       <div className="preset-list__content">
-         {presets.length === 0 ? (
+         {filteredPresets.length === 0 ? (
              <div className="preset-list__empty">
                  <Layers size={48} />
-                 <p>暂无保存的配置预设</p>
+                 <p>{presets.length === 0 ? "暂无保存的配置预设" : "未找到匹配的预设"}</p>
              </div>
          ) : (
              <div className="preset-list__grid">
-                 {presets.map(preset => {
+                 {filteredPresets.map(preset => {
                      const isExpanded = expandedPreset === preset.id;
                      const isActive = activePresetId === preset.id;
                      const isApplying = applyingPresetId === preset.id;
 
                      return (
-                        <div key={preset.id} className={`preset-card glass-panel ${isActive ? 'active' : ''}`} onClick={() => toggleDetails(preset.id)}>
+                        <div 
+                            key={preset.id} 
+                            className={`th-interactive-card preset-card-item ${isActive ? 'active' : ''}`} 
+                            onClick={() => toggleDetails(preset.id)}
+                        >
                             <div className="preset-card__main">
                                 <div className="preset-card__icon">
                                     {isActive ? <CheckCircle size={20} className="active-indicator"/> : <Layers size={20}/>}

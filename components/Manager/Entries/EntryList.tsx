@@ -122,8 +122,8 @@ const EntryList: React.FC = () => {
   return (
     <div className="entry-list">
       {/* Standard Toolbar */}
-      <div className="th-manager__toolbar" style={{borderTop: 'none', borderBottom: '1px solid var(--border-base)', gap: '12px'}}>
-        <div className="entry-list__search-box">
+      <div className="th-toolbar">
+        <div className="th-search-box">
             <Search size={16} />
             <input 
                 value={filterText} 

@@ -15,30 +15,6 @@
   gap: var(--spacing-xl);
 }
 
-/* Toolbar Components */
-.entry-list__search-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-app);
-    border: 1px solid var(--border-base);
-    border-radius: var(--radius-md);
-    padding: 6px 12px;
-    color: var(--text-secondary);
-    width: 240px;
-}
-.entry-list__search-box input {
-    border: none;
-    background: transparent;
-    outline: none;
-    width: 100%;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-}
-.entry-list__search-box:focus-within {
-    border-color: var(--color-primary);
-}
-
 .entry-list__selection-tools {
     display: flex;
     gap: 4px;

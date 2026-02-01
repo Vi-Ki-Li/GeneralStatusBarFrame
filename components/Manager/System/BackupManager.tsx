@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { StatusBarData } from '../../../types';
 import { backupService, ExportOptions } from '../../../services/backupService';
 import { useToast } from '../../Toast/ToastContext';
-import { Download, Upload, Archive, RefreshCw, AlertTriangle, FileJson, CheckCircle, Save, HardDrive } from 'lucide-react';
+import { Download, Upload, Archive, RefreshCw, AlertTriangle, FileJson, CheckCircle } from 'lucide-react';
 import './BackupManager.css';
 
 interface BackupManagerProps {
@@ -23,6 +23,7 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importStrategy, setImportStrategy] = useState<'merge' | 'overwrite'>('merge');
   const [importLogs, setImportLogs] = useState<string[]>([]);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
@@ -78,12 +79,15 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
     reader.readAsText(importFile);
   };
 
-  const handleReset = () => {
-      if (confirm("确定要恢复出厂设置吗？所有数据将丢失！")) {
-          const empty = backupService.getFactoryResetData(data);
-          onUpdate(empty);
-          toast.warning("已重置系统");
-      }
+  const handleResetClick = () => {
+      setShowResetConfirm(true);
+  };
+
+  const executeReset = () => {
+      const empty = backupService.getFactoryResetData(data);
+      onUpdate(empty);
+      toast.warning("已重置系统");
+      setShowResetConfirm(false);
   };
 
   return (
@@ -185,13 +189,26 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
                     <h3>恢复出厂设置</h3>
                     <p>重置所有数据到初始状态</p>
                 </div>
-                <button className="btn btn--danger" onClick={handleReset} style={{marginLeft: 'auto'}}>
+                <button className="btn btn--danger" onClick={handleResetClick} style={{marginLeft: 'auto'}}>
                     <RefreshCw size={16} /> 重置
                 </button>
             </div>
           </section>
 
       </div>
+
+      {showResetConfirm && (
+          <div className="backup-reset-overlay animate-fade-in">
+              <div className="backup-reset-modal glass-panel">
+                  <h3><AlertTriangle size={24} style={{color: 'var(--color-danger)'}}/> 确认重置?</h3>
+                  <p>您确定要将所有数据恢复到出厂状态吗？<br/>此操作不可撤销，建议先导出备份。</p>
+                  <div className="backup-reset-actions">
+                      <button className="btn btn--ghost" onClick={() => setShowResetConfirm(false)}>取消</button>
+                      <button className="btn btn--danger" onClick={executeReset}>确认重置</button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
