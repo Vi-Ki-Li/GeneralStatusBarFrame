@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { StatusBarData } from '../../../types';
 import { backupService, ExportOptions } from '../../../services/backupService';
 import { useToast } from '../../Toast/ToastContext';
-import { Download, Upload, Archive, RefreshCw, AlertTriangle, FileJson, CheckCircle } from 'lucide-react';
+import { Download, Upload, Archive, RefreshCw, AlertTriangle, FileJson, CheckCircle, Save, HardDrive } from 'lucide-react';
 import './BackupManager.css';
 
 interface BackupManagerProps {
@@ -70,11 +70,6 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
           } else {
             toast.info("导入完成，但当前视图无变化");
           }
-          // Force reload to ensure localStorage changes are picked up by services if necessary
-          // Ideally services update internal state, but for safety:
-          setTimeout(() => {
-             // Optional: window.location.reload(); 
-          }, 1000);
         } else {
           toast.error("导入失败");
         }
@@ -93,114 +88,110 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
 
   return (
     <div className="backup-manager">
-      
-      {/* EXPORT SECTION */}
-      <section className="backup-section">
-        <h4 className="backup-section__title">
-          <Download size={20} /> 数据导出
-        </h4>
-        <div className="backup-card">
-          <div className="backup-options-grid">
-            <label className="backup-checkbox">
-              <input type="checkbox" checked={exportOpts.includeDefinitions} onChange={e => setExportOpts({...exportOpts, includeDefinitions: e.target.checked})} />
-              <span>定义与分类</span>
-            </label>
-            <label className="backup-checkbox">
-              <input type="checkbox" checked={exportOpts.includeStyles} onChange={e => setExportOpts({...exportOpts, includeStyles: e.target.checked})} />
-              <span>样式库</span>
-            </label>
-            <label className="backup-checkbox">
-              <input type="checkbox" checked={exportOpts.includePresets} onChange={e => setExportOpts({...exportOpts, includePresets: e.target.checked})} />
-              <span>配置预设</span>
-            </label>
-            <label className="backup-checkbox">
-              <input type="checkbox" checked={exportOpts.includeLayouts} onChange={e => setExportOpts({...exportOpts, includeLayouts: e.target.checked})} />
-              <span>布局快照</span>
-            </label>
-            <label className="backup-checkbox" style={{border: exportOpts.includeGlobalState ? '1px solid var(--color-warning)' : ''}}>
-              <input type="checkbox" checked={exportOpts.includeGlobalState} onChange={e => setExportOpts({...exportOpts, includeGlobalState: e.target.checked})} />
-              <span>全量存档 (含角色状态)</span>
-            </label>
-          </div>
+      <div className="backup-manager__container">
           
-          <div className="backup-actions">
-            <button className="btn btn--primary" onClick={handleExport}>
-              <Archive size={16} /> 生成备份文件
+          {/* Export Card */}
+          <section className="backup-section glass-panel">
+            <div className="backup-section__header">
+                <div className="backup-section__icon-bg"><Download size={20} /></div>
+                <div className="backup-section__header-text">
+                    <h3>数据导出</h3>
+                    <p>创建当前配置的备份文件 (.json)</p>
+                </div>
+            </div>
+            
+            <div className="backup-options">
+                <label className="backup-checkbox">
+                    <input type="checkbox" checked={exportOpts.includeDefinitions} onChange={e => setExportOpts({...exportOpts, includeDefinitions: e.target.checked})} />
+                    <span>定义与分类</span>
+                </label>
+                <label className="backup-checkbox">
+                    <input type="checkbox" checked={exportOpts.includeStyles} onChange={e => setExportOpts({...exportOpts, includeStyles: e.target.checked})} />
+                    <span>样式库</span>
+                </label>
+                <label className="backup-checkbox">
+                    <input type="checkbox" checked={exportOpts.includePresets} onChange={e => setExportOpts({...exportOpts, includePresets: e.target.checked})} />
+                    <span>配置预设</span>
+                </label>
+                <label className="backup-checkbox">
+                    <input type="checkbox" checked={exportOpts.includeLayouts} onChange={e => setExportOpts({...exportOpts, includeLayouts: e.target.checked})} />
+                    <span>布局快照</span>
+                </label>
+                <label className={`backup-checkbox ${exportOpts.includeGlobalState ? 'warning' : ''}`}>
+                    <input type="checkbox" checked={exportOpts.includeGlobalState} onChange={e => setExportOpts({...exportOpts, includeGlobalState: e.target.checked})} />
+                    <span>全量存档 (含角色状态)</span>
+                </label>
+            </div>
+            
+            <button className="btn btn--primary full-width" onClick={handleExport}>
+                <Archive size={16} /> 生成备份文件
             </button>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* IMPORT SECTION */}
-      <section className="backup-section">
-        <h4 className="backup-section__title">
-          <Upload size={20} /> 数据恢复 / 导入
-        </h4>
-        <div className="backup-card">
-          <div className="import-zone" onClick={() => fileInputRef.current?.click()}>
-            <FileJson size={48} className="import-zone__icon" />
-            <div className="import-zone__text">
-              {importFile ? `已选择: ${importFile.name}` : "点击选择或拖拽 .json 备份文件"}
+          {/* Import Card */}
+          <section className="backup-section glass-panel">
+            <div className="backup-section__header">
+                <div className="backup-section__icon-bg"><Upload size={20} /></div>
+                <div className="backup-section__header-text">
+                    <h3>数据导入</h3>
+                    <p>从备份文件中恢复配置</p>
+                </div>
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              style={{display: 'none'}} 
-              accept=".json" 
-              onChange={handleFileSelect} 
-            />
-          </div>
 
-          {importFile && (
-            <div className="import-preview animate-fade-in">
-              <div className="import-strategy">
-                <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="strategy" 
-                    checked={importStrategy === 'merge'} 
-                    onChange={() => setImportStrategy('merge')} 
-                  />
-                  <span>智能合并 (推荐: 仅更新同ID项，保留其他)</span>
-                </label>
-                <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="strategy" 
-                    checked={importStrategy === 'overwrite'} 
-                    onChange={() => setImportStrategy('overwrite')} 
-                  />
-                  <span>完全覆盖 (危险: 清空当前对应模块)</span>
-                </label>
-              </div>
-              
-              <button className="btn btn--primary" onClick={handleImport}>
-                <CheckCircle size={16} /> 开始导入
-              </button>
+            <div className={`import-zone ${importFile ? 'active' : ''}`} onClick={() => fileInputRef.current?.click()}>
+                <FileJson size={32} className="import-zone__icon" />
+                <div className="import-zone__text">
+                    {importFile ? importFile.name : "点击选择或拖拽 .json 备份文件"}
+                </div>
+                <input type="file" ref={fileInputRef} style={{display: 'none'}} accept=".json" onChange={handleFileSelect} />
             </div>
-          )}
 
-          {importLogs.length > 0 && (
-            <div className="import-logs animate-slide-up">
-              {importLogs.map((log, i) => <div key={i}>{log}</div>)}
+            {importFile && (
+                <div className="import-controls animate-slide-up">
+                    <div className="import-strategies">
+                        <label className={`radio-card ${importStrategy === 'merge' ? 'selected' : ''}`}>
+                            <input type="radio" checked={importStrategy === 'merge'} onChange={() => setImportStrategy('merge')} />
+                            <div>
+                                <span className="title">智能合并</span>
+                                <span className="desc">更新现有项，保留其他</span>
+                            </div>
+                        </label>
+                        <label className={`radio-card ${importStrategy === 'overwrite' ? 'selected' : ''}`}>
+                            <input type="radio" checked={importStrategy === 'overwrite'} onChange={() => setImportStrategy('overwrite')} />
+                            <div>
+                                <span className="title">完全覆盖</span>
+                                <span className="desc">清空并替换对应模块</span>
+                            </div>
+                        </label>
+                    </div>
+                    <button className="btn btn--primary full-width" onClick={handleImport}>
+                        <CheckCircle size={16} /> 执行导入
+                    </button>
+                </div>
+            )}
+
+            {importLogs.length > 0 && (
+                <div className="import-logs animate-fade-in">
+                    {importLogs.map((log, i) => <div key={i}>{log}</div>)}
+                </div>
+            )}
+          </section>
+
+          {/* Reset Card */}
+          <section className="backup-section glass-panel danger-zone">
+             <div className="backup-section__header">
+                <div className="backup-section__icon-bg danger"><AlertTriangle size={20} /></div>
+                <div className="backup-section__header-text">
+                    <h3>恢复出厂设置</h3>
+                    <p>重置所有数据到初始状态</p>
+                </div>
+                <button className="btn btn--danger" onClick={handleReset}>
+                    <RefreshCw size={16} /> 重置
+                </button>
             </div>
-          )}
-        </div>
-      </section>
+          </section>
 
-      {/* DANGER ZONE */}
-      <section className="backup-section">
-        <h4 className="backup-section__title" style={{color: 'var(--color-danger)'}}>
-          <AlertTriangle size={20} /> 危险区域
-        </h4>
-        <div className="backup-card backup-danger-zone">
-          <p className="danger-text">此操作将清空所有数据，恢复到应用初始状态。</p>
-          <button className="btn btn--danger" onClick={handleReset}>
-            <RefreshCw size={16} /> 恢复出厂设置
-          </button>
-        </div>
-      </section>
-
+      </div>
     </div>
   );
 };

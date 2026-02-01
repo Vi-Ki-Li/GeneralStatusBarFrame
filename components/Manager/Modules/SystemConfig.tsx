@@ -7,9 +7,8 @@ import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
 import BackupManager from '../System/BackupManager'; 
 import HelpGuide from '../Help/HelpGuide';
-import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen } from 'lucide-react'; 
-import '../ManagerLayout.css'; // Use shared styles
-// Note: SystemConfig.css is no longer needed as we use shared styles, but we might keep it for specific inner content if any
+import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen, PanelLeftClose } from 'lucide-react'; 
+import '../ManagerLayout.css'; 
 
 interface SystemConfigProps {
   data: StatusBarData;
@@ -57,6 +56,13 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
             <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
                 <div className="th-manager__sidebar-header">
                     <div className="th-manager__sidebar-title">系统菜单</div>
+                    <button 
+                        onClick={() => setIsSidebarCollapsed(true)} 
+                        className="th-manager__icon-btn desktop-only"
+                        title="收起侧边栏"
+                    >
+                        <PanelLeftClose size={16} />
+                    </button>
                 </div>
                 
                 <div className="th-manager__sidebar-content">
@@ -84,6 +90,7 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
                                 <button 
                                     onClick={() => setIsSidebarCollapsed(false)} 
                                     className="th-manager__icon-btn desktop-only"
+                                    title="展开侧边栏"
                                 >
                                     <PanelLeftOpen size={16} />
                                 </button>
@@ -97,7 +104,6 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
                 </div>
 
                 <div className="th-manager__main-content" style={{padding: 0}}>
-                    {/* Inner content components handle their own padding/layout usually, or we can wrap them */}
                     {renderContent()}
                 </div>
             </div>

@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { LorebookEntry } from '../../../types';
 import { tavernService } from '../../../services/mockTavernService';
 import { useToast } from '../../Toast/ToastContext';
-import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder, ChevronDown } from 'lucide-react';
+import { Check, CheckCircle2, Circle, Save, Search, RefreshCw, Folder, ChevronDown, Filter } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../../../services/definitionRegistry';
 import './EntryList.css';
 
@@ -24,6 +25,7 @@ const EntryList: React.FC = () => {
     setLoading(true);
     try {
       const fetchedEntries = await tavernService.getLorebookEntries();
+      // Filter out internal system entries
       const regularEntries = fetchedEntries.filter(e => 
         !e.comment.startsWith('设置-') && !e.comment.startsWith('样式-')
       );
@@ -59,7 +61,7 @@ const EntryList: React.FC = () => {
         });
         await tavernService.setLorebookEntries(updatedAll);
         setHasChanges(false);
-        toast.success("已更新");
+        toast.success("世界书已更新");
     } catch (e) { toast.error("保存失败"); }
   };
 
@@ -78,7 +80,6 @@ const EntryList: React.FC = () => {
     const filtered = entries.filter(e => e.comment.toLowerCase().includes(filterText.toLowerCase()));
 
     filtered.forEach(entry => {
-        // 修正：根据 content 而不是 comment 进行分类
         const match = entry.content.match(/\[(?:[^\]\^]+\^)?(\w+)\|/);
         let category = 'Other';
         if (match && match[1]) {
@@ -99,48 +100,71 @@ const EntryList: React.FC = () => {
 
   return (
     <div className="entry-list">
-      <div className="entry-list__header glass-panel">
-        <div className="entry-list__search-wrapper">
-            <Search size={16} className="entry-list__search-icon" />
-            <input value={filterText} onChange={e => setFilterText(e.target.value)} placeholder="搜索条目..." className="entry-list__search-input" />
+      {/* Standard Toolbar */}
+      <div className="th-manager__toolbar" style={{borderTop: 'none', borderBottom: '1px solid var(--border-base)', gap: '12px'}}>
+        <div className="entry-list__search-box">
+            <Search size={16} />
+            <input 
+                value={filterText} 
+                onChange={e => setFilterText(e.target.value)} 
+                placeholder="搜索条目..." 
+            />
         </div>
-        <div className="entry-list__actions">
-            <button onClick={() => handleSelectAll(true)} className="btn btn--ghost" title="全选"><CheckCircle2 size={18} /></button>
-            <button onClick={() => handleSelectAll(false)} className="btn btn--ghost" title="全不选"><Circle size={18} /></button>
-            <button onClick={loadEntries} className="btn btn--ghost" title="刷新"><RefreshCw size={18} /></button>
+        
+        <div className="entry-list__selection-tools">
+            <button onClick={() => handleSelectAll(true)} className="th-manager__icon-btn" title="全选"><CheckCircle2 size={18} /></button>
+            <button onClick={() => handleSelectAll(false)} className="th-manager__icon-btn" title="全不选"><Circle size={18} /></button>
+            <button onClick={loadEntries} className="th-manager__icon-btn" title="刷新"><RefreshCw size={18} /></button>
         </div>
-        <button className={`btn ${hasChanges ? 'btn--primary' : 'btn--ghost'}`} disabled={!hasChanges} onClick={handleApply}>
+
+        <div style={{flex: 1}} />
+
+        <button 
+            className={`btn ${hasChanges ? 'btn--primary pulse' : 'btn--ghost'}`} 
+            disabled={!hasChanges} 
+            onClick={handleApply}
+        >
             <Save size={16} /> 应用更改
         </button>
       </div>
 
       <div className="entry-list__content">
-        {loading ? <div>Loading...</div> : sortedCategories.map(cat => (
-            <div key={cat} className="entry-list__category-group">
-                <div className="entry-list__category-title">
-                    <Folder size={16} /> {getCategoryName(cat)} ({grouped[cat].length})
+        {loading ? (
+            <div className="entry-list__loading">加载中...</div>
+        ) : sortedCategories.length === 0 ? (
+            <div className="entry-list__empty">无匹配条目</div>
+        ) : (
+            sortedCategories.map(cat => (
+            <div key={cat} className="entry-list__section">
+                <div className="entry-list__section-header">
+                    <Folder size={16} /> 
+                    <span>{getCategoryName(cat)}</span>
+                    <span className="count">{grouped[cat].length}</span>
                 </div>
                 <div className="entry-list__grid">
                     {grouped[cat].map(entry => {
                         const isExpanded = expandedUids.has(entry.uid);
                         return (
-                            <div key={entry.uid} className={`entry-card glass-panel ${entry.enabled ? 'entry-card--enabled' : ''}`}>
-                                <div className="entry-card__header">
-                                    <div className="entry-card__main-info" onClick={() => handleToggleEntry(entry.uid)} title="切换启用状态">
-                                        <div className="entry-card__checkbox">{entry.enabled && <Check size={12} />}</div>
-                                        <span className="entry-card__title">{entry.comment}</span>
+                            <div key={entry.uid} className={`entry-card glass-panel ${entry.enabled ? 'enabled' : ''}`}>
+                                <div className="entry-card__top">
+                                    <div className="entry-card__check-area" onClick={() => handleToggleEntry(entry.uid)}>
+                                        <div className="checkbox">{entry.enabled && <Check size={12} />}</div>
+                                        <span className="title">{entry.comment}</span>
                                     </div>
-                                    <button className="entry-card__expand-toggle" onClick={() => handleToggleExpand(entry.uid)} title={isExpanded ? "折叠" : "展开"}>
-                                        <ChevronDown size={16} className={isExpanded ? 'expanded' : ''} />
+                                    <button 
+                                        className="entry-card__toggle-btn" 
+                                        onClick={() => handleToggleExpand(entry.uid)}
+                                    >
+                                        <ChevronDown size={16} className={isExpanded ? 'rotated' : ''} />
                                     </button>
                                 </div>
-                                <div className="entry-card__content-wrapper" onClick={() => handleToggleExpand(entry.uid)}>
+                                <div className="entry-card__body" onClick={() => handleToggleExpand(entry.uid)}>
                                     {isExpanded ? (
-                                        <div className="entry-card__content-full animate-fade-in">
-                                            <pre><code>{entry.content}</code></pre>
+                                        <div className="entry-card__full-text animate-fade-in">
+                                            {entry.content}
                                         </div>
                                     ) : (
-                                        <div className="entry-card__content-preview">
+                                        <div className="entry-card__preview-text">
                                             {entry.content.split('\n')[0]}
                                         </div>
                                     )}
@@ -150,7 +174,7 @@ const EntryList: React.FC = () => {
                     })}
                 </div>
             </div>
-        ))}
+        )))}
       </div>
     </div>
   );

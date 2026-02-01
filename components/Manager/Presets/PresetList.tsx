@@ -5,7 +5,7 @@ import { presetService } from '../../../services/presetService';
 import { tavernService } from '../../../services/mockTavernService';
 import { setActiveNarrativeConfigId, getNarrativeConfigs } from '../../../utils/snapshotGenerator';
 import { useToast } from '../../Toast/ToastContext';
-import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, ChevronDown, ChevronUp, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
 import './PresetList.css';
 
@@ -145,27 +145,32 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
         : null;
       
       return (
-          <div className="preset-item__details-container">
-              {preset.layout && (
-                  <div className="preset-item__layout-indicator">
-                      <LayoutTemplate size={14} />
-                      <span>包含自定义布局结构 ({preset.layout.length} 行)</span>
-                  </div>
-              )}
-              {narrativeConfigName && (
-                  <div className="preset-item__layout-indicator" style={{color: 'var(--color-primary)', background: 'rgba(99, 102, 241, 0.05)'}}>
-                      <MessageSquareQuote size={14} />
-                      <span>叙事风格: {narrativeConfigName}</span>
-                  </div>
-              )}
+          <div className="preset-details animate-slide-up">
+              <div className="preset-details__info-grid">
+                  {preset.layout && preset.layout.length > 0 && (
+                      <div className="preset-details__tag layout">
+                          <LayoutTemplate size={12} />
+                          <span>自定义布局 ({preset.layout.length} 行)</span>
+                      </div>
+                  )}
+                  {narrativeConfigName && (
+                      <div className="preset-details__tag narrative">
+                          <MessageSquareQuote size={12} />
+                          <span>叙事风格: {narrativeConfigName}</span>
+                      </div>
+                  )}
+              </div>
+              
+              <div className="preset-details__divider" />
+              
               {includedEntries.length === 0 ? (
-                  <div className="preset-item__no-entries">此配置不包含任何条目定义</div>
+                  <div className="preset-details__empty">此配置不包含任何条目定义</div>
               ) : (
-                  <div className="preset-item__details-grid">
+                  <div className="preset-details__chips">
                       {includedEntries.map(def => (
-                          <div key={def.key} className="preset-item__detail-chip">
+                          <div key={def.key} className="preset-details__chip">
                             {def.name || def.key}
-                            {preset.styleOverrides[def.key] && preset.styleOverrides[def.key] !== 'style_default' && ' (*)'}
+                            {preset.styleOverrides[def.key] && preset.styleOverrides[def.key] !== 'style_default' && <span className="highlight">*</span>}
                           </div>
                       ))}
                   </div>
@@ -176,68 +181,67 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
 
   return (
     <div className="preset-list">
-      <div className="preset-list__header glass-panel">
-        <div>
-            <h3 className="preset-list__title"><Layers size={20} /> 配置预设库</h3>
-            <p className="preset-list__subtitle">创建“定义”、“样式”与“布局”的组合，以“主题”的形式应用到聊天中。</p>
-        </div>
-        <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
+      {/* Standard Toolbar */}
+      <div className="th-manager__toolbar" style={{borderTop: 'none', borderBottom: '1px solid var(--border-base)', justifyContent: 'space-between'}}>
+         <div className="preset-list__stats">
+             已存储 {presets.length} 个预设
+         </div>
+         <button className="btn btn--primary" onClick={() => { setEditingPreset(null); setIsEditorOpen(true); }}>
             <Plus size={16} /> 新建预设
         </button>
       </div>
 
       <div className="preset-list__content">
          {presets.length === 0 ? (
-             <div className="preset-list__empty-state">
+             <div className="preset-list__empty">
                  <Layers size={48} />
-                 <p>暂无保存的预设</p>
+                 <p>暂无保存的配置预设</p>
              </div>
          ) : (
-             <div className="preset-list__items-container">
+             <div className="preset-list__grid">
                  {presets.map(preset => {
                      const isExpanded = expandedPreset === preset.id;
                      const isActive = activePresetId === preset.id;
                      const isApplying = applyingPresetId === preset.id;
-                     const hasLayout = !!preset.layout && preset.layout.length > 0;
-                     const hasNarrative = !!preset.narrativeConfigId;
 
                      return (
-                        <div key={preset.id} className={`preset-item glass-panel ${isExpanded ? 'preset-item--expanded' : ''} ${isActive ? 'preset-item--active' : ''}`} onClick={() => toggleDetails(preset.id)}>
-                            <div className="preset-item__main">
-                                <div className="preset-item__info">
-                                    <div className="preset-item__name-row">
-                                        {isActive && <CheckCircle size={16} className="preset-item__active-icon" />}
-                                        <h4 className="preset-item__name">{preset.name}</h4>
-                                        {hasLayout && (
-                                            <span title="包含布局" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                <LayoutTemplate size={14} className="preset-item__layout-icon" />
-                                            </span>
-                                        )}
-                                        {hasNarrative && (
-                                            <span title="包含叙事风格" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                <MessageSquareQuote size={14} className="preset-item__layout-icon" style={{color: 'var(--color-primary)'}} />
-                                            </span>
-                                        )}
-                                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        <div key={preset.id} className={`preset-card glass-panel ${isActive ? 'active' : ''}`} onClick={() => toggleDetails(preset.id)}>
+                            <div className="preset-card__main">
+                                <div className="preset-card__icon">
+                                    {isActive ? <CheckCircle size={20} className="active-indicator"/> : <Layers size={20}/>}
+                                </div>
+                                
+                                <div className="preset-card__info">
+                                    <div className="preset-card__title">
+                                        {preset.name}
+                                        {isActive && <span className="preset-card__badge">使用中</span>}
                                     </div>
-                                    <div className="preset-item__meta">
-                                        <span><BookOpen size={14} /> {preset.itemKeys.length} 定义</span>
-                                        <span><Clock size={14} /> {new Date(preset.timestamp).toLocaleDateString()}</span>
+                                    <div className="preset-card__meta">
+                                        <span><BookOpen size={12} /> {preset.itemKeys.length} 定义</span>
+                                        <span><Clock size={12} /> {new Date(preset.timestamp).toLocaleDateString()}</span>
                                     </div>
                                 </div>
-                                <div className="preset-item__actions">
-                                    <button className="btn btn--ghost btn--edit" onClick={(e) => { e.stopPropagation(); setEditingPreset(preset); setIsEditorOpen(true); }} title="编辑">
-                                        <Edit2 size={16} />
+
+                                <div className="preset-card__actions">
+                                    <button 
+                                        className={`btn btn--sm ${isActive ? 'btn--danger' : 'btn--primary'} btn--apply`} 
+                                        onClick={(e) => handleApplyPreset(preset, e)} 
+                                        disabled={isApplying}
+                                        title={isActive ? "取消应用" : "应用此预设"}
+                                    >
+                                        {isApplying ? <Loader size={14} className="spinner" /> : (isActive ? <span style={{fontSize: 12}}>停用</span> : <Check size={14} />)}
                                     </button>
-                                    <button className="btn btn--ghost btn--delete" onClick={(e) => requestDelete(preset, e)} title="删除">
-                                        <Trash2 size={16} />
-                                    </button>
-                                    <button className={`btn ${isActive ? 'btn--active' : 'btn--ghost'} btn--apply`} onClick={(e) => handleApplyPreset(preset, e)} disabled={isApplying}>
-                                        {isApplying ? <Loader size={14} className="spinner" /> : <CheckCircle size={14} />}
-                                        {isApplying ? '应用中' : (isActive ? '取消应用' : '应用')}
-                                    </button>
+                                    <div className="preset-card__menu">
+                                        <button className="th-manager__icon-btn" onClick={(e) => { e.stopPropagation(); setEditingPreset(preset); setIsEditorOpen(true); }}>
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button className="th-manager__icon-btn th-manager__icon-btn--danger" onClick={(e) => requestDelete(preset, e)}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                            
                             {isExpanded && renderEntryDetails(preset)}
                         </div>
                      );
@@ -247,17 +251,15 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
       </div>
 
       {deletingPreset && (
-        <div className="preset-list__delete-overlay">
-          <div className="preset-list__delete-modal glass-panel">
-             <div className="preset-list__delete-header">
-                <AlertTriangle size={24} /><h3>确认删除</h3>
+        <div className="preset-list__confirm-overlay animate-fade-in">
+          <div className="preset-list__confirm-modal glass-panel">
+             <div className="confirm-header">
+                <AlertTriangle size={24} /> 确认删除
              </div>
-             <p>您确定要删除预设 "{deletingPreset.name}" 吗？此操作不可撤销。</p>
-             <div className="preset-list__delete-actions">
+             <p>确定要删除预设 <strong>{deletingPreset.name}</strong> 吗？</p>
+             <div className="confirm-actions">
                 <button className="btn btn--ghost" onClick={() => setDeletingPreset(null)}>取消</button>
-                <button className="btn btn--danger" onClick={confirmDelete}>
-                    <Trash2 size={16} /> 删除
-                </button>
+                <button className="btn btn--danger" onClick={confirmDelete}>删除</button>
              </div>
           </div>
         </div>
