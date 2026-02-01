@@ -1,39 +1,45 @@
-
-
+/* style.css - Phase 1: Design System Core */
 
 :root {
-  /* --- 核心调色板 (Palette) --- */
-  --color-primary: #6366f1; /* Indigo 500 */
-  --color-primary-hover: #4f46e5;
-  --color-secondary: #ec4899; /* Pink 500 */
-  --color-accent: #8b5cf6; /* Violet 500 */
+  /* --- 1. Design Tokens: Colors (Base Palette) --- */
+  /* Brand Colors */
+  --color-primary: #6366f1;       /* Indigo 500 */
+  --color-primary-hover: #4f46e5; /* Indigo 600 */
+  --color-primary-subtle: rgba(99, 102, 241, 0.1);
   
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #3b82f6;
+  --color-secondary: #ec4899;     /* Pink 500 */
+  --color-accent: #8b5cf6;        /* Violet 500 */
+  
+  /* Semantic Status Colors */
+  --color-success: #10b981;       /* Emerald 500 */
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  
+  --color-warning: #f59e0b;       /* Amber 500 */
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  
+  --color-danger: #ef4444;        /* Red 500 */
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  
+  --color-info: #3b82f6;          /* Blue 500 */
 
-  /* --- 亮色模式变量 --- */
-  --bg-app: #f3f4f6;
-  --bg-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%), 
-                 radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%), 
-                 radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), 
-                 radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
-                 
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-  --glass-blur: blur(16px);
+  /* --- 2. Design Tokens: Typography --- */
+  --font-family-base: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  
-  --bar-bg: rgba(0, 0, 0, 0.06);
-  --chip-bg: rgba(255, 255, 255, 0.8);
-  --chip-border: rgba(0, 0, 0, 0.05);
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-2xl: 1.5rem;   /* 24px */
 
-  /* --- 尺寸与间距 (Sizing & Spacing) --- */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* --- 3. Design Tokens: Spacing & Sizing --- */
+  --spacing-2xs: 2px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
@@ -41,110 +47,310 @@
   --spacing-xl: 24px;
   --spacing-2xl: 32px;
 
+  --header-height: 64px;
+  --sidebar-width: 260px;
+
+  /* --- 4. Design Tokens: Radius --- */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* --- 字体 (Typography) --- */
-  --font-size-xs: 0.75rem;   /* 12px */
-  --font-size-sm: 0.875rem;  /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem; /* 18px */
-  --font-size-xl: 1.25rem;  /* 20px */
-  
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  /* --- 5. Design Tokens: Z-Index (Layering System) --- */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 500;
+  --z-overlay: 900;
+  --z-modal: 1000;
+  --z-popover: 1100;
+  --z-toast: 10000;
+  --z-max: 2147483647;
 
-  /* --- 阴影 (Shadows) --- */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
-  /* --- 动画 --- */
+  /* --- 6. Design Tokens: Animation --- */
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.2s ease;
-  --transition-default: all 0.3s ease;
+  --transition-normal: all 0.3s var(--ease-smooth);
+
+  /* --- 7. Theme Variables (Light Mode Default) --- */
+  --bg-app: #f3f4f6; /* Gray 100 */
+  /* Subtle, modern gradient for light mode */
+  --bg-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%), 
+                 radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%), 
+                 radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), 
+                 radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+
+  /* Surface / Glass */
+  --bg-surface: rgba(255, 255, 255, 0.7);
+  --bg-surface-hover: rgba(255, 255, 255, 0.9);
+  --bg-surface-active: #ffffff;
+  
+  --border-base: rgba(255, 255, 255, 0.6);
+  --border-hover: rgba(99, 102, 241, 0.3);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  
+  --glass-blur: blur(12px);
+
+  /* Text */
+  --text-primary: #1f2937;   /* Gray 800 */
+  --text-secondary: #6b7280; /* Gray 500 */
+  --text-tertiary: #9ca3af;  /* Gray 400 */
+  --text-on-primary: #ffffff;
+
+  /* Components specific */
+  --input-bg: rgba(255, 255, 255, 0.6);
+  --bar-bg: rgba(0, 0, 0, 0.06);
+  --chip-bg: rgba(255, 255, 255, 0.8);
+  --chip-border: rgba(0, 0, 0, 0.05);
 }
 
-/* --- 全局重置 --- */
+/* --- Dark Mode Overrides (Zinc / Neutral Tone) --- */
+body.dark-mode {
+  --bg-app: #09090b; /* Zinc 950 - Pure, deep dark */
+  
+  /* Very subtle, dark gradient for Zinc mode */
+  --bg-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%), 
+                 radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.05) 0px, transparent 50%), 
+                 radial-gradient(at 50% 50%, rgba(24, 24, 27, 0) 0px, transparent 50%);
+
+  /* Surfaces: Zinc 900/800 base */
+  --bg-surface: rgba(24, 24, 27, 0.7);       /* Zinc 900 + Alpha */
+  --bg-surface-hover: rgba(39, 39, 42, 0.8); /* Zinc 800 + Alpha */
+  --bg-surface-active: rgba(63, 63, 70, 0.9); /* Zinc 700 */
+
+  --border-base: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  /* Text: Clean whites and grays */
+  --text-primary: #fafafa;   /* Zinc 50 */
+  --text-secondary: #a1a1aa; /* Zinc 400 */
+  --text-tertiary: #52525b;  /* Zinc 600 */
+
+  /* Components */
+  --input-bg: rgba(0, 0, 0, 0.3);
+  --bar-bg: rgba(255, 255, 255, 0.08);
+  --chip-bg: rgba(255, 255, 255, 0.03);
+  --chip-border: rgba(255, 255, 255, 0.06);
+}
+
+/* --- Global Reset & Base --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Outfit', -apple-system, sans-serif;
+  font-family: var(--font-family-base);
   background-color: var(--bg-app);
   background-image: var(--bg-gradient);
   background-attachment: fixed;
   background-size: cover;
   color: var(--text-primary);
   min-height: 100vh;
-  transition: color 0.3s ease;
-  overflow-y: overlay; /* Try to use overlay scrollbar where supported */
+  transition: color 0.3s ease, background-color 0.3s ease;
+  overflow-y: overlay;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- 深色模式 (Dark Mode) --- */
-body.dark-mode {
-  --bg-app: #0f172a; /* Slate 900 */
-  --bg-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%), 
-                 radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.1) 0px, transparent 50%), 
-                 radial-gradient(at 50% 50%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
-                 
-  --glass-bg: rgba(30, 41, 59, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  
-  --bar-bg: rgba(255, 255, 255, 0.1);
-  --chip-bg: rgba(255, 255, 255, 0.08);
-  --chip-border: rgba(255, 255, 255, 0.05);
-}
-
+/* --- Layout Utilities --- */
 .container { 
   width: 100%;
-  max-width: 700px;
+  max-width: 800px; /* Revised to 800px per user request */
   margin: 0 auto; 
   padding: var(--spacing-xl); 
 }
 
-/* --- 自定义滚动条 (Webkit Overlay) --- */
-/* Makes scrollbar mostly transparent and floating */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-row { display: flex; flex-direction: row; }
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* --- Component: Scrollbars --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 ::-webkit-scrollbar-track {
   background: transparent; 
 }
-
 ::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 4px;
-  border: 2px solid transparent; /* Creates padding effect */
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
   background-clip: content-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
 }
-
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* --- 骨架屏动画 (Skeleton) --- */
+/* --- Component: Glass Panel --- */
+/* The core building block of the UI */
+.glass-panel {
+  background: var(--bg-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-base);
+  box-shadow: var(--shadow-glass);
+  border-radius: var(--radius-xl);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* --- Component: Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: 0.9rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+  background: transparent;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Primary Button: Gradient Brand Color */
+.btn--primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  color: var(--text-on-primary);
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+.btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.05);
+}
+.btn--primary.pulse { 
+  animation: pulse 2s infinite;
+}
+
+/* Ghost Button: Subtle, for secondary actions */
+.btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+/* Danger Button: Red */
+.btn--danger {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border: 1px solid transparent;
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* Icon Only Button Helper */
+.btn--icon {
+  padding: 8px;
+  border-radius: var(--radius-md);
+  aspect-ratio: 1;
+}
+
+/* --- Component: Inputs (Form Controls) --- */
+.form-input, 
+.form-select, 
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  font-size: 0.9rem;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.form-input:focus, 
+.form-select:focus, 
+.form-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-subtle);
+  background: var(--bg-surface-active);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Range Slider */
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* --- Animation Utilities --- */
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-slide-up { animation: slideUp 0.3s var(--ease-out-back) forwards; }
+.animate-slide-in { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
+/* --- Skeleton Loader --- */
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -154,8 +360,8 @@ body.dark-mode {
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-sm);
 }
-
 body.dark-mode .skeleton {
   background: linear-gradient(
     90deg,
@@ -166,89 +372,7 @@ body.dark-mode .skeleton {
   background-size: 200% 100%;
 }
 
-/* --- 玻璃拟态卡片 (Glassmorphism) --- */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--radius-xl);
-}
-
-/* --- 按钮 (Buttons) --- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  border: none;
-  font-weight: var(--font-weight-medium);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transition-fast);
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.btn--primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  color: white;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.btn--primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--text-secondary);
-}
-
-.btn--ghost:hover:not(:disabled) {
-  background: var(--bar-bg);
-  color: var(--text-primary);
-}
-
-/* --- 动画 (Animations) --- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease forwards;
-}
-
-.animate-slide-in {
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s var(--ease-out-back) forwards;
-}
-
-/* --- 响应式布局 (Responsive) --- */
+/* --- Responsive Helpers --- */
 .desktop-only { display: flex; }
 .mobile-only { display: none; }
 
@@ -260,50 +384,11 @@ body.dark-mode .skeleton {
   .mobile-only { display: flex !important; }
 }
 
-/* --- Renderer Safety Net (Visuals STRIPPED) --- */
-/* 这些基础样式仅确保布局不塌陷，不包含颜色/圆角等皮肤属性 */
-
-/* Numeric */
-.numeric-renderer__progress-container {
-  /* 仅保留布局属性 */
-  min-height: 4px;
-  width: 100%;
-  overflow: hidden;
-  /* 默认背景色移至 defaultStyleUnits */
-}
-
-.numeric-renderer__progress-fill {
-  height: 100%;
-  min-height: 4px; 
-  transition: width 0.6s var(--ease-out-back);
-  /* 默认颜色移至 defaultStyleUnits */
-}
-
-/* Array */
-.array-renderer__tags-container {
-  min-height: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.array-renderer__tag-chip {
-  min-height: 20px;
-  display: inline-flex;
-  align-items: center;
-  /* padding, color, background, border 全部移除，交由 Editor 控制 */
-}
-
-/* Object List */
-.object-card {
-  min-height: 30px;
-  /* padding, border 等移除 */
-  display: flex;
-  flex-direction: column;
-}
-
-/* Text */
-.text-renderer__value {
-  min-height: 1em;
-  /* color, font-weight 等移除 */
-}
+/* --- Legacy / Safety Net Styles (Do Not Remove) --- */
+/* These ensure basic structure if custom styles fail or haven't been migrated yet */
+.numeric-renderer__progress-container { min-height: 4px; width: 100%; overflow: hidden; }
+.numeric-renderer__progress-fill { height: 100%; min-height: 4px; transition: width 0.6s var(--ease-out-back); }
+.array-renderer__tags-container { min-height: 20px; display: flex; flex-wrap: wrap; gap: 4px; }
+.array-renderer__tag-chip { min-height: 20px; display: inline-flex; align-items: center; }
+.object-card { min-height: 30px; display: flex; flex-direction: column; }
+.text-renderer__value { min-height: 1em; }

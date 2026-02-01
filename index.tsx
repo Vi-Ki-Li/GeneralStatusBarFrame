@@ -58,7 +58,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
                 <div style="font-size: 64px; margin-bottom: 24px;">🛡️</div>
                 <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px; color: #fff;">安全模式已激活</h2>
                 <p style="font-size: 16px; color: #aaa; margin-bottom: 32px; max-width: 400px; line-height: 1.5;">
-                    检测到紧急重置请求。全局主题样式已被强制移除，应用已恢复默认外观。
+                    检测到紧急重置请求。全局主题样式已被强制移除，恢复默认外观。
                 </p>
                 <button id="th-safe-mode-close-btn" style="
                     padding: 12px 32px;

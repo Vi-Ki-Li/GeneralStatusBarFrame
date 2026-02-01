@@ -11,9 +11,14 @@
   padding: var(--spacing-lg) var(--spacing-xl);
   gap: var(--spacing-lg);
   border-radius: var(--radius-xl);
-  background: var(--glass-bg);
+  
+  /* Standardized Glass Effect */
+  background: var(--bg-surface);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-base);
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .app__title {
@@ -26,13 +31,14 @@
 }
 
 .app__actions {
+  display: flex;
   gap: var(--spacing-xs);
   align-items: center;
 }
 
 .app__actions-divider {
   width: 1px;
-  background: var(--chip-border);
+  background: var(--border-base);
   height: 20px;
 }
 
@@ -46,13 +52,17 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--glass-border);
-  border-radius: 20px 20px 0 0;
+  
+  /* Standardized Surface & Layering */
+  background: var(--bg-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--border-base);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+  z-index: var(--z-modal);
+  
   padding: var(--spacing-xl) var(--spacing-lg) 40px var(--spacing-lg);
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
-  z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -69,9 +79,9 @@
 .mobile-action-sheet__backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   backdrop-filter: blur(2px);
-  z-index: 9998;
+  z-index: calc(var(--z-modal) - 1);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -100,6 +110,7 @@
   border: none;
   padding: var(--spacing-sm);
   color: var(--text-secondary);
+  cursor: pointer;
 }
 
 .mobile-action-sheet__grid {
@@ -115,15 +126,22 @@
   justify-content: center;
   padding: var(--spacing-xl);
   gap: var(--spacing-sm);
-  border: 1px solid var(--chip-border);
-  background: var(--glass-bg);
+  
+  /* Inherit standard glass/panel styles via class, but override here if needed */
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
   text-decoration: none;
+  transition: transform 0.1s;
+}
+
+.mobile-action-sheet__action-item:active {
+  transform: scale(0.98);
 }
 
 .mobile-action-sheet__action-item.primary {
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;
+  border: none;
 }
 
 .mobile-action-sheet__action-item.full-width {
@@ -142,7 +160,7 @@
     margin-bottom: var(--spacing-lg);
     position: sticky;
     top: 10px;
-    z-index: 50;
+    z-index: var(--z-sticky);
   }
   
   .app__title {
@@ -151,9 +169,5 @@
 
   .app__content {
     margin-top: 0;
-  }
-
-  .btn.btn--ghost {
-      padding: var(--spacing-sm);
   }
 }

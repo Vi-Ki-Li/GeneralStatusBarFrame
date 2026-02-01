@@ -2,10 +2,11 @@
 .module-nav--mobile {
   display: flex;
   justify-content: space-around;
-  background: var(--glass-bg);
-  border-top: 1px solid var(--chip-border);
-  padding: var(--spacing-sm) var(--spacing-xs);
+  background: var(--bg-surface); /* Use surface color */
+  border-top: 1px solid var(--border-base);
+  padding: var(--spacing-xs) var(--spacing-xs) calc(var(--spacing-xs) + env(safe-area-inset-bottom, 0px)); /* Safe area support */
   flex-shrink: 0;
+  z-index: 10;
 }
 
 .module-nav__item--mobile {
@@ -14,10 +15,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   color: var(--text-tertiary);
   flex: 1;
-  padding: var(--spacing-xs) 0;
+  padding: 8px 0;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.module-nav__item--mobile:active {
+  background: var(--bg-surface-hover);
 }
 
 .module-nav__item--mobile.active {
@@ -26,7 +34,7 @@
 
 .module-nav__label--mobile {
   font-size: 0.65rem;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-medium);
 }
 .module-nav__item--mobile.active .module-nav__label--mobile {
   font-weight: var(--font-weight-semibold);
@@ -36,19 +44,20 @@
 .module-nav--desktop {
   width: 80px;
   background: rgba(0,0,0,0.02);
-  border-right: 1px solid var(--chip-border);
+  border-right: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: var(--spacing-xl) 0;
   gap: var(--spacing-xl);
   flex-shrink: 0;
+  height: 100%;
 }
 
 .module-nav__item--desktop {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: none;
   background: transparent;
   color: var(--text-tertiary);
@@ -56,19 +65,28 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s var(--ease-out-back);
-  box-shadow: none;
-  transform: scale(1);
+  transition: all 0.2s var(--ease-smooth);
+  position: relative;
 }
 
 .module-nav__item--desktop:hover:not(.active) {
-    background: var(--chip-bg);
+    background: var(--bg-surface-hover);
     color: var(--text-primary);
 }
 
 .module-nav__item--desktop.active {
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  transform: scale(1.05);
+  box-shadow: 0 4px 12px var(--color-primary-subtle);
+  transform: translateY(-2px);
+}
+
+.module-nav__item--desktop.active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 20px;
+  border: 2px solid var(--bg-app);
+  opacity: 0.5;
+  z-index: -1;
 }
