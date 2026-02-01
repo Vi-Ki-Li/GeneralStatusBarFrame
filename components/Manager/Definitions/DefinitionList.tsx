@@ -1,11 +1,13 @@
+
 import React, { useState, useMemo } from 'react';
 import { ItemDefinition, CategoryDefinition, StatusBarData } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
 import * as LucideIcons from 'lucide-react';
 import { tavernService } from '../../../services/mockTavernService';
+import '../ManagerLayout.css';
 import './DefinitionList.css';
 
 interface DefinitionListProps {
@@ -18,6 +20,7 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
   const toast = useToast();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'categories' | 'items'>('categories');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [editingItemDef, setEditingItemDef] = useState<ItemDefinition | null>(null);
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
@@ -26,6 +29,8 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
   const [confirmDeleteCatKey, setConfirmDeleteCatKey] = useState<string | null>(null);
   const [confirmDeleteItemKey, setConfirmDeleteItemKey] = useState<string | null>(null);
   const [isInjectingAll, setIsInjectingAll] = useState(false);
+
+  const isMobile = window.innerWidth <= 768; // Simple check
 
   const categories = (Object.values(data.categories || {}) as CategoryDefinition[]).sort((a, b) => a.order - b.order);
   const itemDefinitions = (Object.values(data.item_definitions || {}) as ItemDefinition[]).sort((a, b) => a.key.localeCompare(b.key));
@@ -124,14 +129,6 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
     }
   };
 
-  const InlineConfirm = ({ onConfirm, onCancel, context }: { onConfirm: () => void, onCancel: () => void, context?: string }) => (
-    <div className={`inline-confirm ${context ? `inline-confirm--${context}` : ''} animate-fade-in`}>
-        <span className="inline-confirm__text"><AlertTriangle size={12} /> 确认?</span>
-        <button onClick={(e) => { e.stopPropagation(); onConfirm(); }} className="inline-confirm__btn inline-confirm__btn--yes" title="确认删除"><Check size={14} /></button>
-        <button onClick={(e) => { e.stopPropagation(); onCancel(); }} className="inline-confirm__btn inline-confirm__btn--no" title="取消"><XIcon size={14} /></button>
-    </div>
-  );
-
   const injectButtonText = isInjectingAll
     ? '同步中...' 
     : selectedCategory 
@@ -139,130 +136,155 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
       : '全部注入/同步';
 
   return (
-    <div className="def-studio">
-      <div className={`def-studio__sidebar ${mobileView === 'items' ? 'mobile-hidden' : ''}`}>
-          <div className="def-studio__sidebar-header">
-              <Layers size={18} />
-              <h3>分类</h3>
-          </div>
-          <div className="def-studio__cat-list">
-              <div onClick={() => handleSelectCategory(null)} className={`def-studio__cat-item-wrapper ${selectedCategoryKey === null ? 'active' : ''}`}>
-                  <div className="def-studio__cat-item">
-                      <ChevronsRight size={16} />
-                      <span>所有分类</span>
-                  </div>
-              </div>
-
-              {categories.map(cat => {
-                  const Icon = (LucideIcons as any)[cat.icon] || LucideIcons.CircleHelp;
-                  return (
-                      <div key={cat.key} className={`def-studio__cat-item-wrapper ${selectedCategoryKey === cat.key ? 'active' : ''}`}>
-                          <div className="def-studio__cat-item" onClick={() => handleSelectCategory(cat.key)}>
-                              <Icon size={16} />
-                              <span>{cat.name}</span>
-                          </div>
-                          <div className="def-studio__cat-item-actions">
-                              {confirmDeleteCatKey === cat.key ? (
-                                  <InlineConfirm context="sidebar" onConfirm={() => executeDeleteCategory(cat.key)} onCancel={() => setConfirmDeleteCatKey(null)} />
-                              ) : (
-                                  <>
-                                      <button onClick={() => { setEditingCatDef(cat); setIsCatDrawerOpen(true); }} className="btn btn--ghost" title="编辑"><Edit2 size={14} /></button>
-                                      <button onClick={() => setConfirmDeleteCatKey(cat.key)} className="btn btn--ghost btn--delete" title="删除"><Trash2 size={14} /></button>
-                                  </>
-                              )}
-                          </div>
-                      </div>
-                  );
-              })}
-          </div>
-          <div className="def-studio__sidebar-footer">
-              <button onClick={() => { setEditingCatDef(null); setIsCatDrawerOpen(true); }} className="def-studio__add-cat-btn" title="新建分类">
-                  <Plus size={16} /> 新建分类
-              </button>
-          </div>
-      </div>
-      
-      <div className={`def-studio__main ${mobileView === 'categories' ? 'mobile-hidden' : ''}`}>
-          <div className="def-studio__main-header">
-              <button className="def-studio__back-btn" onClick={() => setMobileView('categories')}>
-                  <ChevronLeft size={16} />
-                  返回分类
-              </button>
-              <div>
-                  <h2 className="def-studio__main-title">
-                      {selectedCategory ? selectedCategory.name : '所有条目规则'}
-                  </h2>
-                  <p className="def-studio__main-subtitle">
-                      {selectedCategory ? `(Key: ${selectedCategory.key})` : '全局'}
-                      {' '}&bull;{' '}
-                      {filteredItems.length} 个条目
-                  </p>
-              </div>
-              <div className="def-studio__header-actions">
-                  <button onClick={handleInjectAll} className="btn btn--ghost" disabled={isInjectingAll || filteredItems.length === 0}>
-                      {isInjectingAll ? <Loader size={16} className="spinner" /> : <UploadCloud size={16} />}
-                      <span className="desktop-only">{injectButtonText}</span>
-                  </button>
+    <div className="th-manager">
+      <div className="th-manager__layout">
+          {/* Sidebar */}
+          <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''} ${isMobile && mobileView === 'items' ? 'mobile-hidden' : ''}`}>
+              <div className="th-manager__sidebar-header">
+                  <div className="th-manager__sidebar-title"><Layers size={16} /> 分类</div>
                   <button 
-                    className="btn btn--primary" 
-                    onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}
+                    onClick={() => setIsSidebarCollapsed(true)} 
+                    className="th-manager__icon-btn desktop-only"
+                    title="收起侧边栏"
                   >
-                      <Plus size={16} /> <span className="desktop-only">新建条目规则</span>
+                      <PanelLeftClose size={16}/>
+                  </button>
+              </div>
+              
+              <div className="th-manager__sidebar-content">
+                  <button onClick={() => handleSelectCategory(null)} className={`th-manager__list-item ${selectedCategoryKey === null ? 'th-manager__list-item--active' : ''}`}>
+                      <div className="th-manager__item-main">
+                          <div className="th-manager__item-icon"><ChevronsRight size={16} /></div>
+                          <span className="th-manager__item-text">所有分类</span>
+                      </div>
+                  </button>
+
+                  {categories.map(cat => {
+                      const Icon = (LucideIcons as any)[cat.icon] || LucideIcons.CircleHelp;
+                      return (
+                          <div key={cat.key} className={`th-manager__list-item ${selectedCategoryKey === cat.key ? 'th-manager__list-item--active' : ''}`} onClick={() => handleSelectCategory(cat.key)}>
+                              <div className="th-manager__item-main">
+                                  <div className="th-manager__item-icon"><Icon size={16} /></div>
+                                  <span className="th-manager__item-text">{cat.name}</span>
+                              </div>
+                              <div className="th-manager__item-actions">
+                                  {confirmDeleteCatKey === cat.key ? (
+                                      <div style={{display:'flex', gap: 4}}>
+                                          <button onClick={(e) => { e.stopPropagation(); executeDeleteCategory(cat.key); }} className="th-manager__icon-btn th-manager__icon-btn--danger"><Check size={16} /></button>
+                                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCatKey(null); }} className="th-manager__icon-btn"><XIcon size={16} /></button>
+                                      </div>
+                                  ) : (
+                                      <>
+                                          <button onClick={(e) => { e.stopPropagation(); setEditingCatDef(cat); setIsCatDrawerOpen(true); }} className="th-manager__icon-btn"><Edit2 size={16} /></button>
+                                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCatKey(cat.key); }} className="th-manager__icon-btn th-manager__icon-btn--danger"><Trash2 size={16} /></button>
+                                      </>
+                                  )}
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+              
+              <div className="th-manager__sidebar-footer">
+                  <button onClick={() => { setEditingCatDef(null); setIsCatDrawerOpen(true); }} className="th-manager__list-item" style={{justifyContent: 'center', color: 'var(--text-tertiary)'}}>
+                      <Plus size={16} /> 新建分类
                   </button>
               </div>
           </div>
-
-          <div className="def-studio__main-content">
-              {filteredItems.length > 0 ? (
-                  <div className="def-studio__item-grid">
-                      {filteredItems.map(def => {
-                          const isComplex = def.structure?.parts && def.structure.parts.length > 0;
-                          return (
-                              <div key={def.key} className="def-card def-card--item glass-panel">
-                                  <div className="def-card__header">
-                                      <div className="def-card__name-group">
-                                          <div className="def-card__name">{def.key}</div>
-                                          <div className="def-card__category-tag">
-                                              {data.categories[def.defaultCategory || '']?.name || def.defaultCategory || 'Default'}
-                                          </div>
-                                      </div>
-                                      <div className="def-card__actions">
-                                          {confirmDeleteItemKey === def.key ? (
-                                              <InlineConfirm onConfirm={() => executeDeleteItemDef(def.key)} onCancel={() => setConfirmDeleteItemKey(null)} />
-                                          ) : (
-                                              <>
-                                                  <button onClick={() => handleInject(def)} className="btn btn--ghost" title="注入/同步到世界书"><UploadCloud size={16} /></button>
-                                                  <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="btn btn--ghost"><Edit2 size={16} /></button>
-                                                  <button onClick={() => setConfirmDeleteItemKey(def.key)} className="btn btn--ghost btn--delete"><Trash2 size={16} /></button>
-                                              </>
-                                          )}
-                                      </div>
-                                  </div>
-                                  <div className="def-card__meta-group">
-                                      <span className="def-card__meta-chip">
-                                          <Type size={12} />
-                                          {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : def.type === 'list-of-objects' ? '对象列表' : '标签组'}
-                                      </span>
-                                      {isComplex && (
-                                          <span className="def-card__meta-chip highlight">
-                                              自定义结构 ({def.structure?.parts.length})
-                                          </span>
-                                      )}
-                                  </div>
-                                  {def.name && <div className="def-card__display-name">{def.name}</div>}
-                              </div>
-                          );
-                      })}
+          
+          {/* Main Content */}
+          <div className={`th-manager__main ${isMobile && mobileView === 'categories' ? 'mobile-hidden' : ''}`}>
+              <div className="th-manager__main-header">
+                  {isMobile && (
+                      <button className="th-manager__icon-btn" onClick={() => setMobileView('categories')} style={{marginRight: 8}}>
+                          <ChevronLeft size={20} />
+                      </button>
+                  )}
+                  <div className="th-manager__main-title-group">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {isSidebarCollapsed && !isMobile && (
+                              <button onClick={() => setIsSidebarCollapsed(false)} className="th-manager__icon-btn desktop-only"><PanelLeftOpen size={16} /></button>
+                          )}
+                          <h2 className="th-manager__main-title">
+                              {selectedCategory ? selectedCategory.name : '所有条目规则'}
+                          </h2>
+                      </div>
+                      <p className="th-manager__main-subtitle">
+                          {selectedCategory ? `(Key: ${selectedCategory.key})` : '全局'}
+                          {' '}&bull;{' '}
+                          {filteredItems.length} 个条目
+                      </p>
                   </div>
-              ) : (
-                  <div className="def-studio__empty-state">
-                      <List size={40} />
-                      <p>{selectedCategory ? `分类 “${selectedCategory.name}” 下暂无条目规则` : '暂无条目规则'}</p>
-                      <button className="btn btn--primary" onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}>
-                          <Plus size={16} /> 创建第一个
+                  <div className="th-manager__toolbar" style={{borderTop: 'none', background: 'transparent', padding: 0, marginLeft: 'auto'}}>
+                      <button onClick={handleInjectAll} className="btn btn--ghost" disabled={isInjectingAll || filteredItems.length === 0}>
+                          {isInjectingAll ? <Loader size={16} className="spinner" /> : <UploadCloud size={16} />}
+                          <span className="desktop-only">{injectButtonText}</span>
+                      </button>
+                      <button 
+                        className="btn btn--primary" 
+                        onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}
+                      >
+                          <Plus size={16} /> <span className="desktop-only">新建规则</span>
                       </button>
                   </div>
-              )}
+              </div>
+
+              <div className="th-manager__main-content">
+                  {filteredItems.length > 0 ? (
+                      <div className="def-studio__item-grid">
+                          {filteredItems.map(def => {
+                              const isComplex = def.structure?.parts && def.structure.parts.length > 0;
+                              return (
+                                  <div key={def.key} className="def-card def-card--item glass-panel">
+                                      <div className="def-card__header">
+                                          <div className="def-card__name-group">
+                                              <div className="def-card__name">{def.key}</div>
+                                              <div className="def-card__category-tag">
+                                                  {data.categories[def.defaultCategory || '']?.name || def.defaultCategory || 'Default'}
+                                              </div>
+                                          </div>
+                                          <div className="def-card__actions">
+                                              {confirmDeleteItemKey === def.key ? (
+                                                  <div style={{display:'flex', gap: 4, background: 'var(--color-danger-bg)', borderRadius: 4, padding: 2}}>
+                                                      <span style={{fontSize: 12, color: 'var(--color-danger)', marginLeft: 4}}>确认?</span>
+                                                      <button onClick={() => executeDeleteItemDef(def.key)} className="th-manager__icon-btn th-manager__icon-btn--danger"><Check size={14} /></button>
+                                                      <button onClick={() => setConfirmDeleteItemKey(null)} className="th-manager__icon-btn"><XIcon size={14} /></button>
+                                                  </div>
+                                              ) : (
+                                                  <>
+                                                      <button onClick={() => handleInject(def)} className="th-manager__icon-btn" title="注入/同步到世界书"><UploadCloud size={16} /></button>
+                                                      <button onClick={() => { setEditingItemDef(def); setIsItemDrawerOpen(true); }} className="th-manager__icon-btn"><Edit2 size={16} /></button>
+                                                      <button onClick={() => setConfirmDeleteItemKey(def.key)} className="th-manager__icon-btn th-manager__icon-btn--danger"><Trash2 size={16} /></button>
+                                                  </>
+                                              )}
+                                          </div>
+                                      </div>
+                                      <div className="def-card__meta-group">
+                                          <span className="def-card__meta-chip">
+                                              <Type size={12} />
+                                              {def.type === 'text' ? '文本' : def.type === 'numeric' ? '数值' : def.type === 'list-of-objects' ? '对象列表' : '标签组'}
+                                          </span>
+                                          {isComplex && (
+                                              <span className="def-card__meta-chip highlight">
+                                                  自定义结构 ({def.structure?.parts.length})
+                                              </span>
+                                          )}
+                                      </div>
+                                      {def.name && <div className="def-card__display-name">{def.name}</div>}
+                                  </div>
+                              );
+                          })}
+                      </div>
+                  ) : (
+                      <div className="def-studio__empty-state">
+                          <List size={40} />
+                          <p>{selectedCategory ? `分类 “${selectedCategory.name}” 下暂无条目规则` : '暂无条目规则'}</p>
+                          <button className="btn btn--primary" onClick={() => { setEditingItemDef(null); setIsItemDrawerOpen(true); }}>
+                              <Plus size={16} /> 创建第一个
+                          </button>
+                      </div>
+                  )}
+              </div>
           </div>
       </div>
 

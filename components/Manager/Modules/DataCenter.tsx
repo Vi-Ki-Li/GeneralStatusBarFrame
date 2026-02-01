@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StatusBarData, StatusBarItem, ItemDefinition, CategoryDefinition } from '../../../types'; 
 import { getCategoryDefinition } from '../../../services/definitionRegistry';
@@ -13,7 +14,8 @@ import { tavernService } from '../../../services/mockTavernService';
 import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
-import './DataCenter.css';
+import '../ManagerLayout.css'; // Import standardized styles
+import './DataCenter.css'; // Keep module-specific overrides if needed
 
 interface DataCenterProps {
   data: StatusBarData;
@@ -28,7 +30,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
   const [selectedId, setSelectedId] = useState<string>('SHARED');
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Sidebar collapse state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); 
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
@@ -232,11 +234,12 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
   };
 
   return (
-    <div className="data-center">
-        <div className={`data-center__main-layout ${isMobile ? 'data-center__main-layout--mobile' : ''}`}>
+    <div className="th-manager">
+        <div className="th-manager__layout">
             
+            {/* Sidebar (Desktop) or Tabs (Mobile) */}
             {!isMobile && (
-                <div className={`data-center__sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+                <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
                   <CharacterListSidebar 
                       characters={charList} 
                       selectedId={selectedId}
@@ -250,58 +253,64 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
             )}
             
             {isMobile && (
-                <div className="data-center__mobile-tabs">
-                    <button onClick={() => setSelectedId('SHARED')} className={`data-center__mobile-tab ${selectedId === 'SHARED' ? 'active' : ''}`}>共享</button>
+                <div className="th-manager__mobile-tabs">
+                    <button onClick={() => setSelectedId('SHARED')} className={`th-manager__mobile-tab ${selectedId === 'SHARED' ? 'active' : ''}`}>共享</button>
                     {charList.map(c => (
-                        <button key={c.id} onClick={() => setSelectedId(c.id)} className={`data-center__mobile-tab ${selectedId === c.id ? 'active' : ''}`}>{c.name}</button>
+                        <button key={c.id} onClick={() => setSelectedId(c.id)} className={`th-manager__mobile-tab ${selectedId === c.id ? 'active' : ''}`}>{c.name}</button>
                     ))}
-                    <button onClick={() => setShowMobileAdd(true)} className="data-center__mobile-tab"><Plus size={14} /></button>
+                    <button onClick={() => setShowMobileAdd(true)} className="th-manager__mobile-tab"><Plus size={14} /></button>
                 </div>
             )}
 
-            <div className="data-center__editor-pane">
-                <div className="data-center__editor-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {isSidebarCollapsed && !isMobile && (
-                            <button 
-                                onClick={() => setIsSidebarCollapsed(false)} 
-                                className="panel-toggle-btn desktop-only"
-                                title="展开侧边栏"
-                            >
-                                <PanelLeftOpen size={16} />
-                            </button>
-                        )}
-                        <h2 className="data-center__editor-title">
-                            {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
-                        </h2>
-                    </div>
-                    <div className="data-center__editor-subtitle">
-                        {hasUnsavedChanges && <span className="data-center__unsaved-indicator">[未保存] </span>}
-                        ID: {selectedId}
+            {/* Main Content */}
+            <div className="th-manager__main">
+                <div className="th-manager__main-header">
+                    <div className="th-manager__main-title-group">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {isSidebarCollapsed && !isMobile && (
+                                <button 
+                                    onClick={() => setIsSidebarCollapsed(false)} 
+                                    className="th-manager__icon-btn desktop-only"
+                                    title="展开侧边栏"
+                                >
+                                    <PanelLeftOpen size={16} />
+                                </button>
+                            )}
+                            <h2 className="th-manager__main-title">
+                                {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
+                            </h2>
+                        </div>
+                        <div className="th-manager__main-subtitle">
+                            {hasUnsavedChanges && <span className="data-center__unsaved-indicator" style={{color: 'var(--color-warning)'}}>[未保存] </span>}
+                            ID: {selectedId}
+                        </div>
                     </div>
                 </div>
 
-                {getCategoriesToRender().map(catKey => (
-                    <CategoryEditor 
-                        key={catKey}
-                        categoryKey={catKey}
-                        categoryDef={getCategoryDefinition(localData.categories, catKey)}
-                        itemDefinitions={localData.item_definitions}
-                        items={getCurrentItems(catKey)}
-                        onUpdateItems={(newItems) => handleUpdateItems(catKey, newItems)}
-                        onEditDefinition={handleEditDefinition}
-                        onEditCategory={handleEditCategory} 
-                    />
-                ))}
-                <div className="data-center__editor-spacer" />
+                <div className="th-manager__main-content">
+                    {getCategoriesToRender().map(catKey => (
+                        <CategoryEditor 
+                            key={catKey}
+                            categoryKey={catKey}
+                            categoryDef={getCategoryDefinition(localData.categories, catKey)}
+                            itemDefinitions={localData.item_definitions}
+                            items={getCurrentItems(catKey)}
+                            onUpdateItems={(newItems) => handleUpdateItems(catKey, newItems)}
+                            onEditDefinition={handleEditDefinition}
+                            onEditCategory={handleEditCategory} 
+                        />
+                    ))}
+                    <div style={{ height: '60px' }} /> {/* Spacer */}
+                </div>
             </div>
         </div>
 
-        <div className="data-center__action-bar glass-panel">
+        {/* Toolbar Footer */}
+        <div className="th-manager__toolbar">
             {hasUnsavedChanges && (
-                <div className="data-center__unsaved-prompt animate-fade-in">
-                    <AlertCircle size={18} />
-                    <span>有未保存的更改</span>
+                <div className="data-center__unsaved-prompt animate-fade-in" style={{marginRight: 'auto'}}>
+                    <AlertCircle size={18} color="var(--color-warning)" />
+                    <span style={{color: 'var(--color-warning)', fontWeight: 500}}>有未保存的更改</span>
                 </div>
             )}
             <button 
@@ -346,7 +355,6 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
             onSave={handleSaveDefinition}
             onInject={handleInjectDefinition}
             existingKeys={Object.keys(localData.item_definitions)}
-            // FIX: Pass the required onGoToStyleEditor prop.
             onGoToStyleEditor={onGoToStyleEditor}
         />
         <CategoryDrawer 

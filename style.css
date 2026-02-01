@@ -48,7 +48,7 @@
   --spacing-2xl: 32px;
 
   --header-height: 64px;
-  --sidebar-width: 260px; /* Standardized Width */
+  --sidebar-width: 240px; /* Standardized Width */
 
   /* --- 4. Design Tokens: Radius --- */
   --radius-sm: 4px;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
@@ -5,11 +6,12 @@ import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import { useToast } from '../../Toast/ToastContext';
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, DragStartEvent, DragEndEvent, DragMoveEvent, DragOverlay } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, X as XIcon, Paintbrush, Loader, Save, RotateCcw, Copy, Eye, Download, Upload, ListChecks, CheckSquare, PanelLeftClose, PanelLeftOpen, LayoutList } from 'lucide-react'; 
+import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, RotateCcw, Copy, Eye, Download, Upload, ListChecks, CheckSquare, PanelLeftClose, PanelLeftOpen, LayoutList, Paintbrush, Save, AlertCircle } from 'lucide-react'; 
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
 import _ from 'lodash';
-import './StyleManager.css';
+import '../ManagerLayout.css'; // Standard styles
+import './StyleManager.css'; // Module specific overrides
 
 // 子组件：可拖拽的样式单元
 const DraggableStyleUnit: React.FC<{ 
@@ -47,32 +49,38 @@ const DraggableStyleUnit: React.FC<{
     <div
       ref={setNodeRef}
       style={styleProp}
-      className={`style-atelier__item-wrapper ${isSelected ? 'selected' : ''}`}
+      className={`th-manager__list-item ${isSelected ? 'th-manager__list-item--active' : ''}`}
       onMouseEnter={() => !isDragging && !isSelectionMode && setPreviewingStyle(style)}
       onMouseLeave={() => setPreviewingStyle(null)}
       onClick={handleClick}
       {...listeners}
       {...attributes}
     >
-        {isSelectionMode && (
-            <div className="style-atelier__checkbox">
-                {isSelected && <div className="style-atelier__checkbox-inner" />}
-            </div>
-        )}
-        <div className="style-atelier__item-main">
-          <span className="style-atelier__item-name">{style.name}</span>
+        <div className="th-manager__item-main">
+            {isSelectionMode && (
+                <div className={`style-atelier__checkbox ${isSelected ? 'checked' : ''}`}>
+                    {isSelected && <div className="style-atelier__checkbox-inner" />}
+                </div>
+            )}
+            <span className="th-manager__item-text">{style.name}</span>
         </div>
         
         {!isSelectionMode && (
-            <div className="style-atelier__item-actions">
-              <button onPointerDown={onButtonDown} onClick={onEdit} className="btn btn--ghost" title={style.isDefault ? "查看" : "编辑"}>
-                {style.isDefault ? <Eye size={14}/> : <Edit2 size={14}/>}
+            <div className="th-manager__item-actions">
+              <button onPointerDown={onButtonDown} onClick={onEdit} className="th-manager__icon-btn" title={style.isDefault ? "查看" : "编辑"}>
+                {style.isDefault ? <Eye size={16}/> : <Edit2 size={16}/>}
               </button>
-              <button onPointerDown={onButtonDown} onClick={onCopy} className="btn btn--ghost btn--copy" title="复制">
-                <Copy size={14}/>
+              <button onPointerDown={onButtonDown} onClick={onCopy} className="th-manager__icon-btn" title="复制">
+                <Copy size={16}/>
               </button>
-              <button onPointerDown={onButtonDown} onClick={onDelete} className="btn btn--ghost btn--delete" title={style.isDefault ? "默认样式无法删除" : "删除"} disabled={style.isDefault}>
-                <Trash2 size={14}/>
+              <button 
+                onPointerDown={onButtonDown} 
+                onClick={onDelete} 
+                className="th-manager__icon-btn th-manager__icon-btn--danger" 
+                title={style.isDefault ? "默认样式无法删除" : "删除"} 
+                disabled={style.isDefault}
+              >
+                <Trash2 size={16}/>
               </button>
             </div>
         )}
@@ -119,11 +127,10 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         setStagedData(_.cloneDeep(data)); 
     }, [data]);
 
-    // v9.9 Safe Mode Sync: Listen for global safe mode triggers
     useEffect(() => {
         const handleSafeMode = () => {
             setActiveThemeId(null);
-            loadUserStyles(); // Reload styles in case of deeper resets
+            loadUserStyles(); 
             toast.warning("安全模式触发：主题状态已重置");
         };
         window.addEventListener('th:safe-mode-triggered', handleSafeMode);
@@ -257,7 +264,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         });
 
         if (idsToDelete.length === 0) {
-            toast.info("没有可删除的自定义样式 (默认样式不可删除)");
+            toast.info("没有可删除的自定义样式");
             return;
         }
 
@@ -279,13 +286,35 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
     };
 
     const handleExport = () => {
-        // ... (Export logic unchanged)
+        const idsToExport = Array.from(selectedIds);
+        const stylesToExport = userStyles.filter(s => idsToExport.includes(s.id));
+        if (stylesToExport.length === 0 && !isSelectionMode) {
+             // Export all user styles if nothing selected/not in selection mode
+             const json = styleService.exportStyles(userStyles);
+             downloadJson(json, 'all_user_styles.json');
+        } else if (stylesToExport.length > 0) {
+             const json = styleService.exportStyles(stylesToExport);
+             downloadJson(json, 'selected_styles.json');
+        } else {
+            toast.info("请选择要导出的样式");
+        }
+    };
+    
+    const downloadJson = (json: string, filename: string) => {
+        const blob = new Blob([json], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     const handleImportClick = () => fileInputRef.current?.click();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // ... (Import logic unchanged)
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
@@ -359,33 +388,19 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         other: '其他',
     };
 
-    // Calculate Classes
-    const sidebarClasses = [
-        'style-atelier__sidebar',
-        !isMobile && isSidebarCollapsed ? 'collapsed' : '',
-        isMobile && mobileTab !== 'library' ? 'mobile-hidden' : ''
-    ].filter(Boolean).join(' ');
-
-    const previewClasses = [
-        'style-atelier__main-preview',
-        isMobile && mobileTab !== 'preview' ? 'mobile-hidden' : ''
-    ].filter(Boolean).join(' ');
-
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
-            <div className={`style-atelier ${isSelectionMode ? 'selection-mode' : ''} ${isMobile ? 'mobile-layout' : ''}`}>
-                
-                {/* Mobile Tabs */}
+            <div className="th-manager">
                 {isMobile && (
-                    <div className="style-atelier__mobile-tabs">
+                    <div className="th-manager__mobile-tabs">
                         <button 
-                            className={`style-atelier__mobile-tab ${mobileTab === 'library' ? 'active' : ''}`}
+                            className={`th-manager__mobile-tab ${mobileTab === 'library' ? 'active' : ''}`}
                             onClick={() => setMobileTab('library')}
                         >
                             <LayoutList size={16} /> 样式库
                         </button>
                         <button 
-                            className={`style-atelier__mobile-tab ${mobileTab === 'preview' ? 'active' : ''}`}
+                            className={`th-manager__mobile-tab ${mobileTab === 'preview' ? 'active' : ''}`}
                             onClick={() => setMobileTab('preview')}
                         >
                             <Paintbrush size={16} /> 效果预览
@@ -393,160 +408,191 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                     </div>
                 )}
 
-                {/* Sidebar (Library) */}
-                <div className={sidebarClasses}>
-                    <div className="style-atelier__sidebar-header">
-                        <div className="style-atelier__header-left">
-                            <Palette size={18}/>
-                            <h3>样式库</h3>
-                        </div>
-                        <div style={{display: 'flex', gap: '8px'}}>
-                            <button 
-                                onClick={handleToggleSelectionMode} 
-                                className={`style-atelier__selection-toggle ${isSelectionMode ? 'active' : ''}`}
-                                title={isSelectionMode ? "退出选择" : "批量管理"}
-                            >
-                                <ListChecks size={18} />
-                            </button>
-                            <button 
-                                onClick={() => setIsSidebarCollapsed(true)} 
-                                className="panel-toggle-btn desktop-only"
-                                title="收起"
-                            >
-                                <PanelLeftClose size={16} />
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="style-atelier__style-list">
-                        <div className="style-atelier__group style-atelier__theme-section">
-                            <h4 className="style-atelier__group-title">全局主题</h4>
-                            {themes.map(theme => {
-                                const isActive = activeThemeId === theme.id;
-                                const isSelected = selectedIds.has(theme.id);
-                                return (
-                                    <div 
-                                        key={theme.id} 
-                                        className={`theme-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                                        onClick={isSelectionMode ? () => handleToggleSelect(theme.id) : undefined}
-                                    >
-                                        {isSelectionMode && (
-                                            <div className="style-atelier__checkbox">
-                                                {isSelected && <div className="style-atelier__checkbox-inner" />}
-                                            </div>
-                                        )}
-                                        <div className="theme-item__info">
-                                            <Palette size={14} />
-                                            <span className="theme-item__name">{theme.name}</span>
-                                        </div>
-                                        {!isSelectionMode && (
-                                            <div className="theme-item__actions">
-                                                <button onClick={() => { setEditingStyle(theme); setIsEditorOpen(true); }} className="btn btn--ghost" title="编辑"><Edit2 size={14}/></button>
-                                                <button onClick={(e) => requestDelete(theme, e)} className="btn btn--ghost btn--delete" title="删除"><Trash2 size={14}/></button>
-                                                <button onClick={() => handleApplyTheme(theme.id)} className={`theme-item__apply-btn ${isActive ? 'active' : ''}`}>
-                                                    <Check size={14}/>
-                                                    <span>{isActive ? '已应用' : '应用'}</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {groupOrder.map(groupKey => (
-                            groupedStyleUnits[groupKey] && (
-                                <div key={groupKey} className="style-atelier__group">
-                                    <h4 className="style-atelier__group-title">{groupLabels[groupKey as keyof typeof groupLabels]}</h4>
-                                    {groupedStyleUnits[groupKey].map(style => (
-                                        <DraggableStyleUnit 
-                                            key={style.id}
-                                            style={style as StyleDefinition & { isDefault?: boolean }}
-                                            setPreviewingStyle={setPreviewingStyle}
-                                            onEdit={() => { setEditingStyle(style); setIsEditorOpen(true); }}
-                                            onCopy={() => handleCopyStyle(style)}
-                                            onDelete={(e) => requestDelete(style, e)}
-                                            isSelectionMode={isSelectionMode}
-                                            isSelected={selectedIds.has(style.id)}
-                                            onToggleSelect={() => handleToggleSelect(style.id)}
-                                        />
-                                    ))}
-                                </div>
-                            )
-                        ))}
-                    </div>
-                    
-                    <div className="style-atelier__sidebar-footer">
-                        {isSelectionMode ? (
-                            <div className="style-atelier__footer-row style-atelier__bulk-actions">
-                                <button onClick={handleSelectAll} className="style-atelier__io-btn" title="全选/反选">
-                                    <CheckSquare size={16} />
-                                </button>
-                                <button onClick={handleExport} className="style-atelier__io-btn" title={`导出选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
-                                    <Download size={16}/>
-                                </button>
-                                <button onClick={handleBulkDelete} className="style-atelier__io-btn delete" title={`删除选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
-                                    <Trash2 size={16}/>
-                                </button>
+                <div className="th-manager__layout">
+                    {/* Sidebar */}
+                    <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''} ${isMobile && mobileTab !== 'library' ? 'mobile-hidden' : ''}`}>
+                        <div className="th-manager__sidebar-header">
+                            <div className="th-manager__sidebar-title">
+                                <Palette size={16}/> 样式工坊
                             </div>
-                        ) : (
-                            <div className="style-atelier__footer-row">
-                                <button onClick={() => { setEditingStyle(null); setIsEditorOpen(true); }} className="style-atelier__add-btn" title="新建样式">
-                                    <Plus size={16}/> 新建
-                                </button>
-                                <div className="style-atelier__io-actions">
-                                    <button onClick={handleImportClick} className="style-atelier__io-btn" title="导入样式">
-                                        <Upload size={16}/>
-                                    </button>
-                                    <button onClick={handleExport} className="style-atelier__io-btn" title="导出所有用户样式">
-                                        <Download size={16}/>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleFileChange} />
-                    </div>
-                </div>
-
-                {/* Main Preview Area */}
-                <div className={previewClasses}>
-                    <div className="style-atelier__preview-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {isSidebarCollapsed && !isMobile && (
+                            <div style={{display: 'flex', gap: '4px'}}>
                                 <button 
-                                    onClick={() => setIsSidebarCollapsed(false)} 
-                                    className="panel-toggle-btn desktop-only"
-                                    title="展开样式库"
+                                    onClick={handleToggleSelectionMode} 
+                                    className={`th-manager__icon-btn ${isSelectionMode ? 'active' : ''}`}
+                                    title={isSelectionMode ? "退出选择" : "批量管理"}
+                                    style={isSelectionMode ? {color: 'var(--color-primary)'} : {}}
                                 >
-                                    <PanelLeftOpen size={18} />
+                                    <ListChecks size={16} />
                                 </button>
+                                <button 
+                                    onClick={() => setIsSidebarCollapsed(true)} 
+                                    className="th-manager__icon-btn desktop-only"
+                                    title="收起"
+                                >
+                                    <PanelLeftClose size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="th-manager__sidebar-content">
+                            {/* Theme Section */}
+                            <div className="style-atelier__group">
+                                <h4 className="style-atelier__group-title">全局主题</h4>
+                                {themes.map(theme => {
+                                    const isActive = activeThemeId === theme.id;
+                                    const isSelected = selectedIds.has(theme.id);
+                                    return (
+                                        <div 
+                                            key={theme.id} 
+                                            className={`th-manager__list-item ${isActive ? 'th-manager__list-item--active' : ''} ${isSelected ? 'selected' : ''}`}
+                                            onClick={isSelectionMode ? () => handleToggleSelect(theme.id) : undefined}
+                                        >
+                                            <div className="th-manager__item-main">
+                                                {isSelectionMode ? (
+                                                    <div className={`style-atelier__checkbox ${isSelected ? 'checked' : ''}`}>
+                                                        {isSelected && <div className="style-atelier__checkbox-inner" />}
+                                                    </div>
+                                                ) : (
+                                                    <div className="th-manager__item-icon"><Palette size={16} /></div>
+                                                )}
+                                                <span className="th-manager__item-text">{theme.name}</span>
+                                            </div>
+                                            {!isSelectionMode && (
+                                                <div className="th-manager__item-actions">
+                                                    <button onClick={() => { setEditingStyle(theme); setIsEditorOpen(true); }} className="th-manager__icon-btn" title="编辑"><Edit2 size={16}/></button>
+                                                    <button onClick={(e) => requestDelete(theme, e)} className="th-manager__icon-btn th-manager__icon-btn--danger" title="删除"><Trash2 size={16}/></button>
+                                                    <button 
+                                                        onClick={(e) => {e.stopPropagation(); handleApplyTheme(theme.id)}} 
+                                                        className="th-manager__icon-btn"
+                                                        title={isActive ? "已应用" : "应用主题"}
+                                                        style={{color: isActive ? 'var(--color-success)' : undefined}}
+                                                    >
+                                                        <Check size={16}/>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Style Units */}
+                            {groupOrder.map(groupKey => (
+                                groupedStyleUnits[groupKey] && (
+                                    <div key={groupKey} className="style-atelier__group">
+                                        <h4 className="style-atelier__group-title">{groupLabels[groupKey as keyof typeof groupLabels]}</h4>
+                                        {groupedStyleUnits[groupKey].map(style => (
+                                            <DraggableStyleUnit 
+                                                key={style.id}
+                                                style={style as StyleDefinition & { isDefault?: boolean }}
+                                                setPreviewingStyle={setPreviewingStyle}
+                                                onEdit={() => { setEditingStyle(style); setIsEditorOpen(true); }}
+                                                onCopy={() => handleCopyStyle(style)}
+                                                onDelete={(e) => requestDelete(style, e)}
+                                                isSelectionMode={isSelectionMode}
+                                                isSelected={selectedIds.has(style.id)}
+                                                onToggleSelect={() => handleToggleSelect(style.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                )
+                            ))}
+                        </div>
+                        
+                        <div className="th-manager__sidebar-footer">
+                            {isSelectionMode ? (
+                                <div className="style-atelier__bulk-actions">
+                                    <button onClick={handleSelectAll} className="th-manager__icon-btn" title="全选/反选">
+                                        <CheckSquare size={18} />
+                                    </button>
+                                    <div style={{flex: 1}} />
+                                    <button onClick={handleExport} className="th-manager__icon-btn" title={`导出选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
+                                        <Download size={18}/>
+                                    </button>
+                                    <button onClick={handleBulkDelete} className="th-manager__icon-btn th-manager__icon-btn--danger" title={`删除选中 (${selectedIds.size})`} disabled={selectedIds.size === 0}>
+                                        <Trash2 size={18}/>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="style-atelier__footer-row">
+                                    <button onClick={() => { setEditingStyle(null); setIsEditorOpen(true); }} className="th-manager__list-item" style={{justifyContent: 'center', color: 'var(--text-tertiary)'}}>
+                                        <Plus size={16}/>
+                                        <span>新建样式</span>
+                                    </button>
+                                    <div className="style-atelier__io-actions">
+                                        <button onClick={handleImportClick} className="th-manager__icon-btn" title="导入样式">
+                                            <Upload size={16}/>
+                                        </button>
+                                        <button onClick={handleExport} className="th-manager__icon-btn" title="导出所有用户样式">
+                                            <Download size={16}/>
+                                        </button>
+                                    </div>
+                                </div>
                             )}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Paintbrush size={16}/>
-                                <h4>宏观效果预览</h4>
+                            <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleFileChange} />
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className={`th-manager__main ${isMobile && mobileTab !== 'preview' ? 'mobile-hidden' : ''}`}>
+                        <div className="th-manager__main-header">
+                            <div className="th-manager__main-title-group">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {isSidebarCollapsed && !isMobile && (
+                                        <button 
+                                            onClick={() => setIsSidebarCollapsed(false)} 
+                                            className="th-manager__icon-btn desktop-only"
+                                            title="展开样式库"
+                                        >
+                                            <PanelLeftOpen size={16} />
+                                        </button>
+                                    )}
+                                    <h2 className="th-manager__main-title">宏观效果预览</h2>
+                                </div>
+                                <div className="th-manager__main-subtitle">
+                                    {hasChanges && <span className="data-center__unsaved-indicator" style={{color: 'var(--color-warning)'}}>[有未保存的样式关联] </span>}
+                                    从左侧拖拽样式到下方条目以应用
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="th-manager__main-content">
+                            <div className="style-atelier__preview-canvas">
+                                {stagedData ? (
+                                    <StatusBar data={stagedData} styleOverride={previewingStyle} />
+                                ) : (
+                                    <div className="style-atelier__placeholder">加载预览...</div>
+                                )}
                             </div>
                         </div>
                     </div>
-                    <div className="style-atelier__preview-canvas">
-                        {stagedData ? (
-                            <StatusBar data={stagedData} styleOverride={previewingStyle} />
-                        ) : (
-                            <div className="style-atelier__placeholder">加载预览...</div>
-                        )}
-                    </div>
                 </div>
 
-                {/* Deletion & Action Modals (Unchanged logic) */}
+                {/* Footer Toolbar */}
+                {hasChanges && (
+                    <div className="th-manager__toolbar">
+                        <div className="data-center__unsaved-prompt" style={{marginRight: 'auto'}}>
+                            <AlertCircle size={18} />
+                            <span>有未保存的关联更改</span>
+                        </div>
+                        <button onClick={handleDiscardChanges} className="btn btn--ghost">
+                            <RotateCcw size={16} /> 放弃
+                        </button>
+                        <button onClick={handleSaveChanges} className="btn btn--primary pulse">
+                            <Save size={16} /> 保存更改
+                        </button>
+                    </div>
+                )}
+
+                {/* Modals */}
                 {deletingStyle && (
                     <div className="style-atelier__delete-overlay">
                         <div className="style-atelier__delete-modal glass-panel">
-                            <div className="style-atelier__delete-header">
-                                <AlertTriangle size={24} /><h3>确认删除</h3>
-                            </div>
-                            <p>您确定要删除样式 "{deletingStyle.name}" 吗？此操作不可撤销。</p>
+                            <h3>确认删除</h3>
+                            <p>确定要删除样式 "{deletingStyle.name}" 吗？</p>
                             <div className="style-atelier__delete-actions">
                                 <button className="btn btn--ghost" onClick={() => setDeletingStyle(null)}>取消</button>
-                                <button className="btn btn--danger" onClick={confirmDelete}><Trash2 size={16} /> 删除</button>
+                                <button className="btn btn--danger" onClick={confirmDelete}>删除</button>
                             </div>
                         </div>
                     </div>
@@ -555,30 +601,12 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                 {pendingBulkDeleteIds && (
                     <div className="style-atelier__delete-overlay">
                         <div className="style-atelier__delete-modal glass-panel">
-                            <div className="style-atelier__delete-header">
-                                <AlertTriangle size={24} /><h3>确认批量删除</h3>
-                            </div>
-                            <p>您确定要删除选中的 <strong>{pendingBulkDeleteIds.length}</strong> 个样式吗？此操作不可撤销。</p>
+                            <h3>确认批量删除</h3>
+                            <p>删除选中的 <strong>{pendingBulkDeleteIds.length}</strong> 个样式？</p>
                             <div className="style-atelier__delete-actions">
                                 <button className="btn btn--ghost" onClick={() => setPendingBulkDeleteIds(null)}>取消</button>
-                                <button className="btn btn--danger" onClick={executeBulkDelete}><Trash2 size={16} /> 全部删除</button>
+                                <button className="btn btn--danger" onClick={executeBulkDelete}>全部删除</button>
                             </div>
-                        </div>
-                    </div>
-                )}
-                
-                {hasChanges && (
-                    <div className="style-atelier__action-bar glass-panel animate-slide-up">
-                        <span className="style-atelier__action-bar-prompt">
-                            您有未保存的更改
-                        </span>
-                        <div className="style-atelier__action-bar-buttons">
-                            <button onClick={handleDiscardChanges} className="btn btn--ghost">
-                                <RotateCcw size={16} /> 放弃
-                            </button>
-                            <button onClick={handleSaveChanges} className="btn btn--primary pulse">
-                                <Save size={16} /> 保存更改
-                            </button>
                         </div>
                     </div>
                 )}

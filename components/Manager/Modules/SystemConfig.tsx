@@ -5,10 +5,11 @@ import { styleService } from '../../../services/styleService';
 import SnapshotSettings from '../SnapshotSettings';
 import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
-import BackupManager from '../System/BackupManager'; // Added
+import BackupManager from '../System/BackupManager'; 
 import HelpGuide from '../Help/HelpGuide';
-import { Camera, Layers, ListFilter, CircleHelp, Archive } from 'lucide-react'; // Added Archive icon
-import './SystemConfig.css';
+import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen } from 'lucide-react'; 
+import '../ManagerLayout.css'; // Use shared styles
+// Note: SystemConfig.css is no longer needed as we use shared styles, but we might keep it for specific inner content if any
 
 interface SystemConfigProps {
   data: StatusBarData;
@@ -18,54 +19,89 @@ interface SystemConfigProps {
   snapshotMeta: SnapshotMeta | null;
 }
 
-type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'BACKUP' | 'HELP'; // Added BACKUP
+type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'BACKUP' | 'HELP';
 
 const SystemConfig: React.FC<SystemConfigProps> = ({ 
   data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta
 }) => {
   const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const allStyles = styleService.getStyleDefinitions();
 
-  const tabs: { id: SystemTab; label: string; icon: React.ElementType }[] = [
-    { id: 'SNAPSHOT', label: '动态快照', icon: Camera },
-    { id: 'PRESETS', label: '配置预设', icon: Layers },
-    { id: 'ENTRIES', label: '条目管理', icon: ListFilter },
-    { id: 'BACKUP', label: '备份与迁移', icon: Archive }, // Added
-    { id: 'HELP', label: '使用指南', icon: CircleHelp },
+  const tabs: { id: SystemTab; label: string; icon: React.ElementType, description?: string }[] = [
+    { id: 'PRESETS', label: '配置预设', icon: Layers, description: '管理主题与布局配置' },
+    { id: 'SNAPSHOT', label: '动态快照', icon: Camera, description: '自动生成世界叙事' },
+    { id: 'ENTRIES', label: '条目管理', icon: ListFilter, description: '世界书条目列表' },
+    { id: 'BACKUP', label: '备份与迁移', icon: Archive, description: '导入/导出数据' },
+    { id: 'HELP', label: '使用指南', icon: CircleHelp, description: '帮助文档' },
   ];
 
-  return (
-    <div className="system-config">
-      <div className="system-config__tabs-container">
-        {tabs.map(tab => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`system-config__tab ${isActive ? 'active' : ''}`}
-            >
-              <tab.icon size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+  const renderContent = () => {
+      switch (activeTab) {
+          case 'SNAPSHOT': return <SnapshotSettings data={data} enabled={snapshotEnabled} onToggle={onToggleSnapshot} meta={snapshotMeta} />;
+          case 'PRESETS': return <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} />;
+          case 'ENTRIES': return <EntryList />;
+          case 'BACKUP': return <BackupManager data={data} onUpdate={onUpdate} />;
+          case 'HELP': return <HelpGuide />;
+          default: return null;
+      }
+  };
 
-      <div className="system-config__content-area">
-        {activeTab === 'SNAPSHOT' && (
-          <SnapshotSettings 
-            data={data} 
-            enabled={snapshotEnabled} 
-            onToggle={onToggleSnapshot} 
-            meta={snapshotMeta} 
-          />
-        )}
-        {activeTab === 'PRESETS' && <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} />}
-        {activeTab === 'ENTRIES' && <EntryList />}
-        {activeTab === 'BACKUP' && <BackupManager data={data} onUpdate={onUpdate} />} 
-        {activeTab === 'HELP' && <HelpGuide />}
-      </div>
+  const activeTabInfo = tabs.find(t => t.id === activeTab);
+
+  return (
+    <div className="th-manager">
+        <div className="th-manager__layout">
+            
+            {/* Sidebar Navigation */}
+            <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
+                <div className="th-manager__sidebar-header">
+                    <div className="th-manager__sidebar-title">系统菜单</div>
+                </div>
+                
+                <div className="th-manager__sidebar-content">
+                    {tabs.map(tab => (
+                        <div 
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`th-manager__list-item ${activeTab === tab.id ? 'th-manager__list-item--active' : ''}`}
+                        >
+                            <div className="th-manager__item-main">
+                                <div className="th-manager__item-icon"><tab.icon size={18} /></div>
+                                <span className="th-manager__item-text">{tab.label}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="th-manager__main">
+                <div className="th-manager__main-header">
+                    <div className="th-manager__main-title-group">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {isSidebarCollapsed && (
+                                <button 
+                                    onClick={() => setIsSidebarCollapsed(false)} 
+                                    className="th-manager__icon-btn desktop-only"
+                                >
+                                    <PanelLeftOpen size={16} />
+                                </button>
+                            )}
+                            <h2 className="th-manager__main-title">{activeTabInfo?.label}</h2>
+                        </div>
+                        <div className="th-manager__main-subtitle">
+                            {activeTabInfo?.description}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="th-manager__main-content" style={{padding: 0}}>
+                    {/* Inner content components handle their own padding/layout usually, or we can wrap them */}
+                    {renderContent()}
+                </div>
+            </div>
+        </div>
     </div>
   );
 };

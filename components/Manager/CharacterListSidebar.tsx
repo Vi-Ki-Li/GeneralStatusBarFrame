@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Globe, Plus, Sparkles, Check, X, Trash2, Eye, EyeOff, PanelLeftClose } from 'lucide-react';
-import './CharacterListSidebar.css';
+// import './CharacterListSidebar.css'; // Now using ManagerLayout.css primarily
 
 interface CharacterOption {
   id: string;
@@ -15,7 +16,7 @@ interface CharacterListSidebarProps {
   onAddCharacter: (id: string, name: string) => void;
   onResetData?: () => void;
   onTogglePresence: (id: string) => void;
-  onClose?: () => void; // Scheme A: Top toggle
+  onClose?: () => void;
 }
 
 const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({ 
@@ -67,42 +68,52 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
   };
 
   return (
-    <div className="char-sidebar">
-      <div className="char-sidebar__header-row">
-          <div className="char-sidebar__group-title" style={{marginBottom:0}}>数据源</div>
+    <>
+      <div className="th-manager__sidebar-header">
+          <div className="th-manager__sidebar-title">数据源</div>
           {onClose && (
-              <button onClick={onClose} className="panel-toggle-btn desktop-only" title="收起侧边栏">
+              <button onClick={onClose} className="th-manager__icon-btn desktop-only" title="收起侧边栏">
                   <PanelLeftClose size={16} />
               </button>
           )}
       </div>
 
-      <div className="char-sidebar__group">
+      <div className="th-manager__sidebar-content">
         <button
             onClick={() => onSelect('SHARED')}
-            className={`char-sidebar__item ${selectedId === 'SHARED' ? 'char-sidebar__item--active' : ''}`}
+            className={`th-manager__list-item ${selectedId === 'SHARED' ? 'th-manager__list-item--active' : ''}`}
         >
-            <div className="char-sidebar__item-main">
-                <div className="char-sidebar__item-icon"><Globe size={18} /></div>
-                <span className="char-sidebar__item-name">共享/世界</span>
+            <div className="th-manager__item-main">
+                <div className="th-manager__item-icon"><Globe size={18} /></div>
+                <span className="th-manager__item-text">共享/世界</span>
             </div>
         </button>
-      </div>
 
-      <div className="char-sidebar__group char-sidebar__group--characters">
-        <div className="char-sidebar__group-header">
-          <span className="char-sidebar__group-title">角色列表</span>
-          <button 
-            onClick={handleStartAdd}
-            className="char-sidebar__add-btn"
-            title="添加角色"
-          >
-            <Plus size={14} />
-          </button>
+        <div style={{
+            marginTop: 'var(--spacing-lg)', 
+            paddingTop: 'var(--spacing-sm)', 
+            borderTop: '1px solid var(--border-base)',
+            marginBottom: '4px'
+        }}>
+            <div style={{
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: '8px', 
+                padding: '0 8px'
+            }}>
+                <span className="th-manager__sidebar-title" style={{fontSize: '0.75rem'}}>角色列表</span>
+                <button 
+                    onClick={handleStartAdd}
+                    className="th-manager__icon-btn"
+                    title="添加角色"
+                >
+                    <Plus size={14} />
+                </button>
+            </div>
         </div>
 
-        <div className="char-sidebar__list">
-          {isAdding && (
+        {isAdding && (
             <div className="char-sidebar__add-form animate-fade-in">
               <input
                 ref={idInputRef}
@@ -132,9 +143,9 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
                 <button onClick={handleCancel} className="char-sidebar__add-cancel"><X size={16} /></button>
               </div>
             </div>
-          )}
+        )}
 
-          {characters.map(char => {
+        {characters.map(char => {
             const isSelected = selectedId === char.id; 
             const isUser = char.id === 'char_user';
             
@@ -142,45 +153,46 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
               <div
                 key={char.id}
                 onClick={() => onSelect(char.id)}
-                className={`char-sidebar__item ${isSelected ? 'char-sidebar__item--active' : ''}`}
+                className={`th-manager__list-item ${isSelected ? 'th-manager__list-item--active' : ''}`}
               >
-                <div className="char-sidebar__item-main">
-                    <div className="char-sidebar__item-icon">
+                <div className="th-manager__item-main">
+                    <div className="th-manager__item-icon">
                       {isUser ? <User size={16} /> : <Sparkles size={16} />}
                     </div>
-                    <div className="char-sidebar__item-info">
-                    <span className="char-sidebar__item-name">{char.name}</span>
+                    <span className="th-manager__item-text">{char.name}</span>
                     {char.id !== 'char_user' && (
-                        <span className="char-sidebar__item-id">{char.id}</span>
+                        <span className="th-manager__item-meta">{char.id}</span>
                     )}
-                    </div>
                 </div>
 
-                <button 
-                onClick={(e) => { e.stopPropagation(); onTogglePresence(char.id); }}
-                className={`char-sidebar__presence-toggle ${char.isPresent ? 'present' : 'hidden'}`}
-                title={char.isPresent ? '角色在场 (Visible)' : '角色退场 (Hidden)'}
-                >
-                    {char.isPresent ? <Eye size={16} /> : <EyeOff size={16} />}
-                </button>
+                <div className="th-manager__item-actions">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onTogglePresence(char.id); }}
+                        className={`th-manager__icon-btn`}
+                        title={char.isPresent ? '角色在场 (Visible)' : '角色退场 (Hidden)'}
+                        style={{color: char.isPresent ? 'var(--color-success)' : 'var(--text-tertiary)'}}
+                    >
+                        {char.isPresent ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                </div>
               </div>
             );
-          })}
-        </div>
+        })}
       </div>
       
-      <div className="char-sidebar__footer">
+      <div className="th-manager__sidebar-footer">
         {onResetData && (
           <button 
             onClick={onResetData}
-            className="char-sidebar__reset-btn"
+            className="th-manager__list-item"
+            style={{color: 'var(--text-tertiary)', justifyContent: 'center'}}
           >
             <Trash2 size={16} />
             <span>清空数据</span>
           </button>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
