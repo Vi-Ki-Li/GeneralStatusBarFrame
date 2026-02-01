@@ -10,12 +10,13 @@ import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import DefinitionDrawer from '../Definitions/DefinitionDrawer';
 import CategoryDrawer from '../Definitions/CategoryDrawer'; 
+import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
 import { tavernService } from '../../../services/mockTavernService';
 import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
-import '../ManagerLayout.css'; // Import standardized styles
-import './DataCenter.css'; // Keep module-specific overrides if needed
+import '../ManagerLayout.css'; 
+import './DataCenter.css'; 
 
 interface DataCenterProps {
   data: StatusBarData;
@@ -279,6 +280,22 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                             <h2 className="th-manager__main-title">
                                 {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
                             </h2>
+                            {/* Help Button - Start Add */}
+                            <ContextHelpButton 
+                                title="数据中心帮助" 
+                                content={
+                                    <>
+                                        <p>这里是所有状态数据的实时编辑器。</p>
+                                        <ul>
+                                            <li><strong>左侧栏/顶部标签</strong>: 切换不同的数据源（共享世界或特定角色）。</li>
+                                            <li><strong>添加新条目</strong>: 在对应分类下点击“添加新条目”。系统会根据您在“定义工坊”中的设置提供智能建议。</li>
+                                            <li><strong>锁定机制</strong>: 您手动修改过的数值会自动“锁定”（黄色锁图标），此时 AI 将无法修改它，直到您发送一条新消息后自动解锁。</li>
+                                            <li><strong>暂存与保存</strong>: 所有修改首先是“暂存”的。请务必点击底部的“保存所有更改”按钮以生效。</li>
+                                        </ul>
+                                    </>
+                                } 
+                            />
+                            {/* Help Button - End Add */}
                         </div>
                         <div className="th-manager__main-subtitle">
                             {hasUnsavedChanges && <span className="data-center__unsaved-indicator" style={{color: 'var(--color-warning)'}}>[未保存] </span>}

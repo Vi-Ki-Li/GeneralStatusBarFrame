@@ -38,6 +38,10 @@
   max-height: 100%;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   transform: translateY(100%);
+  
+  /* Shared Appearance */
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
 }
 
 .preset-editor-wrapper.open .preset-editor__panel {
@@ -75,6 +79,7 @@
 .preset-editor__title {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
 }
 
 .preset-editor__close-btn {
@@ -83,7 +88,9 @@
   color: var(--text-tertiary);
   cursor: pointer;
   padding: var(--spacing-xs);
+  transition: color 0.2s;
 }
+.preset-editor__close-btn:hover { color: var(--text-primary); }
 
 .preset-editor__content {
   flex: 1;
@@ -119,9 +126,15 @@
   color: var(--text-primary);
   font-size: 1rem;
   outline: none;
+  transition: border-color 0.2s;
 }
 .preset-editor__input:focus {
   border-color: var(--color-primary);
+}
+
+.preset-editor__select-wrapper {
+    position: relative;
+    width: 100%;
 }
 
 .preset-editor__search-wrapper {
@@ -141,8 +154,50 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--chip-border);
   background: var(--bg-app);
+  color: var(--text-primary);
   outline: none;
   font-size: 0.9rem;
+}
+
+/* Action Bar */
+.preset-editor__selection-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    align-items: center;
+}
+.preset-editor__action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--chip-border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.preset-editor__action-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+.preset-editor__link-btn {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+}
+.preset-editor__link-btn:hover {
+    text-decoration: underline;
 }
 
 .preset-editor__def-list {
@@ -213,6 +268,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-primary);
+  font-size: 0.9rem;
 }
 .preset-editor__def-key {
   font-size: 0.8rem;
@@ -233,8 +290,9 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--chip-border);
   background: var(--bg-app);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
+  max-width: 120px;
 }
 
 .preset-editor__footer {
@@ -257,6 +315,7 @@
 .preset-editor__checkbox-label input {
     width: 16px;
     height: 16px;
+    accent-color: var(--color-primary);
 }
 .preset-editor__layout-icon {
     color: var(--color-primary);
@@ -277,9 +336,10 @@
     }
     .preset-editor__style-override {
         width: 100%;
-        margin-left: 0;
+        margin-left: 34px; /* Align with text */
     }
     .preset-editor__style-select {
         width: 100%;
+        max-width: none;
     }
 }

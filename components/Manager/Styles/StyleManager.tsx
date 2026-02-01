@@ -9,6 +9,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { Plus, Edit2, Trash2, Palette, AlertTriangle, Check, RotateCcw, Copy, Eye, Download, Upload, ListChecks, CheckSquare, PanelLeftClose, PanelLeftOpen, LayoutList, Paintbrush, Save, AlertCircle } from 'lucide-react'; 
 import StyleEditor from './StyleEditor';
 import StatusBar from '../../StatusBar/StatusBar';
+import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
 import _ from 'lodash';
 import '../ManagerLayout.css'; // Standard styles
 import './StyleManager.css'; // Module specific overrides
@@ -548,6 +549,22 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
                                         </button>
                                     )}
                                     <h2 className="th-manager__main-title">宏观效果预览</h2>
+                                    {/* Help Button - Start Add */}
+                                    <ContextHelpButton 
+                                        title="样式工坊帮助" 
+                                        content={
+                                            <>
+                                                <p>在这里，您可以定义数据条目的视觉表现，或者设置全局主题。</p>
+                                                <ul>
+                                                    <li><strong>全局主题</strong>: 位于列表顶部，点击“勾选”图标应用。它会改变整个应用的配色、字体和圆角。</li>
+                                                    <li><strong>样式单元</strong>: 创建可复用的渲染模板（如“血条样式”）。</li>
+                                                    <li><strong>可视化编辑器</strong>: 新建样式时，可以使用可视化 GUI 调整颜色、边框等，无需写代码。</li>
+                                                    <li><strong>应用样式</strong>: 在此界面，您可以将左侧的样式拖拽到右侧预览中的条目上，直接建立关联。</li>
+                                                </ul>
+                                            </>
+                                        } 
+                                    />
+                                    {/* Help Button - End Add */}
                                 </div>
                                 <div className="th-manager__main-subtitle">
                                     {hasChanges && <span className="data-center__unsaved-indicator" style={{color: 'var(--color-warning)'}}>[有未保存的样式关联] </span>}

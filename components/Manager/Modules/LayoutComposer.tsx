@@ -1,9 +1,11 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { StatusBarData, ItemDefinition, CategoryDefinition, StatusBarItem } from '../../../types';
 import { LayoutNode, LayoutSnapshot } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import DraggablePanel from '../../Shared/DraggablePanel';
+import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
 import * as LucideIcons from 'lucide-react';
 import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon, Save, Download, FileJson, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, BringToFront, Settings } from 'lucide-react';
 import {
@@ -1057,6 +1059,24 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                                 </button>
                             )}
                             <span className="layout-composer__canvas-title">
+                                {/* Help Button - Start Add */}
+                                <ContextHelpButton 
+                                    title="布局编排帮助" 
+                                    content={
+                                        <>
+                                            <p>所见即所得地设计状态栏的布局结构。</p>
+                                            <ul>
+                                                <li><strong>基础概念</strong>: 布局由“行”(Row)、“列”(Col) 和“组件”(Item) 组成。</li>
+                                                <li><strong>创建行</strong>: 从左侧组件库拖拽一个组件到中央的虚线框区域，会自动创建包含该组件的新行。</li>
+                                                <li><strong>分列</strong>: 将组件拖拽到现有列的边缘（左右两侧），会显示蓝色指示条，释放后将该列一分为二。</li>
+                                                <li><strong>调整宽度</strong>: 拖动列与列之间的分隔线来调整宽度比例。</li>
+                                                <li><strong>属性调整</strong>: 点击画布中的任意元素，右侧面板会显示其属性（背景色、边距、对齐方式等）。</li>
+                                                <li><strong>删除</strong>: 选中元素后点击右上角的垃圾桶图标，或按 Delete 键。</li>
+                                            </ul>
+                                        </>
+                                    } 
+                                />
+                                {/* Help Button - End Add */}
                                 Layout Canvas
                             </span>
                             

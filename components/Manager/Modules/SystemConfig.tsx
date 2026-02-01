@@ -8,6 +8,7 @@ import EntryList from '../Entries/EntryList';
 import BackupManager from '../System/BackupManager'; 
 import HelpGuide from '../Help/HelpGuide';
 import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen, PanelLeftClose } from 'lucide-react'; 
+import { ManagerModule } from '../Navigation/ModuleNavigation';
 import '../ManagerLayout.css'; 
 
 interface SystemConfigProps {
@@ -16,12 +17,13 @@ interface SystemConfigProps {
   snapshotEnabled: boolean;
   onToggleSnapshot: (enabled: boolean) => void;
   snapshotMeta: SnapshotMeta | null;
+  onNavigate: (module: ManagerModule) => void;
 }
 
 type SystemTab = 'SNAPSHOT' | 'PRESETS' | 'ENTRIES' | 'BACKUP' | 'HELP';
 
 const SystemConfig: React.FC<SystemConfigProps> = ({ 
-  data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta
+  data, onUpdate, snapshotEnabled, onToggleSnapshot, snapshotMeta, onNavigate
 }) => {
   const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -38,7 +40,7 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
   const renderContent = () => {
       switch (activeTab) {
           case 'SNAPSHOT': return <SnapshotSettings data={data} enabled={snapshotEnabled} onToggle={onToggleSnapshot} meta={snapshotMeta} />;
-          case 'PRESETS': return <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} />;
+          case 'PRESETS': return <PresetList data={data} onUpdate={onUpdate} allStyles={allStyles} onNavigate={onNavigate} />;
           case 'ENTRIES': return <EntryList />;
           case 'BACKUP': return <BackupManager data={data} onUpdate={onUpdate} />;
           case 'HELP': return <HelpGuide />;

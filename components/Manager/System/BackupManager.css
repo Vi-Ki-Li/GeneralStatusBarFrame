@@ -1,36 +1,27 @@
 
-.backup-manager {
-  height: 100%;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-}
+/* BackupManager.css - Refactored for ManagerLayout standard */
 
-.backup-manager__container {
-  max-width: 600px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
+/* Removed .backup-manager, .backup-manager__container as we use th-manager__main-content */
 
 /* Options Grid */
 .backup-options {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Better responsiveness */
     gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
 }
 
 .full-width {
     width: 100%;
     justify-content: center;
-    padding: 10px;
+    padding: 12px;
 }
 
 /* Import Zone */
 .import-zone {
     border: 2px dashed var(--border-base);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-2xl);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -42,11 +33,11 @@
 }
 .import-zone:hover, .import-zone.active {
     border-color: var(--color-primary);
-    background: rgba(99, 102, 241, 0.05);
+    background: var(--color-primary-subtle);
     color: var(--color-primary);
 }
 .import-zone__icon { opacity: 0.5; }
-.import-zone__text { font-size: 0.9rem; color: var(--text-secondary); }
+.import-zone__text { font-size: 0.95rem; color: var(--text-secondary); font-weight: 500; }
 
 /* Strategy Radios */
 .import-strategies {
@@ -58,36 +49,42 @@
     flex: 1;
     display: flex;
     align-items: flex-start;
-    gap: var(--spacing-sm);
-    padding: 10px;
+    gap: var(--spacing-md);
+    padding: 12px;
     border: 1px solid var(--border-base);
     border-radius: var(--radius-md);
-    background: var(--bg-app);
+    background: var(--bg-surface);
     cursor: pointer;
+    transition: all 0.2s;
+}
+.radio-card:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-hover);
 }
 .radio-card.selected {
     border-color: var(--color-primary);
     background: var(--bg-surface);
     box-shadow: 0 0 0 1px var(--color-primary);
 }
-.radio-card input { margin-top: 4px; }
-.radio-card .title { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
-.radio-card .desc { display: block; font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
+.radio-card input { margin-top: 4px; accent-color: var(--color-primary); }
+.radio-card .title { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.radio-card .desc { display: block; font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4; }
 
-.import-controls { margin-top: var(--spacing-lg); }
+.import-controls { margin-top: var(--spacing-xl); }
 
 .import-logs {
-    background: #1e1e1e;
-    color: #4ade80;
-    font-family: monospace;
+    background: #18181b; /* Zinc 900 */
+    color: #4ade80; /* Green 400 */
+    font-family: var(--font-family-mono);
     font-size: 0.8rem;
-    padding: 10px;
+    padding: 12px;
     border-radius: var(--radius-md);
-    max-height: 120px;
+    max-height: 150px;
     overflow-y: auto;
+    border: 1px solid var(--border-base);
 }
 
-/* Reset Confirmation Modal */
+/* Reset Confirmation Modal (Reused styles) */
 .backup-reset-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -106,6 +103,8 @@
     text-align: center;
     border: 1px solid var(--color-danger);
     background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
 }
 
 .backup-reset-modal h3 {
@@ -127,4 +126,13 @@
     display: flex;
     justify-content: center;
     gap: var(--spacing-md);
+}
+
+@media (max-width: 600px) {
+    .import-strategies {
+        flex-direction: column;
+    }
+    .backup-options {
+        grid-template-columns: 1fr;
+    }
 }

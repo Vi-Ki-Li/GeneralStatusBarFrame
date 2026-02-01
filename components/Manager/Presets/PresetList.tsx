@@ -7,15 +7,17 @@ import { setActiveNarrativeConfigId, getNarrativeConfigs } from '../../../utils/
 import { useToast } from '../../Toast/ToastContext';
 import { Save, Trash2, CheckCircle, Clock, BookOpen, Layers, AlertTriangle, Plus, Edit2, Loader, LayoutTemplate, MessageSquareQuote, Check, Download, Upload, Search } from 'lucide-react';
 import PresetEditorModal from './PresetEditorModal';
+import { ManagerModule } from '../Navigation/ModuleNavigation';
 import './PresetList.css';
 
 interface PresetListProps {
   data: StatusBarData;
   onUpdate: (newData: StatusBarData) => void;
   allStyles: StyleDefinition[];
+  onNavigate: (module: ManagerModule) => void;
 }
 
-const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) => {
+const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles, onNavigate }) => {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
@@ -341,6 +343,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles }) =>
         allDefinitions={allDefinitions}
         allStyles={allStyles}
         currentLayout={data.layout}
+        onNavigate={onNavigate}
       />
     </div>
   );

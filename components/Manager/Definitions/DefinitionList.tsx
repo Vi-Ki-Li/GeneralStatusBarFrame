@@ -5,6 +5,7 @@ import { useToast } from '../../Toast/ToastContext';
 import { Plus, Edit2, Trash2, Box, Type, Layers, List, Check, X as XIcon, AlertTriangle, ChevronsRight, UploadCloud, Loader, ChevronLeft, PanelLeftOpen, PanelLeftClose, Download, Upload } from 'lucide-react';
 import DefinitionDrawer from './DefinitionDrawer';
 import CategoryDrawer from './CategoryDrawer';
+import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
 import * as LucideIcons from 'lucide-react';
 import { tavernService } from '../../../services/mockTavernService';
 import '../ManagerLayout.css';
@@ -252,6 +253,22 @@ const DefinitionList: React.FC<DefinitionListProps> = ({ data, onUpdate, onGoToS
                           <h2 className="th-manager__main-title">
                               {selectedCategory ? selectedCategory.name : '所有条目规则'}
                           </h2>
+                          {/* Help Button - Start Add */}
+                          <ContextHelpButton 
+                              title="定义工坊帮助" 
+                              content={
+                                  <>
+                                      <p>这里是管理数据“元数据”的地方。您可以定义每个条目的结构、类型和在世界书中的格式。</p>
+                                      <ul>
+                                          <li><strong>分类管理</strong>: 左侧管理分类（容器）。可以设置分类是“列表”、“网格”还是“标签流”布局。</li>
+                                          <li><strong>条目规则</strong>: 点击“新建规则”来定义一个新的数据点（如“HP”）。</li>
+                                          <li><strong>注入世界书</strong>: 编辑好规则后，点击“注入/同步”按钮。这会自动在您的 SillyTavern 世界书中创建一条正则替换条目，教导 AI 如何输出这个数据。</li>
+                                          <li><strong>数据结构</strong>: 支持“数值”（带进度条）、“文本”、“标签组”和“对象列表”（如背包）。</li>
+                                      </ul>
+                                  </>
+                              } 
+                          />
+                          {/* Help Button - End Add */}
                       </div>
                       <p className="th-manager__main-subtitle">
                           {selectedCategory ? `(Key: ${selectedCategory.key})` : '全局'}

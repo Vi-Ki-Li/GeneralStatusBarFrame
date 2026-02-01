@@ -5,7 +5,8 @@ import { LayoutNode } from '../../../types/layout';
 import { useToast } from '../../Toast/ToastContext';
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import { getNarrativeConfigs, NarrativeConfig } from '../../../utils/snapshotGenerator';
-import { X, Save, Search, Box, LayoutTemplate, MessageSquareQuote } from 'lucide-react';
+import { ManagerModule } from '../Navigation/ModuleNavigation';
+import { X, Save, Search, Box, LayoutTemplate, MessageSquareQuote, CheckSquare, Square, ArrowUpRight } from 'lucide-react';
 import './PresetEditorModal.css';
 
 interface PresetEditorModalProps {
@@ -15,11 +16,12 @@ interface PresetEditorModalProps {
   presetToEdit: Preset | null;
   allDefinitions: ItemDefinition[];
   allStyles: StyleDefinition[];
-  currentLayout?: LayoutNode[]; // Passed from parent
+  currentLayout?: LayoutNode[];
+  onNavigate: (module: ManagerModule) => void;
 }
 
 const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
-  isOpen, onClose, onSave, presetToEdit, allDefinitions, allStyles, currentLayout
+  isOpen, onClose, onSave, presetToEdit, allDefinitions, allStyles, currentLayout, onNavigate
 }) => {
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
@@ -53,7 +55,6 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     }
   }, [isOpen, presetToEdit]);
   
-  // Prevent body scroll when modal/drawer is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -75,24 +76,36 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 
   const availableStyles = useMemo(() => {
     const defaultOption: StyleDefinition = { id: 'style_default', name: '默认', dataType: 'numeric', css: '' };
-    
-    // Filter out themes
     const filteredUserStyles = allStyles.filter(s => s.dataType !== 'theme');
     const filteredDefaults = DEFAULT_STYLE_UNITS.filter(s => s.dataType !== 'theme') as unknown as StyleDefinition[];
-    
     return [defaultOption, ...filteredDefaults, ...filteredUserStyles];
   }, [allStyles]);
 
   const handleToggleItem = (key: string) => {
     setSelectedItemKeys(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
-      } else {
-        newSet.add(key);
-      }
+      if (newSet.has(key)) newSet.delete(key);
+      else newSet.add(key);
       return newSet;
     });
+  };
+  
+  const handleSelectAll = () => {
+      const allKeys = filteredDefinitions.map(d => d.key);
+      setSelectedItemKeys(prev => {
+          const newSet = new Set(prev);
+          allKeys.forEach(k => newSet.add(k));
+          return newSet;
+      });
+  };
+
+  const handleDeselectAll = () => {
+      const allKeys = filteredDefinitions.map(d => d.key);
+      setSelectedItemKeys(prev => {
+          const newSet = new Set(prev);
+          allKeys.forEach(k => newSet.delete(k));
+          return newSet;
+      });
   };
   
   const handleOverrideChange = (itemKey: string, styleId: string) => {
@@ -107,6 +120,11 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     });
   };
 
+  const handleNavigate = (module: ManagerModule) => {
+      onClose();
+      onNavigate(module);
+  };
+
   const handleSave = () => {
     if (!name.trim()) {
       toast.error("预设名称不能为空");
@@ -114,7 +132,7 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     }
     
     const preset: Preset = {
-      id: presetToEdit?.id || '', // Service will generate new ID if empty
+      id: presetToEdit?.id || '',
       name: name.trim(),
       timestamp: Date.now(),
       itemKeys: Array.from(selectedItemKeys),
@@ -126,10 +144,8 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         if (currentLayout && currentLayout.length > 0) {
             preset.layout = currentLayout;
         } else {
-            // If editing a preset that had layout, but current session has no layout, keep old layout or warn?
-            // Let's assume we take the current state.
             if (presetToEdit?.layout) {
-                 preset.layout = presetToEdit.layout; // Preserve if not editing layout explicitly
+                 preset.layout = presetToEdit.layout;
                  toast.info("保留了原有的布局设置 (因为当前没有活动布局)");
             } else {
                  toast.warning("当前没有自定义布局，预设将不包含布局信息");
@@ -181,15 +197,20 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         </div>
         
         <div className="preset-editor__form-group">
-            <label className="preset-editor__checkbox-label">
-                <input 
-                    type="checkbox" 
-                    checked={includeLayout} 
-                    onChange={e => setIncludeLayout(e.target.checked)} 
-                />
-                <span className="preset-editor__checkbox-text">包含当前布局结构</span>
-                {includeLayout && <LayoutTemplate size={14} className="preset-editor__layout-icon" />}
-            </label>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <label className="preset-editor__checkbox-label">
+                    <input 
+                        type="checkbox" 
+                        checked={includeLayout} 
+                        onChange={e => setIncludeLayout(e.target.checked)} 
+                    />
+                    <span className="preset-editor__checkbox-text">包含当前布局结构</span>
+                    {includeLayout && <LayoutTemplate size={14} className="preset-editor__layout-icon" />}
+                </label>
+                <button onClick={() => handleNavigate('LAYOUT')} className="preset-editor__link-btn">
+                    去调整布局 <ArrowUpRight size={12}/>
+                </button>
+            </div>
             {includeLayout && (
                 <div className="preset-editor__hint">
                     应用此预设时，整个状态栏的排版布局将被该快照覆盖。
@@ -210,6 +231,19 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
               className="preset-editor__search-input"
             />
           </div>
+          <div className="preset-editor__selection-actions">
+              <button onClick={handleSelectAll} className="preset-editor__action-btn">
+                  <CheckSquare size={14} /> 全选
+              </button>
+              <button onClick={handleDeselectAll} className="preset-editor__action-btn">
+                  <Square size={14} /> 全不选
+              </button>
+              <div style={{flex: 1}}/>
+              <button onClick={() => handleNavigate('STYLES')} className="preset-editor__link-btn">
+                  去设计样式 <ArrowUpRight size={12}/>
+              </button>
+          </div>
+          
           <div className="preset-editor__def-list">
             {filteredDefinitions.map(def => {
               const isSelected = selectedItemKeys.has(def.key);

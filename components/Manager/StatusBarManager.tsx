@@ -55,14 +55,15 @@ const StatusBarManager: React.FC<StatusBarManagerProps> = ({
           onStyleEditRequestProcessed={() => setStyleEditRequest(null)}
         />;
       case 'LAYOUT':
-        return <LayoutComposer data={data} onUpdate={onUpdate} isMobile={isMobile} />; // 此处修改1行
+        return <LayoutComposer data={data} onUpdate={onUpdate} isMobile={isMobile} />;
       case 'SYSTEM':
         return <SystemConfig 
             data={data} 
             onUpdate={onUpdate} 
             snapshotEnabled={snapshotEnabled} 
             onToggleSnapshot={onToggleSnapshot} 
-            snapshotMeta={snapshotMeta} 
+            snapshotMeta={snapshotMeta}
+            onNavigate={setActiveModule}
         />;
       default:
         return <div>Module not found</div>;

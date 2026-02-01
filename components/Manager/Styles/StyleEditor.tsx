@@ -381,12 +381,11 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         <textarea className="style-editor__textarea style-editor__textarea--css" placeholder=".numeric-renderer__progress-fill { background: red; }" value={formData.css || ''} onChange={(e) => handleChange('css', e.target.value)} />
                     </div>
 
-                    {formData.dataType !== 'theme' && (
-                        <div className="style-editor__docs-container">
-                            <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle"><HelpCircle size={14} /><span>可用CSS类名参考</span><ChevronRight size={16} className={`icon-selector__arrow ${showDocs ? 'open' : ''}`} /></button>
-                            {showDocs && (<div className="style-editor__docs-content animate-fade-in">{docEntries && docEntries.length > 0 ? (docEntries.map(doc => (<div key={doc.className} className="style-editor__doc-item"><div className="style-editor__doc-main"><code className="style-editor__doc-class">{doc.className}</code><p className="style-editor__doc-desc">{doc.description}</p></div><button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制"><ClipboardCopy size={14} /></button></div>))) : (<div className="style-editor__doc-empty">暂无此类名的参考信息。</div>)}</div>)}
-                        </div>
-                    )}
+                    {/* ALWAYS SHOW DOCS for themes or other types now */}
+                    <div className="style-editor__docs-container">
+                        <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle"><HelpCircle size={14} /><span>可用CSS类名参考</span><ChevronRight size={16} className={`icon-selector__arrow ${showDocs ? 'open' : ''}`} /></button>
+                        {showDocs && (<div className="style-editor__docs-content animate-fade-in">{docEntries && docEntries.length > 0 ? (docEntries.map(doc => (<div key={doc.className} className="style-editor__doc-item"><div className="style-editor__doc-main"><code className="style-editor__doc-class">{doc.className}</code><p className="style-editor__doc-desc">{doc.description}</p></div><button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制"><ClipboardCopy size={14} /></button></div>))) : (<div className="style-editor__doc-empty">暂无此类名的参考信息。</div>)}</div>)}
+                    </div>
                 </div>
 
                 <div className={`style-editor__right-pane ${isMobile && activeTab !== 'preview' ? 'hidden' : ''}`}>

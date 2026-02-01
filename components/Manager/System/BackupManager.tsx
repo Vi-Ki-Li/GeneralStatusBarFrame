@@ -91,8 +91,7 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
   };
 
   return (
-    <div className="backup-manager">
-      <div className="backup-manager__container">
+    <div className="th-manager__main-content">
           
           {/* Export Card */}
           <section className="th-card">
@@ -194,8 +193,6 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
                 </button>
             </div>
           </section>
-
-      </div>
 
       {showResetConfirm && (
           <div className="backup-reset-overlay animate-fade-in">
