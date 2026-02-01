@@ -91,33 +91,33 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
       <div className="backup-manager__container">
           
           {/* Export Card */}
-          <section className="backup-section glass-panel">
-            <div className="backup-section__header">
-                <div className="backup-section__icon-bg"><Upload size={20} /></div>
-                <div className="backup-section__header-text">
+          <section className="th-card">
+            <div className="th-card-header">
+                <div className="th-card-header__icon"><Upload size={20} /></div>
+                <div className="th-card-header__content">
                     <h3>数据导出</h3>
                     <p>创建当前配置的备份文件 (.json)</p>
                 </div>
             </div>
             
             <div className="backup-options">
-                <label className="backup-checkbox">
+                <label className="th-grid-checkbox">
                     <input type="checkbox" checked={exportOpts.includeDefinitions} onChange={e => setExportOpts({...exportOpts, includeDefinitions: e.target.checked})} />
                     <span>定义与分类</span>
                 </label>
-                <label className="backup-checkbox">
+                <label className="th-grid-checkbox">
                     <input type="checkbox" checked={exportOpts.includeStyles} onChange={e => setExportOpts({...exportOpts, includeStyles: e.target.checked})} />
                     <span>样式库</span>
                 </label>
-                <label className="backup-checkbox">
+                <label className="th-grid-checkbox">
                     <input type="checkbox" checked={exportOpts.includePresets} onChange={e => setExportOpts({...exportOpts, includePresets: e.target.checked})} />
                     <span>配置预设</span>
                 </label>
-                <label className="backup-checkbox">
+                <label className="th-grid-checkbox">
                     <input type="checkbox" checked={exportOpts.includeLayouts} onChange={e => setExportOpts({...exportOpts, includeLayouts: e.target.checked})} />
                     <span>布局快照</span>
                 </label>
-                <label className={`backup-checkbox ${exportOpts.includeGlobalState ? 'warning' : ''}`}>
+                <label className={`th-grid-checkbox ${exportOpts.includeGlobalState ? 'warning' : ''}`}>
                     <input type="checkbox" checked={exportOpts.includeGlobalState} onChange={e => setExportOpts({...exportOpts, includeGlobalState: e.target.checked})} />
                     <span>全量存档 (含角色状态)</span>
                 </label>
@@ -129,10 +129,10 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
           </section>
 
           {/* Import Card */}
-          <section className="backup-section glass-panel">
-            <div className="backup-section__header">
-                <div className="backup-section__icon-bg"><Download size={20} /></div>
-                <div className="backup-section__header-text">
+          <section className="th-card">
+            <div className="th-card-header">
+                <div className="th-card-header__icon"><Download size={20} /></div>
+                <div className="th-card-header__content">
                     <h3>数据导入</h3>
                     <p>从备份文件中恢复配置</p>
                 </div>
@@ -178,14 +178,14 @@ const BackupManager: React.FC<BackupManagerProps> = ({ data, onUpdate }) => {
           </section>
 
           {/* Reset Card */}
-          <section className="backup-section glass-panel danger-zone">
-             <div className="backup-section__header">
-                <div className="backup-section__icon-bg danger"><AlertTriangle size={20} /></div>
-                <div className="backup-section__header-text">
+          <section className="th-card danger-zone">
+             <div className="th-card-header">
+                <div className="th-card-header__icon"><AlertTriangle size={20} /></div>
+                <div className="th-card-header__content">
                     <h3>恢复出厂设置</h3>
                     <p>重置所有数据到初始状态</p>
                 </div>
-                <button className="btn btn--danger" onClick={handleReset}>
+                <button className="btn btn--danger" onClick={handleReset} style={{marginLeft: 'auto'}}>
                     <RefreshCw size={16} /> 重置
                 </button>
             </div>

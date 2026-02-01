@@ -388,6 +388,151 @@ body.dark-mode .skeleton {
   background-size: 200% 100%;
 }
 
+/* --- Phase 3: Standard Components (Added) --- */
+
+/* 1. Standard Card */
+.th-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  transition: all 0.2s ease;
+}
+
+/* 2. Interactive Card (for lists, presets, etc.) */
+.th-interactive-card {
+  position: relative; /* For badges/actions */
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.th-interactive-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.th-interactive-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+/* 3. Toolbar (Top/Bottom bars) */
+.th-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-base);
+  flex-shrink: 0;
+}
+
+/* 4. Search Box */
+.th-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  color: var(--text-secondary);
+  width: 240px; /* Default width */
+  transition: border-color 0.2s;
+}
+.th-search-box:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-subtle);
+}
+.th-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* 5. Grid Checkbox (for BackupManager, PresetEditor) */
+.th-grid-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-base);
+  background: var(--bg-app);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.th-grid-checkbox:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-surface-hover);
+}
+.th-grid-checkbox input {
+  accent-color: var(--color-primary);
+  width: 16px; height: 16px;
+}
+.th-grid-checkbox span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+.th-grid-checkbox.warning {
+   border-color: var(--color-warning);
+   color: var(--color-warning);
+   background: var(--color-warning-bg);
+}
+.th-grid-checkbox.warning span {
+   color: var(--color-warning);
+}
+
+/* Utility: Card Header Group */
+.th-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+.th-card-header__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--bg-app);
+    border: 1px solid var(--border-base);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.th-card-header__content h3 {
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+.th-card-header__content p {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+/* Danger variant */
+.th-card.danger-zone {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.03);
+}
+.th-card.danger-zone .th-card-header__icon {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
 /* --- Responsive Helpers --- */
 .desktop-only { display: flex; }
 .mobile-only { display: none; }

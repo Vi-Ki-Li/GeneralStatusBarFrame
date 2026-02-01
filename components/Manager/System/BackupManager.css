@@ -13,82 +13,11 @@
   gap: var(--spacing-xl);
 }
 
-.backup-section {
-  padding: var(--spacing-xl);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.backup-section__header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-}
-
-.backup-section__icon-bg {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--bg-app);
-  border: 1px solid var(--border-base);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.backup-section__icon-bg.danger {
-    color: var(--color-danger);
-    background: var(--color-danger-bg);
-    border-color: var(--color-danger);
-}
-
-.backup-section__header-text h3 {
-    font-size: 1rem;
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-}
-.backup-section__header-text p {
-    font-size: 0.85rem;
-    color: var(--text-tertiary);
-    margin-top: 2px;
-}
-
 /* Options Grid */
 .backup-options {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-sm);
-}
-
-.backup-checkbox {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-base);
-    background: var(--bg-app);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.backup-checkbox:hover {
-    border-color: var(--border-hover);
-}
-.backup-checkbox input {
-    accent-color: var(--color-primary);
-    width: 16px; height: 16px;
-}
-.backup-checkbox span {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-.backup-checkbox.warning {
-    border-color: var(--color-warning);
-    color: var(--color-warning);
 }
 
 .full-width {
@@ -156,9 +85,4 @@
     border-radius: var(--radius-md);
     max-height: 120px;
     overflow-y: auto;
-}
-
-.danger-zone {
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.03);
 }
