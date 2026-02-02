@@ -1,4 +1,5 @@
 
+/* @doc: 帮助弹窗遮罩 | category: theme | desc: 点击帮助按钮后全屏显示的遮罩层 */
 .context-help-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -11,6 +12,7 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+/* @doc: 帮助弹窗面板 | category: theme | desc: 包含帮助文档内容的居中面板 */
 .context-help-modal {
   width: 90%;
   max-width: 500px;
@@ -24,6 +26,7 @@
   overflow: hidden;
 }
 
+/* @doc: 帮助弹窗头部 | category: theme | desc: 包含标题和关闭按钮的顶部区域 */
 .context-help-header {
   display: flex;
   justify-content: space-between;
@@ -56,6 +59,7 @@
   color: var(--text-primary);
 }
 
+/* @doc: 帮助内容区 | category: theme | desc: 包含具体的帮助文本和列表的区域 */
 .context-help-content {
   padding: var(--spacing-lg);
   overflow-y: auto;

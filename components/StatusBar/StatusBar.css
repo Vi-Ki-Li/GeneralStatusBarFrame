@@ -32,12 +32,14 @@
   opacity: 0.7;
 }
 
+/* @doc: 锁定图标 | category: statusbar | desc: 当数值被用户手动修改后显示的锁定图标 */
 .status-item-row__lock-icon {
   display: flex;
   color: var(--color-warning);
   opacity: 0.7;
 }
 
+/* @doc: 条目内容区 | category: statusbar | desc: 条目右侧（或下方）的主要内容显示区域 */
 .status-item-row__content {
   flex: 1;
   min-width: 0;
@@ -52,6 +54,7 @@
   margin-bottom: var(--spacing-md);
 }
 
+/* @doc: 角色分组块 | category: statusbar | desc: 包含多角色 Tab 和角色数据的区块 */
 .status-bar__character-block {
   margin-top: var(--spacing-xl);
 }

@@ -54,6 +54,7 @@
   border-bottom: 1px solid var(--border-base); /* Added border-bottom per request */
 }
 
+/* @doc: 侧边栏标题文字 | category: manager | desc: 侧边栏标题行的文字样式 */
 .th-manager__sidebar-title {
   font-size: 0.85rem;
   font-weight: var(--font-weight-bold);
@@ -65,6 +66,7 @@
   gap: var(--spacing-sm);
 }
 
+/* @doc: 侧边栏内容区 | category: manager | desc: 侧边栏中间的可滚动列表区域 */
 .th-manager__sidebar-content {
   flex: 1;
   overflow-y: auto;
@@ -74,6 +76,7 @@
   gap: 2px;
 }
 
+/* @doc: 侧边栏底部 | category: manager | desc: 侧边栏底部的固定区域（如新建按钮） */
 .th-manager__sidebar-footer {
   margin-top: auto;
   padding: var(--spacing-lg);
@@ -85,6 +88,7 @@
 }
 
 /* --- Element: Main Content Area --- */
+/* @doc: 主内容区容器 | category: manager | desc: 右侧主要操作区域的容器 */
 .th-manager__main {
   flex: 1;
   display: flex;
@@ -110,6 +114,7 @@
   gap: 4px;
 }
 
+/* @doc: 主内容大标题 | category: manager | desc: 右侧区域的大标题文字 */
 .th-manager__main-title {
   font-size: 1.5rem;
   font-weight: var(--font-weight-bold);
@@ -117,6 +122,7 @@
   letter-spacing: -0.02em;
 }
 
+/* @doc: 主内容副标题 | category: manager | desc: 标题下方的小字说明 */
 .th-manager__main-subtitle {
   font-size: 0.85rem;
   color: var(--text-tertiary);
@@ -195,6 +201,7 @@
   min-width: 0;
 }
 
+/* @doc: 列表项图标 | category: manager | desc: 列表项左侧的图标 */
 .th-manager__item-icon {
   color: var(--text-tertiary);
   display: flex;
@@ -210,6 +217,7 @@
   color: inherit;
 }
 
+/* @doc: 列表项文本 | category: manager | desc: 列表项的主要文字 */
 .th-manager__item-text {
   white-space: nowrap;
   overflow: hidden;
@@ -217,6 +225,7 @@
   flex: 1;
 }
 
+/* @doc: 列表项元信息 | category: manager | desc: 列表项右侧的辅助信息（如ID） */
 .th-manager__item-meta {
   font-size: 0.75rem;
   color: var(--text-tertiary);

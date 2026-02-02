@@ -1,3 +1,5 @@
+
+/* @doc: 图标选择器容器 | category: manager | desc: 图标选择器的整体容器 */
 .icon-picker {
   display: flex;
   flex-direction: column;
@@ -32,6 +34,7 @@
   border-color: var(--color-primary);
 }
 
+/* @doc: 图标网格 | category: manager | desc: 图标列表的网格布局 */
 .icon-picker__grid {
   flex: 1;
   overflow-y: auto;
@@ -41,6 +44,7 @@
   padding-right: 4px;
 }
 
+/* @doc: 图标项按钮 | category: manager | desc: 单个图标按钮 */
 .icon-picker__item {
   display: flex;
   align-items: center;

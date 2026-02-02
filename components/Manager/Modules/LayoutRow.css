@@ -1,5 +1,7 @@
+
 /* components/Manager/Modules/LayoutRow.css */
 
+/* @doc: 布局行条目 | category: manager | desc: 布局编排器列表中代表一个“行”或“组件”的可拖拽条目 */
 .layout-row {
     display: flex;
     align-items: center;
@@ -10,6 +12,7 @@
     touch-action: none;
 }
 
+/* @doc: 布局行拖拽柄 | category: manager | desc: 布局行条目左侧的抓取区域 */
 .layout-row__drag-handle {
     cursor: grab;
     color: var(--text-tertiary);
@@ -24,6 +27,7 @@
     cursor: grabbing;
 }
 
+/* @doc: 布局行内容区 | category: manager | desc: 显示行或组件名称及图标的区域 */
 .layout-row__content {
     flex: 1;
     display: flex;

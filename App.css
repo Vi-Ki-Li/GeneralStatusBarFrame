@@ -1,9 +1,11 @@
+
 /* --- App Layout --- */
 .app {
   display: flex;
   flex-direction: column;
 }
 
+/* @doc: 应用顶栏 | category: theme | desc: 页面顶部的导航和工具栏 */
 .app__header {
   display: flex;
   justify-content: space-between;
@@ -21,6 +23,7 @@
   transition: background-color 0.2s, border-color 0.2s;
 }
 
+/* @doc: 应用主标题 | category: theme | desc: 顶栏左侧的标题文字 */
 .app__title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
@@ -47,6 +50,7 @@
 }
 
 /* --- Mobile Action Sheet --- */
+/* @doc: 移动端菜单面板 | category: theme | desc: 移动端底部弹出的操作菜单 */
 .mobile-action-sheet {
   position: fixed;
   bottom: 0;

@@ -1,5 +1,7 @@
+
 /* v9.6: StyleGUI Overhaul */
 
+/* @doc: GUI控制台容器 | category: manager | desc: 可视化样式编辑器的整体容器 */
 .style-gui-controls {
   display: flex;
   flex-direction: column;
@@ -11,6 +13,7 @@
 }
 
 /* --- "Currently Editing" Display --- */
+/* @doc: 当前编辑目标展示 | category: manager | desc: 显示当前选中的CSS类名和描述的区域 */
 .gui-controls__target-display {
   background: var(--bg-app);
   padding: var(--spacing-md);
@@ -62,6 +65,7 @@
 }
 
 /* --- Section --- */
+/* @doc: GUI折叠面板 | category: manager | desc: 包含一组属性控件的折叠容器 */
 .gui-controls__section {
   background: var(--bg-app);
   border: 1px solid var(--chip-border);
@@ -69,6 +73,7 @@
   overflow: hidden;
 }
 
+/* @doc: GUI折叠面板头部 | category: manager | desc: 点击展开/收起的标题栏 */
 .gui-controls__section-header {
   display: flex;
   justify-content: space-between;
@@ -115,6 +120,7 @@
 }
 
 /* --- Controls --- */
+/* @doc: GUI单个控件 | category: manager | desc: 包含标签和输入框的单个属性控制项 */
 .gui-controls__control {
   display: flex;
   flex-direction: column;
@@ -126,6 +132,7 @@
 }
 
 /* Color Control */
+/* @doc: 颜色输入框容器 | category: manager | desc: 包含颜色选择器和文本输入框的组合 */
 .gui-controls__color-input-wrapper {
   display: flex;
   align-items: center;

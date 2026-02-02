@@ -22,6 +22,7 @@
 }
 
 /* --- Panel --- */
+/* @doc: 样式编辑器面板 | category: manager | desc: 样式工坊弹出的大面板容器 */
 .style-editor__panel {
   position: absolute;
   top: 50%;
@@ -97,6 +98,7 @@
 }
 
 /* --- Left Pane (Editor) --- */
+/* @doc: 样式编辑器左栏 | category: manager | desc: 包含表单和配置项的左侧区域 */
 .style-editor__left-pane {
   display: flex;
   flex-direction: column;
@@ -333,6 +335,7 @@
 }
 
 /* --- Right Pane (Preview) --- */
+/* @doc: 样式预览容器 | category: manager | desc: 编辑器右侧的实时预览区域 */
 .style-editor__right-pane {
   display: flex;
   flex-direction: column;

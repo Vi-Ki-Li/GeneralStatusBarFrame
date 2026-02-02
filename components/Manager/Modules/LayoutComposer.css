@@ -30,6 +30,7 @@
 /* --- Palette Content --- */
 /* Search box style from ManagerLayout is handled by th-manager classes, 
    but palette content might need tweaks */
+/* @doc: 组件库搜索框 | category: manager | desc: 左侧组件库顶部的搜索输入框 */
 .palette-search {
   display: flex;
   align-items: center;
@@ -143,7 +144,7 @@
   background-position: center;
 }
 
-/* Drop Zone for New Rows */
+/* @doc: 新建行投放区 | category: manager | desc: 画布底部的“拖拽至此创建新行”区域 */
 .layout-composer__drop-zone {
     margin-bottom: 20px;
     padding: 24px;
@@ -197,6 +198,7 @@
 }
 
 /* --- Inspector Internal Styles --- */
+/* @doc: 属性检查器面板 | category: manager | desc: 右侧属性编辑面板的内部容器 */
 .layout-inspector {
   width: 100%;
   height: 100%;

@@ -43,6 +43,7 @@ body.dark-mode .status-section:hover {
   opacity: 0.8;
 }
 
+/* @doc: 分组内容区 | category: statusbar | desc: 展开后包含所有条目的区域 */
 .status-section__content {
   /* Base styles applied, layout specific below */
 }

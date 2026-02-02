@@ -1,3 +1,5 @@
+
+/* @doc: 模态框遮罩 | category: manager | desc: 弹窗背后的半透明遮罩 */
 .manager-modal__overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -10,6 +12,7 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+/* @doc: 模态框面板 | category: manager | desc: 管理器的主窗口容器 */
 .manager-modal__panel {
   width: 90%;
   max-width: 1200px;

@@ -1,4 +1,5 @@
 
+/* @doc: 浮动面板容器 | category: manager | desc: 可拖拽面板的主容器 (如属性检查器) */
 .draggable-panel {
   position: fixed; /* Changed from absolute to fixed for viewport-relative positioning */
   background: var(--bg-app);
@@ -13,6 +14,7 @@
   transition: opacity 0.2s; /* Removed transform transition to reduce lag */
 }
 
+/* @doc: 浮动面板头部 | category: manager | desc: 面板顶部的拖拽把手区域 */
 .draggable-panel__header {
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--glass-bg);
@@ -29,6 +31,7 @@
   cursor: grabbing;
 }
 
+/* @doc: 浮动面板标题 | category: manager | desc: 面板头部的标题文字 */
 .draggable-panel__title {
   font-size: 0.85rem;
   font-weight: var(--font-weight-semibold);

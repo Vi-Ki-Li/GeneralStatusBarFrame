@@ -1,6 +1,7 @@
 
 /* components/Manager/Help/HelpGuide.css */
 
+/* @doc: 帮助页布局容器 | category: manager | desc: 帮助页面的整体 Flex 容器 */
 .help-guide-layout {
   display: flex;
   height: 100%;
@@ -9,6 +10,7 @@
 }
 
 /* --- Sidebar Nav --- */
+/* @doc: 帮助页侧栏 | category: manager | desc: 帮助页左侧的目录导航 */
 .help-sidebar {
   width: 200px;
   background: rgba(0,0,0,0.02);
@@ -44,6 +46,7 @@
     padding: 0 var(--spacing-md);
 }
 
+/* @doc: 帮助导航按钮 | category: manager | desc: 侧栏中的目录按钮 */
 .help-nav__btn {
     width: 100%;
     display: flex;
@@ -77,6 +80,7 @@
 }
 
 /* --- Main Content --- */
+/* @doc: 帮助内容区 | category: manager | desc: 右侧可滚动的详细文档区域 */
 .help-content {
     flex: 1;
     overflow-y: auto;
@@ -165,6 +169,7 @@
 }
 
 /* Cards */
+/* @doc: 帮助功能卡片 | category: manager | desc: 介绍具体功能的图文卡片 */
 .help-card {
     padding: var(--spacing-xl);
     background: var(--bg-surface);
@@ -215,6 +220,7 @@
 }
 
 /* Hint Box */
+/* @doc: 帮助提示框 | category: manager | desc: 黄色的提示信息块 */
 .help-hint {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
@@ -267,6 +273,7 @@ body.dark-mode .help-hint {
 }
 
 /* Code Snippet */
+/* @doc: 代码片段块 | category: manager | desc: 显示代码示例的深色区域 */
 .help-code-snippet {
     background: #1e1e1e;
     color: #d4d4d4;
