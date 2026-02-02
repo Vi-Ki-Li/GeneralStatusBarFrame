@@ -12,7 +12,7 @@ import DefinitionDrawer from '../Definitions/DefinitionDrawer';
 import CategoryDrawer from '../Definitions/CategoryDrawer'; 
 import ContextHelpButton from '../../Shared/ContextHelpButton'; 
 import { tavernService } from '../../../services/mockTavernService';
-import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen, Trash2 } from 'lucide-react'; // 此处修改1行
+import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen, Trash2, Eraser } from 'lucide-react'; // 此处修改1行
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import '../ManagerLayout.css'; 
@@ -32,7 +32,8 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); 
-  const [deletingCharId, setDeletingCharId] = useState<string | null>(null); // 此处添加1行
+  const [deletingCharId, setDeletingCharId] = useState<string | null>(null);
+  const [clearingScopeId, setClearingScopeId] = useState<string | null>(null); // 此处添加1行
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
@@ -158,7 +159,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
      toast.info("数据已重置 (需点击保存以生效)");
   };
 
-  const executeDeleteCharacter = () => { // 此处开始添加19行
+  const executeDeleteCharacter = () => {
       if (!deletingCharId) return;
 
       const newData = _.cloneDeep(localData);
@@ -178,6 +179,24 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
       handleLocalUpdate(newData);
       setDeletingCharId(null);
       toast.info("角色及数据已删除 (需保存以生效)");
+  };
+
+  const executeClearScope = () => { // 此处开始添加19行
+      if (!clearingScopeId) return;
+      const newData = _.cloneDeep(localData);
+      
+      if (clearingScopeId === 'SHARED') {
+          newData.shared = {};
+      } else {
+          // Keep the character object but empty its categories
+          if (newData.characters[clearingScopeId]) {
+              newData.characters[clearingScopeId] = {};
+          }
+      }
+      
+      handleLocalUpdate(newData);
+      setClearingScopeId(null);
+      toast.info("数据已清空 (需保存以生效)");
   }; // 此处完成添加
 
   const handleUpdateItems = (category: string, newItems: StatusBarItem[]) => {
@@ -271,7 +290,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                       onAddCharacter={handleAddCharacter}
                       onResetData={handleResetData}
                       onTogglePresence={handleTogglePresence}
-                      onDeleteCharacter={setDeletingCharId} // 此处修改1行
+                      onDeleteCharacter={setDeletingCharId} 
                       onClose={() => setIsSidebarCollapsed(true)}
                   />
                 </div>
@@ -304,7 +323,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                             <h2 className="th-manager__main-title">
                                 {selectedId === 'SHARED' ? '共享世界数据' : resolveDisplayName(localData, selectedId)}
                             </h2>
-                            {/* Help Button - Start Add */}
+                            {/* Help Button */}
                             <ContextHelpButton 
                                 title="数据中心帮助" 
                                 content={
@@ -319,7 +338,15 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                                     </>
                                 } 
                             />
-                            {/* Help Button - End Add */}
+                            {/* Clear Scope Button - Start Add */}
+                            <button
+                                onClick={() => setClearingScopeId(selectedId)}
+                                className="th-manager__icon-btn th-manager__icon-btn--danger"
+                                title={selectedId === 'SHARED' ? "清空共享数据" : "清空此角色数据"}
+                            >
+                                <Eraser size={18} />
+                            </button>
+                            {/* Clear Scope Button - End Add */}
                         </div>
                         <div className="th-manager__main-subtitle">
                             {hasUnsavedChanges && <span className="data-center__unsaved-indicator" style={{color: 'var(--color-warning)'}}>[未保存] </span>}
@@ -388,7 +415,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
             </div>
         )}
 
-        {deletingCharId && ( // 此处开始添加15行
+        {deletingCharId && ( 
             <div className="data-center__reset-confirm-overlay">
                 <div className="data-center__reset-confirm-modal glass-panel">
                     <h3><Trash2 size={20} /> 确认删除角色?</h3>
@@ -399,6 +426,22 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                     <div className="data-center__reset-confirm-actions">
                         <button onClick={() => setDeletingCharId(null)} className="btn btn--ghost">取消</button>
                         <button onClick={executeDeleteCharacter} className="btn btn--danger">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {clearingScopeId && ( // 此处开始添加16行
+            <div className="data-center__reset-confirm-overlay">
+                <div className="data-center__reset-confirm-modal glass-panel">
+                    <h3><Eraser size={20} /> 确认清空?</h3>
+                    <p>
+                        即将清空 <strong>{clearingScopeId === 'SHARED' ? '共享/世界' : resolveDisplayName(localData, clearingScopeId)}</strong> 的所有数据条目。<br/>
+                        分类结构将被保留。此操作不可撤销。
+                    </p>
+                    <div className="data-center__reset-confirm-actions">
+                        <button onClick={() => setClearingScopeId(null)} className="btn btn--ghost">取消</button>
+                        <button onClick={executeClearScope} className="btn btn--danger">确认清空</button>
                     </div>
                 </div>
             </div>
