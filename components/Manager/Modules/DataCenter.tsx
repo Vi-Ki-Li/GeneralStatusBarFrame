@@ -10,9 +10,9 @@ import CategoryEditor from '../Editor/CategoryEditor';
 import MobileAddCharacterModal from '../MobileAddCharacterModal';
 import DefinitionDrawer from '../Definitions/DefinitionDrawer';
 import CategoryDrawer from '../Definitions/CategoryDrawer'; 
-import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
+import ContextHelpButton from '../../Shared/ContextHelpButton'; 
 import { tavernService } from '../../../services/mockTavernService';
-import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen } from 'lucide-react';
+import { Plus, Save, RotateCcw, AlertCircle, PanelLeftOpen, Trash2 } from 'lucide-react'; // 此处修改1行
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import '../ManagerLayout.css'; 
@@ -32,6 +32,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
   const [showMobileAdd, setShowMobileAdd] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); 
+  const [deletingCharId, setDeletingCharId] = useState<string | null>(null); // 此处添加1行
 
   const [editingDefinition, setEditingDefinition] = useState<ItemDefinition | null>(null);
   const [isDefDrawerOpen, setIsDefDrawerOpen] = useState(false);
@@ -157,6 +158,28 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
      toast.info("数据已重置 (需点击保存以生效)");
   };
 
+  const executeDeleteCharacter = () => { // 此处开始添加19行
+      if (!deletingCharId) return;
+
+      const newData = _.cloneDeep(localData);
+
+      // Remove from data structures
+      delete newData.characters[deletingCharId];
+      delete newData.id_map[deletingCharId];
+      if (newData.character_meta) {
+          delete newData.character_meta[deletingCharId];
+      }
+
+      // If current view is the deleted char, switch to SHARED
+      if (selectedId === deletingCharId) {
+          setSelectedId('SHARED');
+      }
+
+      handleLocalUpdate(newData);
+      setDeletingCharId(null);
+      toast.info("角色及数据已删除 (需保存以生效)");
+  }; // 此处完成添加
+
   const handleUpdateItems = (category: string, newItems: StatusBarItem[]) => {
     const newData = _.cloneDeep(localData);
     if (selectedId === 'SHARED') {
@@ -248,6 +271,7 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                       onAddCharacter={handleAddCharacter}
                       onResetData={handleResetData}
                       onTogglePresence={handleTogglePresence}
+                      onDeleteCharacter={setDeletingCharId} // 此处修改1行
                       onClose={() => setIsSidebarCollapsed(true)}
                   />
                 </div>
@@ -359,6 +383,22 @@ const DataCenter: React.FC<DataCenterProps> = ({ data, onUpdate, isMobile, onGoT
                     <div className="data-center__reset-confirm-actions">
                         <button onClick={() => setShowResetConfirm(false)} className="btn btn--ghost">取消</button>
                         <button onClick={executeReset} className="btn btn--danger">确认</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {deletingCharId && ( // 此处开始添加15行
+            <div className="data-center__reset-confirm-overlay">
+                <div className="data-center__reset-confirm-modal glass-panel">
+                    <h3><Trash2 size={20} /> 确认删除角色?</h3>
+                    <p>
+                        即将删除 <strong>{resolveDisplayName(localData, deletingCharId)}</strong> ({deletingCharId})。<br/>
+                        该角色的所有数据将被移除。此操作不可撤销。
+                    </p>
+                    <div className="data-center__reset-confirm-actions">
+                        <button onClick={() => setDeletingCharId(null)} className="btn btn--ghost">取消</button>
+                        <button onClick={executeDeleteCharacter} className="btn btn--danger">确认删除</button>
                     </div>
                 </div>
             </div>

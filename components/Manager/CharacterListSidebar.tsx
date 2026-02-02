@@ -16,6 +16,7 @@ interface CharacterListSidebarProps {
   onAddCharacter: (id: string, name: string) => void;
   onResetData?: () => void;
   onTogglePresence: (id: string) => void;
+  onDeleteCharacter: (id: string) => void; // 此处添加1行
   onClose?: () => void;
 }
 
@@ -26,6 +27,7 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
   onAddCharacter,
   onResetData,
   onTogglePresence,
+  onDeleteCharacter, // 此处添加1行
   onClose
 }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -166,6 +168,15 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
                 </div>
 
                 <div className="th-manager__item-actions">
+                    {char.id !== 'char_user' && ( // 此处开始添加7行
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteCharacter(char.id); }}
+                            className="th-manager__icon-btn th-manager__icon-btn--danger"
+                            title="删除角色"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )} 
                     <button 
                         onClick={(e) => { e.stopPropagation(); onTogglePresence(char.id); }}
                         className={`th-manager__icon-btn`}
