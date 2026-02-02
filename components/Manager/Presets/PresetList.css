@@ -82,6 +82,7 @@
   gap: 8px;
 }
 
+/* @doc: 预设状态徽章 | category: manager | desc: 显示“使用中”状态的胶囊徽章 */
 .preset-card__badge {
     font-size: 0.65rem;
     background: var(--color-primary);
