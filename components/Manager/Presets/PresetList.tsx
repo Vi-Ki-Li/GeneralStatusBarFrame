@@ -341,6 +341,7 @@ const PresetList: React.FC<PresetListProps> = ({ data, onUpdate, allStyles, onNa
         onSave={handleSavePreset} 
         presetToEdit={editingPreset}
         allDefinitions={allDefinitions}
+        categories={data.categories} 
         allStyles={allStyles}
         currentLayout={data.layout}
         onNavigate={onNavigate}
