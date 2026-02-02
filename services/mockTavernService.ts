@@ -72,7 +72,7 @@ const MOCK_DATA_V6: StatusBarData = {
           key: '技能', 
           values: [
             { name: '火球术', level: '3' }, 
-            { name: '冰霜箭', level: '2' }
+            { name: '冰霜箭', level: '4' } // 此处修改1行
           ], 
           category: 'CR', 
           source_id: 10, 
