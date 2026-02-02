@@ -1,4 +1,6 @@
 
+/* components/Manager/Presets/PresetList.css */
+
 .preset-list {
   display: flex;
   flex-direction: column;
@@ -12,6 +14,7 @@
   padding: var(--spacing-lg);
 }
 
+/* @doc: 预设列表网格 | category: manager | desc: 预设卡片的网格布局容器 */
 .preset-list__grid {
   display: flex;
   flex-direction: column;
@@ -36,11 +39,13 @@
 }
 
 /* Card Style Overrides for .th-interactive-card */
+/* @doc: 预设卡片 | category: manager | desc: 单个配置预设的卡片容器 */
 .preset-card-item {
   /* Inherits base styles from th-interactive-card */
   padding: var(--spacing-md) var(--spacing-lg);
 }
 
+/* @doc: 预设卡片(激活) | category: manager | desc: 当前生效的预设卡片样式 */
 .preset-card-item.active {
   border-color: var(--color-primary);
   background: rgba(99, 102, 241, 0.03);
@@ -66,6 +71,7 @@
   min-width: 0;
 }
 
+/* @doc: 预设标题 | category: manager | desc: 预设卡片中的标题文字 */
 .preset-card__title {
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);

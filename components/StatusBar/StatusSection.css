@@ -1,3 +1,5 @@
+
+/* @doc: 状态栏分组容器 | category: statusbar | desc: 包裹标题和内容的整个分组区块 */
 .status-section {
   background: rgba(255, 255, 255, 0.03); /* Subtle inner layer */
   border-radius: var(--radius-lg);
@@ -9,6 +11,7 @@ body.dark-mode .status-section:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* @doc: 分组标题栏 | category: statusbar | desc: 点击可折叠/展开的头部区域 */
 .status-section__header {
   padding: var(--spacing-md) var(--spacing-lg);
   cursor: pointer;
@@ -24,6 +27,7 @@ body.dark-mode .status-section:hover {
   color: var(--text-tertiary);
 }
 
+/* @doc: 分组标题文字 | category: statusbar | desc: 分组名称的字体样式 */
 .status-section__title {
   display: flex;
   align-items: center;

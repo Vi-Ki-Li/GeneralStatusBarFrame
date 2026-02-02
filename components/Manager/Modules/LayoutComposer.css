@@ -85,6 +85,7 @@
   animation: fadeIn 0.2s ease;
 }
 
+/* @doc: 布局组件库项 | category: manager | desc: 左侧组件库中的可拖拽项 */
 .palette-item {
   display: flex;
   align-items: center;
@@ -130,6 +131,7 @@
   height: 100%;
 }
 
+/* @doc: 布局画布 | category: manager | desc: 布局编排器的主要工作区 */
 .layout-composer__canvas {
   flex: 1;
   padding: var(--spacing-xl);
@@ -169,6 +171,7 @@
 }
 
 /* --- Right Sidebar (Inspector) --- */
+/* @doc: 布局属性检查器 | category: manager | desc: 右侧用于编辑选中元素属性的面板 */
 .layout-composer__right-sidebar {
     width: 320px;
     border-left: 1px solid var(--border-base);

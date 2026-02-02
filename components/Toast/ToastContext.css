@@ -1,3 +1,5 @@
+
+/* @doc: 通知容器 | category: theme | desc: 浮动通知消息的定位容器 */
 .toast-container {
   position: fixed;
   bottom: var(--spacing-xl);
@@ -10,6 +12,7 @@
   pointer-events: none;
 }
 
+/* @doc: 通知卡片 | category: theme | desc: 单个通知消息的样式 */
 .toast {
   pointer-events: auto;
   display: flex;

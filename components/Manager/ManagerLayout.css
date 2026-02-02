@@ -2,6 +2,7 @@
 /* components/Manager/ManagerLayout.css */
 
 /* --- Block: th-manager (Root) --- */
+/* @doc: 管理器根容器 | category: manager | desc: 管理器弹窗的最外层容器，控制整体背景 */
 .th-manager {
   display: flex;
   flex-direction: column;
@@ -20,6 +21,7 @@
 }
 
 /* --- Element: Sidebar --- */
+/* @doc: 管理器侧边栏 | category: manager | desc: 左侧导航栏容器 */
 .th-manager__sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
@@ -41,6 +43,7 @@
   border: none;
 }
 
+/* @doc: 侧边栏标题区 | category: manager | desc: 侧边栏顶部的标题行 */
 .th-manager__sidebar-header {
   min-height: 48px;
   display: flex;
@@ -91,6 +94,7 @@
   overflow: hidden;
 }
 
+/* @doc: 主内容标题区 | category: manager | desc: 右侧主区域顶部的标题行 */
 .th-manager__main-header {
   padding: var(--spacing-xl) var(--spacing-2xl);
   display: flex;
@@ -122,6 +126,7 @@
   gap: var(--spacing-sm);
 }
 
+/* @doc: 主内容滚动区 | category: manager | desc: 包含表单和列表的核心滚动区域 */
 .th-manager__main-content {
   flex: 1;
   overflow-y: auto;
@@ -131,6 +136,7 @@
   flex-direction: column;
 }
 
+/* @doc: 底部工具栏 | category: manager | desc: 包含保存、放弃等按钮的底部栏 */
 .th-manager__toolbar {
   padding: var(--spacing-md) var(--spacing-xl);
   border-top: 1px solid var(--border-base);
@@ -144,6 +150,7 @@
 }
 
 /* --- Components: List Item (Standardized based on user preference) --- */
+/* @doc: 列表项(管理器) | category: manager | desc: 侧边栏或列表中的通用可点击项 */
 .th-manager__list-item {
   position: relative;
   display: flex;
@@ -167,6 +174,7 @@
   color: var(--text-primary);
 }
 
+/* @doc: 列表项(激活态) | category: manager | desc: 被选中的列表项样式 */
 .th-manager__list-item--active {
   background: var(--color-primary-subtle);
   border-color: var(--color-primary-subtle);
@@ -232,6 +240,7 @@
 }
 
 /* --- Components: Icon Button (Ghost) --- */
+/* @doc: 图标按钮 | category: manager | desc: 管理器中的小型功能按钮 */
 .th-manager__icon-btn {
   background: transparent;
   border: none;

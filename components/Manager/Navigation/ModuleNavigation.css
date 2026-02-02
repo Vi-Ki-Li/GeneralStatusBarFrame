@@ -1,4 +1,6 @@
+
 /* --- Mobile Navigation --- */
+/* @doc: 移动端导航容器 | category: manager | desc: 移动端底部的导航栏容器 */
 .module-nav--mobile {
   display: flex;
   justify-content: space-around;
@@ -9,6 +11,7 @@
   z-index: 10;
 }
 
+/* @doc: 移动端导航按钮 | category: manager | desc: 移动端底部的单个导航项 */
 .module-nav__item--mobile {
   background: transparent;
   border: none;
@@ -41,6 +44,7 @@
 }
 
 /* --- Desktop Sidebar --- */
+/* @doc: 桌面端导航侧栏 | category: manager | desc: 桌面端最左侧的图标导航栏 */
 .module-nav--desktop {
   width: 80px;
   background: rgba(0,0,0,0.02);
@@ -54,6 +58,7 @@
   height: 100%;
 }
 
+/* @doc: 桌面端导航按钮 | category: manager | desc: 桌面端侧栏的图标按钮 */
 .module-nav__item--desktop {
   width: 48px;
   height: 48px;
@@ -74,6 +79,7 @@
     color: var(--text-primary);
 }
 
+/* @doc: 桌面端导航按钮(激活) | category: manager | desc: 当前选中的桌面端导航按钮 */
 .module-nav__item--desktop.active {
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;

@@ -174,6 +174,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   // Dynamic Docs State
   const [dynamicDocs, setDynamicDocs] = useState<CssDocEntry[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({}); // Store computed values
 
   // Mobile Tab State
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
@@ -219,6 +220,22 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  // Compute variable values when docs are shown
+  useEffect(() => {
+    if (showDocs && dynamicDocs.length > 0) {
+        // Use document.body to capture values that might be set on body class (like dark mode)
+        // Fallback to documentElement if body doesn't have it (cascading handles this usually)
+        const computed = getComputedStyle(document.body);
+        const newValues: Record<string, string> = {};
+        dynamicDocs.forEach(doc => {
+            if (doc.className.startsWith('--')) {
+                newValues[doc.className] = computed.getPropertyValue(doc.className).trim();
+            }
+        });
+        setVariableValues(newValues);
+    }
+  }, [showDocs, dynamicDocs]);
 
   const combinedCss = useMemo(() => {
     const guiCss = generateCssFromGuiConfig(formData.guiConfig);
@@ -299,23 +316,30 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     return [...new Set(placeholders)].sort((a,b) => a.localeCompare(b));
   }, [previewKey, allDefinitions]);
 
+  // Helper to determine if a value looks like a color
+  const isColorValue = (val: string) => {
+      if (!val) return false;
+      const v = val.toLowerCase();
+      return v.startsWith('#') || v.startsWith('rgb') || v.startsWith('hsl') || 
+             ['red', 'blue', 'green', 'white', 'black', 'transparent', 'none'].includes(v);
+  };
+
   if (!isOpen) return null;
 
   // Merge static and dynamic docs
-  // Static docs from STYLE_CLASS_DOCUMENTATION are for component-specific classes
-  // Dynamic docs from parser are mostly for Theme variables and global classes
   let docEntries: CssDocEntry[] = [];
   
   if (formData.dataType === 'theme') {
-      const parsedThemeDocs = dynamicDocs.filter(d => d.category === 'theme');
-      // If parser failed or empty, fallback to static theme docs if any
+      // Include Theme, Manager, and Statusbar docs for global theme editing
+      const parsedThemeDocs = dynamicDocs.filter(d => 
+          d.category === 'theme' || d.category === 'manager' || d.category === 'statusbar'
+      );
       if (parsedThemeDocs.length > 0) {
           docEntries = parsedThemeDocs;
       } else {
           docEntries = STYLE_CLASS_DOCUMENTATION['theme'] as CssDocEntry[] || [];
       }
   } else if (formData.dataType) {
-      // For components, prefer static docs as they describe internal structure best
       docEntries = STYLE_CLASS_DOCUMENTATION[formData.dataType] as CssDocEntry[] || [];
   }
 
@@ -425,6 +449,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                                                 <code className="style-editor__doc-class">{doc.className}</code>
                                                 <p className="style-editor__doc-desc">{doc.description}</p>
                                                 {doc.notes && <p className="style-editor__doc-notes">注: {doc.notes}</p>}
+                                                {doc.className.startsWith('--') && variableValues[doc.className] && (
+                                                    <div className="style-editor__doc-value-preview">
+                                                        <span className="value-text">{variableValues[doc.className]}</span>
+                                                        {isColorValue(variableValues[doc.className]) && (
+                                                            <span className="color-swatch" style={{background: variableValues[doc.className]}} />
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                             <button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制">
                                                 <ClipboardCopy size={14} />

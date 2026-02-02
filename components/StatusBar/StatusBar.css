@@ -1,4 +1,6 @@
+
 /* --- Base Item Row Styles (Shared) --- */
+/* @doc: 条目基础行 | category: statusbar | desc: 所有状态条目的通用容器 */
 .status-item-row {
   display: flex;
   justify-content: space-between;
@@ -12,6 +14,7 @@
   border-bottom: none;
 }
 
+/* @doc: 条目标签文本 | category: statusbar | desc: 条目左侧的名称显示区域 */
 .status-item-row__label {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
@@ -24,6 +27,7 @@
   flex-shrink: 0;
 }
 
+/* @doc: 条目图标 | category: statusbar | desc: 条目名称左侧的小图标 */
 .status-item-row__icon {
   opacity: 0.7;
 }
@@ -39,6 +43,7 @@
   min-width: 0;
 }
 
+/* @doc: 状态栏主容器 | category: statusbar | desc: 包裹整个状态栏的外层容器 */
 .status-bar {
   padding: var(--spacing-xl);
 }

@@ -109,7 +109,7 @@
   /* @doc: 基础边框色 | category: theme | desc: 分隔线和容器边框 */
   --border-base: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(99, 102, 241, 0.5);
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -225,6 +225,7 @@ body {
 }
 
 /* --- Component: Scrollbars (Webkit Fallback) --- */
+/* @doc: 滚动条(整体) | category: theme | desc: 整个应用或滚动区域的滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -232,6 +233,7 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent; 
 }
+/* @doc: 滚动条滑块 | category: theme | desc: 可拖动的滚动条滑块 */
 ::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: var(--radius-full);
@@ -334,6 +336,7 @@ body {
 }
 
 /* --- Component: Inputs (Form Controls) --- */
+/* @doc: 通用输入框 | category: theme | desc: 所有文本输入框、下拉框的默认样式 */
 .form-input, 
 .form-select, 
 .form-textarea {

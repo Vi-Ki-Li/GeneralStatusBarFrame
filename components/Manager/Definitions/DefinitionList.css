@@ -8,6 +8,7 @@
 }
 
 /* --- Item Grid --- */
+/* @doc: 定义列表网格 | category: manager | desc: 规则卡片的布局容器 */
 .def-studio__item-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -31,6 +32,7 @@
 }
 
 /* --- Def Card (Custom Content) --- */
+/* @doc: 规则卡片 | category: manager | desc: 单个条目定义卡片 */
 .def-card {
   padding: var(--spacing-lg);
   border: 1px solid var(--border-base);
@@ -58,6 +60,7 @@
   align-items: center;
   gap: var(--spacing-sm);
 }
+/* @doc: 规则键名 | category: manager | desc: 卡片上的 Key 显示 */
 .def-card__name {
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-base);
@@ -83,6 +86,7 @@
   gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
+/* @doc: 规则元标签 | category: manager | desc: 显示类型（如数值、文本）的小标签 */
 .def-card__meta-chip {
   display: flex;
   align-items: center;
