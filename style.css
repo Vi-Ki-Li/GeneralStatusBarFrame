@@ -1,29 +1,41 @@
+
 /* style.css - Phase 1: Design System Core */
 
 :root {
   /* --- 1. Design Tokens: Colors (Base Palette) --- */
   /* Brand Colors */
-  --color-primary: #6366f1;       /* Indigo 500 */
-  --color-primary-hover: #4f46e5; /* Indigo 600 */
+  /* @doc: 主品牌色 | category: theme | desc: 应用的主要色调 (Indigo 500) */
+  --color-primary: #6366f1;       
+  /* @doc: 主色悬停 | category: theme | desc: 按钮悬停状态颜色 */
+  --color-primary-hover: #4f46e5; 
+  /* @doc: 主色淡背景 | category: theme | desc: 选中项或高亮的背景色 */
   --color-primary-subtle: rgba(99, 102, 241, 0.1);
   
-  --color-secondary: #ec4899;     /* Pink 500 */
-  --color-accent: #8b5cf6;        /* Violet 500 */
+  /* @doc: 次要色 | category: theme | desc: 辅助品牌色 (Pink 500) */
+  --color-secondary: #ec4899;     
+  /* @doc: 强调色 | category: theme | desc: 用于特殊高亮 (Violet 500) */
+  --color-accent: #8b5cf6;        
   
   /* Semantic Status Colors */
-  --color-success: #10b981;       /* Emerald 500 */
+  /* @doc: 成功色 | category: theme | desc: 绿色 (Emerald 500) */
+  --color-success: #10b981;       
   --color-success-bg: rgba(16, 185, 129, 0.1);
   
-  --color-warning: #f59e0b;       /* Amber 500 */
+  /* @doc: 警告色 | category: theme | desc: 黄色 (Amber 500) */
+  --color-warning: #f59e0b;       
   --color-warning-bg: rgba(245, 158, 11, 0.1);
   
-  --color-danger: #ef4444;        /* Red 500 */
+  /* @doc: 危险色 | category: theme | desc: 红色 (Red 500) */
+  --color-danger: #ef4444;        
   --color-danger-bg: rgba(239, 68, 68, 0.1);
   
-  --color-info: #3b82f6;          /* Blue 500 */
+  /* @doc: 信息色 | category: theme | desc: 蓝色 (Blue 500) */
+  --color-info: #3b82f6;          
 
   /* --- 2. Design Tokens: Typography --- */
+  /* @doc: 全局字体 | category: theme | desc: 应用主要字体栈 */
   --font-family-base: 'Outfit', system-ui, -apple-system, sans-serif;
+  /* @doc: 等宽字体 | category: theme | desc: 代码和数值使用的字体 */
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
   --font-size-xs: 0.75rem;   /* 12px */
@@ -51,10 +63,15 @@
   --sidebar-width: 240px; /* Standardized Width */
 
   /* --- 4. Design Tokens: Radius --- */
+  /* @doc: 圆角(小) | category: theme | desc: 按钮和小元素的圆角 */
   --radius-sm: 4px;
+  /* @doc: 圆角(中) | category: theme | desc: 输入框和卡片的圆角 */
   --radius-md: 8px;
+  /* @doc: 圆角(大) | category: theme | desc: 模态框和大容器的圆角 */
   --radius-lg: 12px;
+  /* @doc: 圆角(超大) | category: theme | desc: 顶级容器圆角 */
   --radius-xl: 16px;
+  /* @doc: 全圆角 | category: theme | desc: 胶囊按钮和圆形 */
   --radius-full: 9999px;
 
   /* --- 5. Design Tokens: Z-Index (Layering System) --- */
@@ -74,19 +91,22 @@
   --transition-normal: all 0.3s var(--ease-smooth);
 
   /* --- 7. Theme Variables (Light Mode Default) --- */
+  /* @doc: 应用背景色 | category: theme | desc: 网页的基础背景色 */
   --bg-app: #f3f4f6; /* Gray 100 */
-  /* Subtle, modern gradient for light mode */
+  /* @doc: 背景渐变 | category: theme | desc: 叠加在背景色上的渐变效果 */
   --bg-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%), 
                  radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%), 
                  radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), 
                  radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
 
   /* Surface / Glass - Increased Opacity for Solid Feel */
+  /* @doc: 面板表面色 | category: theme | desc: 卡片/弹窗的半透明背景 */
   --bg-surface: rgba(255, 255, 255, 0.95); 
   --bg-surface-hover: rgba(255, 255, 255, 0.98);
   --bg-surface-active: #ffffff;
   
   /* Borders - Darkened for visibility in Light Mode */
+  /* @doc: 基础边框色 | category: theme | desc: 分隔线和容器边框 */
   --border-base: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(99, 102, 241, 0.5);
   
@@ -94,17 +114,23 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  /* @doc: 玻璃阴影 | category: theme | desc: 浮动面板的阴影效果 */
   --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   
+  /* @doc: 毛玻璃模糊 | category: theme | desc: 这里的模糊度影响玻璃拟态效果 */
   --glass-blur: blur(16px);
 
   /* Text */
+  /* @doc: 主要文本色 | category: theme | desc: 正文和标题颜色 */
   --text-primary: #1f2937;   /* Gray 800 */
+  /* @doc: 次要文本色 | category: theme | desc: 标签和说明文字颜色 */
   --text-secondary: #6b7280; /* Gray 500 */
+  /* @doc: 三级文本色 | category: theme | desc: 占位符和禁用态文字 */
   --text-tertiary: #9ca3af;  /* Gray 400 */
   --text-on-primary: #ffffff;
 
   /* Components specific */
+  /* @doc: 输入框背景 | category: theme | desc: 文本输入框的背景 */
   --input-bg: rgba(255, 255, 255, 0.7);
   --bar-bg: rgba(0, 0, 0, 0.06);
   --chip-bg: rgba(255, 255, 255, 0.9);
@@ -116,6 +142,7 @@
 }
 
 /* --- Dark Mode Overrides (Zinc / Neutral Tone) --- */
+/* @doc: 深色模式根节点 | category: theme | desc: 深色模式下的变量覆盖 */
 body.dark-mode {
   --bg-app: #09090b; /* Zinc 950 - Pure, deep dark */
   
@@ -220,6 +247,7 @@ body {
 
 /* --- Component: Glass Panel --- */
 /* The core building block of the UI */
+/* @doc: 通用面板 | category: theme | desc: 应用中最常用的玻璃拟态面板容器 */
 .glass-panel {
   background: var(--bg-surface);
   backdrop-filter: var(--glass-blur);
@@ -260,6 +288,7 @@ body {
 }
 
 /* Primary Button: Gradient Brand Color */
+/* @doc: 主按钮 | category: theme | desc: 强调操作按钮 */
 .btn--primary {
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: var(--text-on-primary);
@@ -276,6 +305,7 @@ body {
 }
 
 /* Ghost Button: Subtle, for secondary actions */
+/* @doc: 幽灵按钮 | category: theme | desc: 次要操作按钮 */
 .btn--ghost {
   background: transparent;
   color: var(--text-secondary);

@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarItem } from '../../../types';
 import { useToast } from '../../Toast/ToastContext';
-import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush, Eye, Edit3 } from 'lucide-react';
+import { X, Save, Code, Settings, Palette, HelpCircle, ChevronRight, ClipboardCopy, LayoutTemplate, Brush, Eye, Edit3, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import StyleGuiControls from './StyleGuiControls';
 import { generateCssFromGuiConfig } from '../../../utils/styleUtils';
 import { STYLE_CLASS_DOCUMENTATION } from '../../../services/styleDocumentation';
+import { documentationParser, CssDocEntry } from '../../../services/documentationParser'; // Import parser
 import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import './StyleEditor.css';
 
@@ -170,6 +171,10 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
   const [showGui, setShowGui] = useState(true);
   const [activeSelector, setActiveSelector] = useState<string | null>(null);
   
+  // Dynamic Docs State
+  const [dynamicDocs, setDynamicDocs] = useState<CssDocEntry[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+
   // Mobile Tab State
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -182,6 +187,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Initialize and Fetch Docs
   useEffect(() => {
     if (isOpen) {
       if (styleToEdit) {
@@ -197,7 +203,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
         setPreviewKey('');
       }
       setActiveSelector(null);
-      setActiveTab('edit'); // Reset to edit tab on open
+      setActiveTab('edit'); 
+
+      // Trigger dynamic doc parsing
+      setIsLoadingDocs(true);
+      documentationParser.parse().then(docs => {
+          setDynamicDocs(docs);
+          setIsLoadingDocs(false);
+      });
     }
   }, [isOpen, styleToEdit, initialPreviewKey]); 
   
@@ -239,7 +252,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
       toast.error("样式名称不能为空"); return;
     }
 
-    // --- Strategy A: CSS Safety Check ---
     const cssContent = combinedCss || '';
     const dangerousPatterns = [
         /(\*|body|html)\s*\{[^}]*display\s*:\s*none/i,
@@ -260,7 +272,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
         );
         if (!confirmSave) return;
     }
-    // -------------------------------------
 
     onSave({ ...formData, css: combinedCss, id: formData.id || uuidv4() } as StyleDefinition);
     onClose();
@@ -290,7 +301,24 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
 
   if (!isOpen) return null;
 
-  const docEntries = formData.dataType ? STYLE_CLASS_DOCUMENTATION[formData.dataType] : [];
+  // Merge static and dynamic docs
+  // Static docs from STYLE_CLASS_DOCUMENTATION are for component-specific classes
+  // Dynamic docs from parser are mostly for Theme variables and global classes
+  let docEntries: CssDocEntry[] = [];
+  
+  if (formData.dataType === 'theme') {
+      const parsedThemeDocs = dynamicDocs.filter(d => d.category === 'theme');
+      // If parser failed or empty, fallback to static theme docs if any
+      if (parsedThemeDocs.length > 0) {
+          docEntries = parsedThemeDocs;
+      } else {
+          docEntries = STYLE_CLASS_DOCUMENTATION['theme'] as CssDocEntry[] || [];
+      }
+  } else if (formData.dataType) {
+      // For components, prefer static docs as they describe internal structure best
+      docEntries = STYLE_CLASS_DOCUMENTATION[formData.dataType] as CssDocEntry[] || [];
+  }
+
   const currentTemplates = formData.dataType ? TEMPLATES[formData.dataType] : [];
 
   const renderGuiControls = () => (
@@ -381,10 +409,33 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ isOpen, onClose, styleToEdit,
                         <textarea className="style-editor__textarea style-editor__textarea--css" placeholder=".numeric-renderer__progress-fill { background: red; }" value={formData.css || ''} onChange={(e) => handleChange('css', e.target.value)} />
                     </div>
 
-                    {/* ALWAYS SHOW DOCS for themes or other types now */}
                     <div className="style-editor__docs-container">
-                        <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle"><HelpCircle size={14} /><span>可用CSS类名参考</span><ChevronRight size={16} className={`icon-selector__arrow ${showDocs ? 'open' : ''}`} /></button>
-                        {showDocs && (<div className="style-editor__docs-content animate-fade-in">{docEntries && docEntries.length > 0 ? (docEntries.map(doc => (<div key={doc.className} className="style-editor__doc-item"><div className="style-editor__doc-main"><code className="style-editor__doc-class">{doc.className}</code><p className="style-editor__doc-desc">{doc.description}</p></div><button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制"><ClipboardCopy size={14} /></button></div>))) : (<div className="style-editor__doc-empty">暂无此类名的参考信息。</div>)}</div>)}
+                        <button onClick={() => setShowDocs(!showDocs)} className="style-editor__docs-toggle">
+                            <HelpCircle size={14} />
+                            <span>可用CSS类名参考</span>
+                            {isLoadingDocs && <Loader2 size={14} className="spin" style={{marginLeft: 8}} />}
+                            <ChevronRight size={16} className={`icon-selector__arrow ${showDocs ? 'open' : ''}`} />
+                        </button>
+                        {showDocs && (
+                            <div className="style-editor__docs-content animate-fade-in">
+                                {docEntries && docEntries.length > 0 ? (
+                                    docEntries.map((doc, idx) => (
+                                        <div key={idx} className="style-editor__doc-item">
+                                            <div className="style-editor__doc-main">
+                                                <code className="style-editor__doc-class">{doc.className}</code>
+                                                <p className="style-editor__doc-desc">{doc.description}</p>
+                                                {doc.notes && <p className="style-editor__doc-notes">注: {doc.notes}</p>}
+                                            </div>
+                                            <button onClick={() => handleCopy(doc.className)} className="style-editor__doc-copy-btn" title="复制">
+                                                <ClipboardCopy size={14} />
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="style-editor__doc-empty">暂无此类名的参考信息。</div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
