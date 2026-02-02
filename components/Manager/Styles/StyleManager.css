@@ -117,3 +117,24 @@
 .mobile-hidden {
     display: none !important;
 }
+
+/* --- Mobile Tabs: Capsule Style Override --- */
+.th-manager__mobile-tabs--capsule {
+    overflow-x: visible; /* Disable horizontal scroll */
+    justify-content: center; /* Center align items */
+    align-items: center;
+    gap: var(--spacing-md); /* Add spacing between buttons */
+    padding: var(--spacing-md) var(--spacing-lg); /* Increase vertical padding */
+    display: flex; /* Ensure flex layout */
+}
+
+.th-manager__mobile-tabs--capsule .th-manager__mobile-tab {
+    flex: 1; /* Force equal width */
+    flex-shrink: 1; /* Allow shrinking if needed */
+    display: flex; /* ADDED: Flexbox for content */
+    align-items: center; /* ADDED: Vertical center */
+    justify-content: center; /* Center icon and text */
+    text-align: center;
+    border-radius: var(--radius-full); /* Ensure pill shape */
+    gap: 6px; /* ADDED: Space between icon and text */
+}

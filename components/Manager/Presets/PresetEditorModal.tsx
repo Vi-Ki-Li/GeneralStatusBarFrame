@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Preset, ItemDefinition, StyleDefinition } from '../../../types';
 import { LayoutNode } from '../../../types/layout';
@@ -7,6 +6,7 @@ import { DEFAULT_STYLE_UNITS } from '../../../services/defaultStyleUnits';
 import { getNarrativeConfigs, NarrativeConfig } from '../../../utils/snapshotGenerator';
 import { ManagerModule } from '../Navigation/ModuleNavigation';
 import { X, Save, Search, Box, LayoutTemplate, MessageSquareQuote, CheckSquare, Square, ArrowUpRight } from 'lucide-react';
+import ManagerModal from '../ManagerModal'; // 引入标准弹窗组件
 import './PresetEditorModal.css';
 
 interface PresetEditorModalProps {
@@ -54,16 +54,6 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
       setSearch('');
     }
   }, [isOpen, presetToEdit]);
-  
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
 
   const filteredDefinitions = useMemo(() => {
     if (!search) return allDefinitions;
@@ -156,144 +146,137 @@ const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     onSave(preset);
   };
 
-  if (!isOpen) return null;
-
-  const editorContent = (
-    <>
-      <div className="preset-editor__header">
-        <h3 className="preset-editor__title">
-          {presetToEdit ? `编辑预设: ${presetToEdit.name}` : '创建新预设'}
-        </h3>
-        <button onClick={onClose} className="preset-editor__close-btn"><X size={20} /></button>
-      </div>
-
-      <div className="preset-editor__content">
-        <div className="preset-editor__form-group">
-          <label className="preset-editor__label">预设名称</label>
-          <input 
-            value={name} 
-            onChange={e => setName(e.target.value)}
-            placeholder="例如: 魔法世界观"
-            className="preset-editor__input"
-          />
-        </div>
-        
-        <div className="preset-editor__form-group">
-            <label className="preset-editor__label">绑定叙事风格</label>
-            <div className="preset-editor__select-wrapper">
-                <MessageSquareQuote size={16} style={{position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)'}} />
-                <select 
-                    value={selectedNarrativeId} 
-                    onChange={e => setSelectedNarrativeId(e.target.value)}
-                    className="preset-editor__input"
-                    style={{paddingLeft: '34px'}}
-                >
-                    <option value="">(不绑定) 保持当前风格</option>
-                    {narrativeConfigs.map(config => (
-                        <option key={config.id} value={config.id}>{config.name} {config.isBuiltIn ? '(内置)' : ''}</option>
-                    ))}
-                </select>
-            </div>
-        </div>
-        
-        <div className="preset-editor__form-group">
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <label className="preset-editor__checkbox-label">
-                    <input 
-                        type="checkbox" 
-                        checked={includeLayout} 
-                        onChange={e => setIncludeLayout(e.target.checked)} 
-                    />
-                    <span className="preset-editor__checkbox-text">包含当前布局结构</span>
-                    {includeLayout && <LayoutTemplate size={14} className="preset-editor__layout-icon" />}
-                </label>
-                <button onClick={() => handleNavigate('LAYOUT')} className="preset-editor__link-btn">
-                    去调整布局 <ArrowUpRight size={12}/>
-                </button>
-            </div>
-            {includeLayout && (
-                <div className="preset-editor__hint">
-                    应用此预设时，整个状态栏的排版布局将被该快照覆盖。
-                </div>
-            )}
+  return (
+    <ManagerModal isOpen={isOpen} onClose={onClose}>
+      <div className="preset-editor">
+        <div className="preset-editor__header">
+          <h3 className="preset-editor__title">
+            {presetToEdit ? `编辑预设: ${presetToEdit.name}` : '创建新预设'}
+          </h3>
+          <button onClick={onClose} className="preset-editor__close-btn"><X size={24} /></button>
         </div>
 
-        <div className="preset-editor__form-group preset-editor__form-group--full">
-          <label className="preset-editor__label">
-            包含的定义 ({selectedItemKeys.size} / {allDefinitions.length})
-          </label>
-          <div className="preset-editor__search-wrapper">
-            <Search size={16} />
+        <div className="preset-editor__content">
+          <div className="preset-editor__form-group">
+            <label className="preset-editor__label">预设名称</label>
             <input 
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="搜索定义..."
-              className="preset-editor__search-input"
+              value={name} 
+              onChange={e => setName(e.target.value)}
+              placeholder="例如: 魔法世界观"
+              className="preset-editor__input"
             />
           </div>
-          <div className="preset-editor__selection-actions">
-              <button onClick={handleSelectAll} className="preset-editor__action-btn">
-                  <CheckSquare size={14} /> 全选
-              </button>
-              <button onClick={handleDeselectAll} className="preset-editor__action-btn">
-                  <Square size={14} /> 全不选
-              </button>
-              <div style={{flex: 1}}/>
-              <button onClick={() => handleNavigate('STYLES')} className="preset-editor__link-btn">
-                  去设计样式 <ArrowUpRight size={12}/>
-              </button>
+          
+          <div className="preset-editor__form-group">
+              <label className="preset-editor__label">绑定叙事风格</label>
+              <div className="preset-editor__select-wrapper">
+                  <MessageSquareQuote size={16} className="preset-editor__select-icon" />
+                  <select 
+                      value={selectedNarrativeId} 
+                      onChange={e => setSelectedNarrativeId(e.target.value)}
+                      className="preset-editor__input preset-editor__input--with-icon"
+                  >
+                      <option value="">(不绑定) 保持当前风格</option>
+                      {narrativeConfigs.map(config => (
+                          <option key={config.id} value={config.id}>{config.name} {config.isBuiltIn ? '(内置)' : ''}</option>
+                      ))}
+                  </select>
+              </div>
           </div>
           
-          <div className="preset-editor__def-list">
-            {filteredDefinitions.map(def => {
-              const isSelected = selectedItemKeys.has(def.key);
-              return (
-                <div key={def.key} className={`preset-editor__def-item ${isSelected ? 'selected' : ''}`}>
-                  <div className="preset-editor__def-item-main" onClick={() => handleToggleItem(def.key)}>
-                    <div className="preset-editor__checkbox">{isSelected && <div/>}</div>
-                    <div className="preset-editor__def-info">
-                      <span className="preset-editor__def-name">{def.name || def.key}</span>
-                      <span className="preset-editor__def-key">{def.name ? def.key : ''}</span>
-                    </div>
+          <div className="preset-editor__form-group">
+              <div className="preset-editor__layout-option">
+                  <label className="preset-editor__checkbox-label">
+                      <input 
+                          type="checkbox" 
+                          checked={includeLayout} 
+                          onChange={e => setIncludeLayout(e.target.checked)} 
+                      />
+                      <span className="preset-editor__checkbox-text">包含当前布局结构</span>
+                      {includeLayout && <LayoutTemplate size={14} className="preset-editor__layout-icon" />}
+                  </label>
+                  <button onClick={() => handleNavigate('LAYOUT')} className="preset-editor__link-btn">
+                      去调整布局 <ArrowUpRight size={12}/>
+                  </button>
+              </div>
+              {includeLayout && (
+                  <div className="preset-editor__hint">
+                      应用此预设时，整个状态栏的排版布局将被该快照覆盖。
                   </div>
-                  {isSelected && (
-                    <div className="preset-editor__style-override animate-fade-in">
-                       <select 
-                         value={styleOverrides[def.key] || 'style_default'}
-                         onChange={e => handleOverrideChange(def.key, e.target.value)}
-                         className="preset-editor__style-select"
-                       >
-                         {availableStyles.map(style => (
-                           <option key={style.id} value={style.id}>
-                               {style.name} {style.id !== 'style_default' ? `(${style.dataType})` : ''}
-                           </option>
-                         ))}
-                       </select>
+              )}
+          </div>
+
+          <div className="preset-editor__definitions-section">
+            <div className="preset-editor__definitions-header">
+              <label className="preset-editor__label">
+                包含的定义 ({selectedItemKeys.size} / {allDefinitions.length})
+              </label>
+              <div className="preset-editor__search-wrapper">
+                <Search size={14} />
+                <input 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="搜索定义..."
+                  className="preset-editor__search-input"
+                />
+              </div>
+            </div>
+            
+            <div className="preset-editor__selection-actions">
+                <button onClick={handleSelectAll} className="preset-editor__action-btn">
+                    <CheckSquare size={14} /> 全选
+                </button>
+                <button onClick={handleDeselectAll} className="preset-editor__action-btn">
+                    <Square size={14} /> 全不选
+                </button>
+                <div style={{flex: 1}}/>
+                <button onClick={() => handleNavigate('STYLES')} className="preset-editor__link-btn">
+                    去设计样式 <ArrowUpRight size={12}/>
+                </button>
+            </div>
+            
+            <div className="preset-editor__def-list">
+              {filteredDefinitions.map(def => {
+                const isSelected = selectedItemKeys.has(def.key);
+                return (
+                  <div key={def.key} className={`preset-editor__def-item ${isSelected ? 'selected' : ''}`}>
+                    <div className="preset-editor__def-item-main" onClick={() => handleToggleItem(def.key)}>
+                      <div className="preset-editor__checkbox">{isSelected && <div/>}</div>
+                      <div className="preset-editor__def-info">
+                        <span className="preset-editor__def-name">{def.name || def.key}</span>
+                        <span className="preset-editor__def-key">{def.name ? def.key : ''}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    {isSelected && (
+                      <div className="preset-editor__style-override animate-fade-in">
+                         <select 
+                           value={styleOverrides[def.key] || 'style_default'}
+                           onChange={e => handleOverrideChange(def.key, e.target.value)}
+                           className="preset-editor__style-select"
+                         >
+                           {availableStyles.map(style => (
+                             <option key={style.id} value={style.id}>
+                                 {style.name} {style.id !== 'style_default' ? `(${style.dataType})` : ''}
+                             </option>
+                           ))}
+                         </select>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="preset-editor__footer">
-        <button onClick={onClose} className="btn btn--ghost">取消</button>
-        <button onClick={handleSave} className="btn btn--primary">
-          <Save size={16} /> {presetToEdit ? '保存更改' : '创建预设'}
-        </button>
-      </div>
-    </>
-  );
-  
-  return (
-    <div className={`preset-editor-wrapper ${isOpen ? 'open' : ''}`}>
-        <div className="preset-editor__overlay" onClick={onClose} />
-        <div className="preset-editor__panel glass-panel">
-            {editorContent}
+        <div className="preset-editor__footer">
+          <button onClick={onClose} className="btn btn--ghost">取消</button>
+          <button onClick={handleSave} className="btn btn--primary">
+            <Save size={16} /> {presetToEdit ? '保存更改' : '创建预设'}
+          </button>
         </div>
-    </div>
+      </div>
+    </ManagerModal>
   );
 };
 

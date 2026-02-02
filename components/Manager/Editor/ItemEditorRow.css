@@ -1,3 +1,4 @@
+
 .item-editor-row {
   display: grid;
   grid-template-columns: 40px 160px 1fr 40px;
@@ -396,6 +397,14 @@
     justify-content: space-between;
     align-items: center;
 }
+
+.item-editor-row__summary-main {
+    display: flex;
+    flex-direction: column; /* Force vertical stacking */
+    gap: 4px; /* Add spacing between name and value */
+    min-width: 0; /* Ensure text truncation works */
+}
+
 .item-editor-row__summary-name {
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
@@ -403,7 +412,6 @@
 .item-editor-row__summary-value {
     color: var(--text-secondary);
     font-size: 0.9rem;
-    margin-top: 2px;
 }
 
 .item-editor-row--expanded {

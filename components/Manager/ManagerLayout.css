@@ -274,17 +274,20 @@
   .th-manager__mobile-tabs {
     display: flex;
     overflow-x: auto;
-    padding: 0 var(--spacing-lg) var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
     gap: var(--spacing-sm);
     border-bottom: 1px solid var(--border-base);
     background: var(--bg-surface);
-    scrollbar-width: none;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */
+    align-items: center;
+    white-space: nowrap;
   }
   .th-manager__mobile-tabs::-webkit-scrollbar { display: none; }
   
   .th-manager__mobile-tab {
     flex-shrink: 0;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: var(--radius-full);
     background: transparent;
     color: var(--text-secondary);
@@ -292,6 +295,7 @@
     font-weight: var(--font-weight-medium);
     border: 1px solid var(--border-base);
     transition: all 0.2s;
+    white-space: nowrap;
   }
   .th-manager__mobile-tab.active {
     background: var(--color-primary);

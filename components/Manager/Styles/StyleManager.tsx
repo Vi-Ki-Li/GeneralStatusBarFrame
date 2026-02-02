@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StyleDefinition, ItemDefinition, StatusBarData } from '../../../types';
 import { styleService } from '../../../services/styleService';
@@ -393,7 +392,7 @@ const StyleManager: React.FC<StyleManagerProps> = ({ isMobile, data, onUpdate, s
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>
             <div className="th-manager">
                 {isMobile && (
-                    <div className="th-manager__mobile-tabs">
+                    <div className="th-manager__mobile-tabs th-manager__mobile-tabs--capsule">
                         <button 
                             className={`th-manager__mobile-tab ${mobileTab === 'library' ? 'active' : ''}`}
                             onClick={() => setMobileTab('library')}
