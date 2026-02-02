@@ -48,6 +48,7 @@
   justify-content: space-between;
   padding: var(--spacing-md) var(--spacing-lg);
   flex-shrink: 0;
+  border-bottom: 1px solid var(--border-base); /* Added border-bottom per request */
 }
 
 .th-manager__sidebar-title {
@@ -64,7 +65,7 @@
 .th-manager__sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 var(--spacing-md) var(--spacing-md);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: 2px;

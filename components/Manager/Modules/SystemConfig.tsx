@@ -7,7 +7,7 @@ import PresetList from '../Presets/PresetList';
 import EntryList from '../Entries/EntryList';
 import BackupManager from '../System/BackupManager'; 
 import HelpGuide from '../Help/HelpGuide';
-import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen, PanelLeftClose } from 'lucide-react'; 
+import { Camera, Layers, ListFilter, CircleHelp, Archive, PanelLeftOpen, PanelLeftClose, Settings } from 'lucide-react'; 
 import { ManagerModule } from '../Navigation/ModuleNavigation';
 import '../ManagerLayout.css'; 
 
@@ -57,7 +57,9 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
             {/* Sidebar Navigation */}
             <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
                 <div className="th-manager__sidebar-header">
-                    <div className="th-manager__sidebar-title">系统菜单</div>
+                    <div className="th-manager__sidebar-title">
+                        <Settings size={16} /> 系统菜单
+                    </div>
                     <button 
                         onClick={() => setIsSidebarCollapsed(true)} 
                         className="th-manager__icon-btn desktop-only"

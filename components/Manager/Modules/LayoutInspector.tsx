@@ -84,7 +84,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
   const renderHeader = (title: string, icon: React.ElementType, showDelete: boolean = false) => (
       <div className="inspector-header">
         <div className="inspector-title">
-            {React.createElement(icon, { size: 18 })}
+            {React.createElement(icon, { size: 16 })}
             <span>{title}</span>
         </div>
         <div className="inspector-actions">
@@ -118,7 +118,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
         {renderHeader("属性面板", Sliders, false)}
         <div className="layout-inspector--empty">
             <div className="layout-inspector__empty-content">
-                <Settings size={48} strokeWidth={1} />
+                <Settings size={48} strokeWidth={1} style={{opacity: 0.2}} />
                 <p>请在画布中选择一个元素<br/>以编辑其属性</p>
             </div>
         </div>

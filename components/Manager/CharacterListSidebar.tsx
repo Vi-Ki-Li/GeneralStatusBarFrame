@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Globe, Plus, Sparkles, Check, X, Trash2, Eye, EyeOff, PanelLeftClose } from 'lucide-react';
+import { User, Globe, Plus, Sparkles, Check, X, Trash2, Eye, EyeOff, PanelLeftClose, Database } from 'lucide-react';
 // import './CharacterListSidebar.css'; // Now using ManagerLayout.css primarily
 
 interface CharacterOption {
@@ -72,7 +72,9 @@ const CharacterListSidebar: React.FC<CharacterListSidebarProps> = ({
   return (
     <>
       <div className="th-manager__sidebar-header">
-          <div className="th-manager__sidebar-title">数据源</div>
+          <div className="th-manager__sidebar-title">
+              <Database size={16} /> 数据源
+          </div>
           {onClose && (
               <button onClick={onClose} className="th-manager__icon-btn desktop-only" title="收起侧边栏">
                   <PanelLeftClose size={16} />

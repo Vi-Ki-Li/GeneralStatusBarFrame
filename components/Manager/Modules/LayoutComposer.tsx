@@ -975,7 +975,9 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     {/* Left Sidebar (Palette) */}
                     <div className={`th-manager__sidebar ${!leftOpen && !isMobile ? 'th-manager__sidebar--collapsed' : ''} ${isMobile ? 'mobile-overlay' : ''} ${isMobile && !leftOpen ? 'closed' : ''}`}>
                         <div className="th-manager__sidebar-header">
-                            <div className="th-manager__sidebar-title">组件库</div>
+                            <div className="th-manager__sidebar-title">
+                                <Box size={16} /> <span>组件库</span>
+                            </div>
                             <div style={{display: 'flex', gap: '4px'}}>
                                 <button onClick={() => setShowSnapshotModal(true)} className="th-manager__icon-btn" title="快照管理"><Save size={16}/></button>
                                 {!isMobile && (
