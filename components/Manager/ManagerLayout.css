@@ -268,7 +268,9 @@
     min-width: 0;
     border-right: none;
     border-bottom: 1px solid var(--border-base);
-    height: auto;
+    /* height: auto; <--- REMOVED: This was causing scroll issues */
+    flex: 1; /* ADDED: Allow it to take up available space */
+    min-height: 0; /* ADDED: Ensure scrollbar appears */
     flex-shrink: 0;
   }
   
@@ -283,6 +285,7 @@
     -ms-overflow-style: none;  /* IE 10+ */
     align-items: center;
     white-space: nowrap;
+    flex-shrink: 0; /* Important: Don't let tabs shrink */
   }
   .th-manager__mobile-tabs::-webkit-scrollbar { display: none; }
   
@@ -297,6 +300,9 @@
     border: 1px solid var(--border-base);
     transition: all 0.2s;
     white-space: nowrap;
+    display: flex; /* Ensure flex for icon+text alignment */
+    align-items: center;
+    gap: 6px;
   }
   .th-manager__mobile-tab.active {
     background: var(--color-primary);

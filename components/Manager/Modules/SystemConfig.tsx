@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBarData, SnapshotMeta } from '../../../types';
 import { styleService } from '../../../services/styleService';
 import SnapshotSettings from '../SnapshotSettings';
@@ -27,7 +27,16 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<SystemTab>('PRESETS'); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768); // 此处添加
   const allStyles = styleService.getStyleDefinitions();
+
+  // 此处开始添加监听逻辑
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  // 此处完成添加
 
   const tabs: { id: SystemTab; label: string; icon: React.ElementType, description?: string }[] = [
     { id: 'PRESETS', label: '配置预设', icon: Layers, description: '管理主题与布局配置' },
@@ -54,43 +63,64 @@ const SystemConfig: React.FC<SystemConfigProps> = ({
     <div className="th-manager">
         <div className="th-manager__layout">
             
-            {/* Sidebar Navigation */}
-            <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
-                <div className="th-manager__sidebar-header">
-                    <div className="th-manager__sidebar-title">
-                        <Settings size={16} /> 系统菜单
-                    </div>
-                    <button 
-                        onClick={() => setIsSidebarCollapsed(true)} 
-                        className="th-manager__icon-btn desktop-only"
-                        title="收起侧边栏"
-                    >
-                        <PanelLeftClose size={16} />
-                    </button>
-                </div>
-                
-                <div className="th-manager__sidebar-content">
-                    {tabs.map(tab => (
-                        <div 
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`th-manager__list-item ${activeTab === tab.id ? 'th-manager__list-item--active' : ''}`}
-                        >
-                            <div className="th-manager__item-main">
-                                <div className="th-manager__item-icon"><tab.icon size={18} /></div>
-                                <span className="th-manager__item-text">{tab.label}</span>
-                            </div>
+            {/* Sidebar Navigation (Desktop Only) */}
+            {!isMobile && ( // 此处修改: 仅桌面端显示 Sidebar
+                <div className={`th-manager__sidebar ${isSidebarCollapsed ? 'th-manager__sidebar--collapsed' : ''}`}>
+                    <div className="th-manager__sidebar-header">
+                        <div className="th-manager__sidebar-title">
+                            <Settings size={16} /> 系统菜单
                         </div>
-                    ))}
+                        <button 
+                            onClick={() => setIsSidebarCollapsed(true)} 
+                            className="th-manager__icon-btn desktop-only"
+                            title="收起侧边栏"
+                        >
+                            <PanelLeftClose size={16} />
+                        </button>
+                    </div>
+                    
+                    <div className="th-manager__sidebar-content">
+                        {tabs.map(tab => (
+                            <div 
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`th-manager__list-item ${activeTab === tab.id ? 'th-manager__list-item--active' : ''}`}
+                            >
+                                <div className="th-manager__item-main">
+                                    <div className="th-manager__item-icon"><tab.icon size={18} /></div>
+                                    <span className="th-manager__item-text">{tab.label}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Mobile Navigation Tabs */}
+            {isMobile && ( // 此处添加: 移动端显示顶部 Tabs
+                <div className="th-manager__mobile-tabs">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        return (
+                            <button 
+                                key={tab.id} 
+                                onClick={() => setActiveTab(tab.id)} 
+                                className={`th-manager__mobile-tab ${activeTab === tab.id ? 'active' : ''}`}
+                            >
+                                <Icon size={14} />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Main Content Area */}
             <div className="th-manager__main">
                 <div className="th-manager__main-header">
                     <div className="th-manager__main-title-group">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {isSidebarCollapsed && (
+                            {isSidebarCollapsed && !isMobile && ( // 此处修改: 仅桌面端显示展开按钮
                                 <button 
                                     onClick={() => setIsSidebarCollapsed(false)} 
                                     className="th-manager__icon-btn desktop-only"
