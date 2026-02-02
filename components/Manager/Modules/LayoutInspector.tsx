@@ -2,8 +2,8 @@
 import React from 'react';
 import { LayoutNode } from '../../../types/layout';
 import { ItemDefinition } from '../../../types';
-import { Settings, Trash2, AlignLeft, AlignCenter, AlignRight, Layout, Plus, Minus, Columns, PanelRightClose, BringToFront, PanelRightOpen } from 'lucide-react'; // Added icons
-import { Palette, VenetianMask } from 'lucide-react'; // Ensure imports match usage
+import { Settings, Trash2, AlignLeft, AlignCenter, AlignRight, Layout, Plus, Minus, Columns, PanelRightClose, BringToFront, PanelRightOpen, Sliders } from 'lucide-react'; 
+import { Palette, VenetianMask } from 'lucide-react'; 
 import './LayoutComposer.css'; 
 
 interface LayoutInspectorProps {
@@ -15,8 +15,8 @@ interface LayoutInspectorProps {
   onAddColumn?: () => void; 
   onRemoveColumn?: () => void;
   onClose?: () => void; 
-  onToggleDock?: () => void; // New prop
-  isDocked?: boolean;        // New prop
+  onToggleDock?: () => void;
+  isDocked?: boolean;
 }
 
 const ControlSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
@@ -80,21 +80,47 @@ const ColorInput: React.FC<{ label: string; value: any; onChange: (val: any) => 
 
 const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDelete, allDefinitions, onAddColumn, onRemoveColumn, onClose, onToggleDock, isDocked }) => {
   
-  // Render empty state if no node
+  // Universal Header Rendering
+  const renderHeader = (title: string, icon: React.ElementType, showDelete: boolean = false) => (
+      <div className="inspector-header">
+        <div className="inspector-title">
+            {React.createElement(icon, { size: 18 })}
+            <span>{title}</span>
+        </div>
+        <div className="inspector-actions">
+            {showDelete && node && (
+                <button onClick={() => onDelete(node.id)} className="inspector-btn delete" title="删除">
+                    <Trash2 size={16} />
+                </button>
+            )}
+            
+            {showDelete && <div className="inspector-divider" />}
+            
+            {onToggleDock && (
+               <button onClick={onToggleDock} className="inspector-btn" title={isDocked ? "脱离面板 (浮窗)" : "停靠面板"}>
+                   {isDocked ? <BringToFront size={16} /> : <PanelRightOpen size={16} />}
+               </button>
+            )}
+            
+            {onClose && (
+                <button onClick={onClose} className="inspector-btn" title="关闭/收起">
+                    <PanelRightClose size={16} />
+                </button>
+            )}
+        </div>
+      </div>
+  );
+
+  // Render empty state WITH HEADER if no node
   if (!node) {
     return (
-      <div className="layout-inspector layout-inspector--empty">
-        <div style={{width: '100%', display: 'flex', justifyContent: 'flex-end', padding: '8px', gap: '4px'}}>
-             {onToggleDock && (
-                 <button className="inspector-btn" onClick={onToggleDock} title={isDocked ? "脱离面板 (浮窗)" : "停靠面板"}>
-                     {isDocked ? <BringToFront size={16} /> : <PanelRightOpen size={16} />}
-                 </button>
-             )}
-             {onClose && <button className="inspector-btn" onClick={onClose}><PanelRightClose size={16} /></button>}
-        </div>
-        <div style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
-            <Settings size={48} />
-            <p>选择画布中的元素以编辑属性</p>
+      <div className="layout-inspector">
+        {renderHeader("属性面板", Sliders, false)}
+        <div className="layout-inspector--empty">
+            <div className="layout-inspector__empty-content">
+                <Settings size={48} strokeWidth={1} />
+                <p>请在画布中选择一个元素<br/>以编辑其属性</p>
+            </div>
         </div>
       </div>
     );
@@ -123,38 +149,9 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
       });
   };
 
-  // Helper for Header Actions
-  const renderHeaderActions = () => (
-      <div className="inspector-actions">
-          <button onClick={() => onDelete(node.id)} className="inspector-btn delete" title="删除">
-              <Trash2 size={16} />
-          </button>
-          
-          <div className="inspector-divider" />
-          
-          {onToggleDock && (
-             <button onClick={onToggleDock} className="inspector-btn" title={isDocked ? "脱离面板 (浮窗)" : "停靠面板"}>
-                 {isDocked ? <BringToFront size={16} /> : <PanelRightOpen size={16} />}
-             </button>
-          )}
-          
-          {onClose && (
-              <button onClick={onClose} className="inspector-btn" title="关闭/收起">
-                  <PanelRightClose size={16} />
-              </button>
-          )}
-      </div>
-  );
-
   const renderRowSettings = () => (
     <>
-      <div className="inspector-header">
-        <div className="inspector-title">
-            <AlignLeft size={18} />
-            <span>行容器 (Row)</span>
-        </div>
-        {renderHeaderActions()}
-      </div>
+      {renderHeader("行容器 (Row)", AlignLeft, true)}
 
       <ControlSection title="列管理 (Columns)" icon={Columns}>
           <div className="inspector-action-row">
@@ -213,13 +210,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
 
   const renderColumnSettings = () => (
     <>
-      <div className="inspector-header">
-        <div className="inspector-title">
-            <AlignCenter size={18} />
-            <span>列容器 (Column)</span>
-        </div>
-        {renderHeaderActions()}
-      </div>
+      {renderHeader("列容器 (Column)", AlignCenter, true)}
 
       <ControlSection title="布局" icon={Layout}>
         <NumberInput label="宽度 (%)" value={node.props?.width} onChange={v => updateProp('width', v)} unit="%" />
@@ -247,13 +238,7 @@ const LayoutInspector: React.FC<LayoutInspectorProps> = ({ node, onUpdate, onDel
       const def = node.data?.key ? allDefinitions[node.data.key] : null;
       return (
         <>
-          <div className="inspector-header">
-            <div className="inspector-title">
-                <AlignRight size={18} />
-                <span>组件 (Item)</span>
-            </div>
-            {renderHeaderActions()}
-          </div>
+          {renderHeader("组件 (Item)", AlignRight, true)}
 
           <div className="inspector-info-card">
               <div className="inspector-info-row">

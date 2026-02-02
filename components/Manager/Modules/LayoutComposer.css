@@ -1,93 +1,35 @@
+
 /* components/Manager/Modules/LayoutComposer.css */
 
-/* Root Layout: Uses flex to fill available space */
-.layout-composer {
-  display: flex;
-  height: 100%;
-  background: var(--bg-app);
-  overflow: hidden;
-  position: relative;
+/* Removed .layout-composer, .layout-composer__left-pane etc. root styles as we now use .th-manager */
+
+/* --- Mobile Specific Overrides for Sidebar --- */
+.th-manager__sidebar.mobile-overlay {
+    position: absolute;
+    top: 48px;
+    left: 0;
+    width: 60vw !important;
+    height: calc(100% - 48px);
+    max-height: none;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+    border-right: 1px solid var(--border-base);
+    border-bottom: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    transform-origin: left;
+    z-index: 20;
 }
 
-/* --- Left Pane (Components Palette) --- */
-.layout-composer__left-pane {
-  display: flex;
-  flex-direction: column;
-  background: rgba(0,0,0,0.02);
-  border-right: 1px solid var(--border-base);
-  flex-shrink: 0;
-  z-index: 10;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  white-space: nowrap; 
-}
-
-.layout-composer__left-pane.open {
-    width: var(--sidebar-width); 
-    opacity: 1;
-}
-
-.layout-composer__left-pane.closed {
-    width: 0;
+.th-manager__sidebar.mobile-overlay.closed {
+    transform: translateX(-100%);
     opacity: 0;
-    overflow: hidden;
+    pointer-events: none;
 }
 
-/* Left Pane Header */
-.layout-composer__pane-header {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border-base);
-  flex-shrink: 0;
-  background: var(--glass-bg);
-}
-
-.layout-composer__pane-header span {
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.layout-composer__pane-header .actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.layout-composer__pane-header button {
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.layout-composer__pane-header button:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-primary);
-}
-
-/* Palette Content */
-.layout-composer__palette {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: var(--sidebar-width);
-}
-
-.layout-composer__palette.hidden {
-    display: none;
-}
-
+/* --- Palette Content --- */
+/* Search box style from ManagerLayout is handled by th-manager classes, 
+   but palette content might need tweaks */
 .palette-search {
   display: flex;
   align-items: center;
@@ -176,7 +118,7 @@
 .palette-item__key { font-size: 0.75rem; color: var(--text-tertiary); font-family: var(--font-family-mono); }
 
 
-/* --- Center Canvas Area --- */
+/* --- Canvas Area --- */
 .layout-composer__canvas-area {
   flex: 1;
   display: flex;
@@ -185,25 +127,7 @@
   position: relative;
   min-width: 0;
   z-index: 1;
-}
-
-.layout-composer__canvas-toolbar {
-  height: 48px;
-  border-bottom: 1px solid var(--border-base);
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  background: var(--glass-bg);
-  flex-shrink: 0;
-}
-
-.layout-composer__canvas-title {
-    margin-left: auto;
-    font-size: 0.8rem;
-    color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  height: 100%;
 }
 
 .layout-composer__canvas {
@@ -244,8 +168,8 @@
     transform: scale(1.01);
 }
 
-/* --- Right Pane (Inspector) --- */
-.layout-composer__right-pane {
+/* --- Right Sidebar (Inspector) --- */
+.layout-composer__right-sidebar {
     width: 320px;
     border-left: 1px solid var(--border-base);
     background: var(--bg-app);
@@ -258,7 +182,7 @@
     white-space: nowrap; 
 }
 
-.layout-composer__right-pane.closed {
+.layout-composer__right-sidebar.closed {
     width: 0;
     opacity: 0;
     border-left: none;
@@ -280,10 +204,23 @@
 }
 
 .layout-inspector--empty {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
-  text-align: center;
+}
+
+.layout-inspector__empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-tertiary);
+    text-align: center;
+}
+.layout-inspector__empty-content p {
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .inspector-header {
@@ -671,36 +608,10 @@
 @media (max-width: 768px) {
     .layout-composer { flex-direction: column; }
     
-    .layout-composer__left-pane.mobile-overlay {
-        position: absolute;
-        top: 48px;
-        left: 0;
-        width: 60vw !important;
-        height: calc(100% - 48px);
-        max-height: none;
-        overflow-y: auto;
-        background: var(--bg-surface);
-        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-        border-right: 1px solid var(--border-base);
-        border-bottom: none;
-        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-        transform-origin: left;
-    }
-    
-    .layout-composer__left-pane.closed {
-        transform: translateX(-100%);
-        opacity: 0;
-        pointer-events: none;
-    }
-    
-    .layout-composer__left-pane.open {
-        transform: translateX(0);
-        opacity: 1;
-        pointer-events: auto;
-    }
+    /* Left pane transitions handled by .th-manager__sidebar.mobile-overlay */
     
     .layout-composer__palette { width: 100%; height: auto; min-width: 0; }
-    .layout-composer__right-pane { display: none; }
+    .layout-composer__right-sidebar { display: none; }
     .layout-composer__canvas { padding: var(--spacing-md); }
 
     .layout-composer__mobile-header {

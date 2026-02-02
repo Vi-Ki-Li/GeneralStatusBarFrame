@@ -5,7 +5,7 @@ import { LayoutNode, LayoutSnapshot } from '../../../types/layout';
 import StyledItemRenderer from '../../StatusBar/Renderers/StyledItemRenderer';
 import LayoutInspector from './LayoutInspector';
 import DraggablePanel from '../../Shared/DraggablePanel';
-import ContextHelpButton from '../../Shared/ContextHelpButton'; // 此处添加1行
+import ContextHelpButton from '../../Shared/ContextHelpButton';
 import * as LucideIcons from 'lucide-react';
 import { Search, Box, ChevronDown, Move, LayoutTemplate, Columns, Trash2, GripVertical, Plus, PlusCircle, Layout, ArrowDownToLine, X as XIcon, Save, Download, FileJson, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, BringToFront, Settings } from 'lucide-react';
 import {
@@ -36,6 +36,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import { useToast } from '../../Toast/ToastContext';
+import '../ManagerLayout.css';
 import './LayoutComposer.css';
 
 interface LayoutComposerProps {
@@ -126,8 +127,7 @@ const PaletteItem: React.FC<{ definition: ItemDefinition; type: 'item' | 'catego
     });
     
     const Icon = (LucideIcons as any)[definition.icon || 'Box'] || Box;
-    // Fix: Add touchAction: none to enable dragging on mobile
-    const style = { opacity: isDragging ? 0.5 : 1, cursor: 'grab', touchAction: 'none' };
+    const style = { opacity: isDragging ? 0.5 : 1, cursor: 'grab', touchAction: 'none' as const };
 
     return (
         <div ref={setNodeRef} style={style} className={`palette-item ${isOverlay ? 'overlay' : ''}`} {...listeners} {...attributes}>
@@ -208,7 +208,7 @@ const LayoutRowDraggable: React.FC<{
         transform: CSS.Transform.toString(transform), 
         transition, 
         opacity: isDragging ? 0.3 : 1,
-        touchAction: 'none', // Fix: Enable dragging on mobile
+        touchAction: 'none',
         ...(node.props?.style || {})
     };
 
@@ -363,7 +363,7 @@ const LayoutItemSortable: React.FC<{
         transform: CSS.Transform.toString(transform), 
         transition, 
         opacity: isDragging ? 0.6 : 1,
-        touchAction: 'none', // Fix: Enable dragging on mobile
+        touchAction: 'none',
         ...(node.props?.style || {})
     };
     
@@ -554,8 +554,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
     // Auto-open inspector when selecting a node (if hidden)
     useEffect(() => {
         if (selectedNodeId && inspectorMode === 'hidden') {
-            // Fix: On mobile, auto-open as floating (bottom sheet) instead of hidden
-            // Since we removed isMobile check in DraggablePanel, floating works for both.
             setInspectorMode('floating');
         }
     }, [selectedNodeId]);
@@ -585,27 +583,20 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
         const filteredItemsByCat: Record<string, ItemDefinition[]> = {};
 
         sortedCats.forEach(cat => {
-            // Find items for this category
             const allDefinitions = Object.values(data.item_definitions) as ItemDefinition[];
             const catItems = allDefinitions.filter(def => {
                 const itemCat = def.defaultCategory || 'Other';
                 return itemCat === cat.key;
             });
 
-            // Filter items based on search
             const matchingItems = catItems.filter(def => 
                 !search || 
                 def.key.toLowerCase().includes(lowerSearch) || 
                 (def.name && def.name.toLowerCase().includes(lowerSearch))
             );
 
-            // Check if category name matches
             const catNameMatches = cat.name.toLowerCase().includes(lowerSearch) || cat.key.toLowerCase().includes(lowerSearch);
 
-            // Include category if:
-            // 1. Search is empty (show all)
-            // 2. Category name matches
-            // 3. Category has matching items
             if (!search || catNameMatches || matchingItems.length > 0) {
                 filteredCategories.push(cat);
                 filteredItemsByCat[cat.key] = matchingItems;
@@ -615,7 +606,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
         return { categories: filteredCategories, itemsByCategory: filteredItemsByCat };
     }, [data, search]);
 
-    // Move allDefinitionsMap to top level to avoid conditional hook calls
     const allDefinitionsMap = useMemo(() => {
         const map: {[key:string]: ItemDefinition} = {};
         (Object.values(data.item_definitions) as ItemDefinition[]).forEach(d => map[d.key] = d);
@@ -741,7 +731,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveDragData(event.active.data.current as DragDataState);
-        // REMOVED: Auto collapse logic to fix drag drop issue on mobile
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -755,7 +744,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
         const activeData = active.data.current;
         const overData = over.data.current;
         
-        // Add new row from palette
         if (activeData?.from === 'palette' && over.id === CREATE_ROW_ZONE_ID) {
             const newItemNode: LayoutNode = {
                 id: uuidv4(),
@@ -781,7 +769,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             return;
         }
 
-        // Handle Column Splitting
         if (currentSplitIntent) {
             const { colId, side } = currentSplitIntent;
             let nodeToInsert: LayoutNode;
@@ -793,7 +780,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     data: { key: activeData.key }
                 };
             } else if (activeData?.type === 'item' || activeData?.type === 'category') {
-                // Move existing item
                 const sourceColId = findParentId(layout, active.id as string);
                 if (!sourceColId) return;
                 const sourceRow = layout.find(r => r.children?.some(c => c.id === sourceColId));
@@ -810,7 +796,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
             const performSplit = (nodes: LayoutNode[]): LayoutNode[] => {
                 let processedNodes = nodes;
-                // If moving existing item, remove it from source first
                 if (activeData?.from !== 'palette') {
                      processedNodes = nodes.map(row => ({
                         ...row,
@@ -822,7 +807,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                 }
 
                 return processedNodes.map(row => {
-                    // Find if this row contains the target column
                     const targetColIndex = row.children?.findIndex(c => c.id === colId);
                     if (targetColIndex === undefined || targetColIndex === -1 || !row.children) return row;
 
@@ -854,7 +838,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             return;
         }
 
-        // Reordering rows
         if (activeData?.type === 'row' && overData?.type === 'row') {
             const oldIndex = layout.findIndex(n => n.id === active.id);
             const newIndex = layout.findIndex(n => n.id === over.id);
@@ -865,7 +848,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             return;
         }
 
-        // Dropping into a column (adding new item or moving existing)
         if (activeData?.from === 'palette' && (overData?.type === 'col' || overData?.type === 'item' || overData?.type === 'category')) {
             const targetColId = overData?.type === 'col' ? (over.id as string) : findParentId(layout, over.id as string);
             if (!targetColId) return;
@@ -901,7 +883,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             return;
         }
 
-        // Reordering items within columns or moving between columns
         if ((activeData?.type === 'item' || activeData?.type === 'category') && (overData?.type === 'item' || overData?.type === 'category')) {
              const activeId = active.id as string;
              const overId = over.id as string;
@@ -910,13 +891,9 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
              const targetParentId = findParentId(layout, overId);
 
              if (sourceParentId && targetParentId) {
-                 // Clone layout
                  const newLayout = _.cloneDeep(layout);
-                 
-                 // Remove from source
                  let nodeToMove: LayoutNode | null = null;
                  
-                 // Helper to find and remove
                  for (const row of newLayout) {
                      if (!row.children) continue;
                      for (const col of row.children) {
@@ -930,7 +907,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                      }
                  }
                  
-                 // Insert into target
                  if (nodeToMove) {
                     for (const row of newLayout) {
                         if (!row.children) continue;
@@ -938,10 +914,8 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                             if (col.id === targetParentId) {
                                 const idx = col.children?.findIndex(c => c.id === overId);
                                 if (idx !== undefined && idx !== -1) {
-                                    // Insert before target item
                                     col.children!.splice(idx, 0, nodeToMove);
                                 } else {
-                                    // Should not happen if overId exists, but fallback append
                                     col.children!.push(nodeToMove);
                                 }
                             }
@@ -955,7 +929,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
 
     const selectedNode = selectedNodeId ? findNodeById(layout, selectedNodeId) : null;
 
-    // Use allDefinitionsMap here
     const inspectorPanel = (
         <LayoutInspector 
             node={selectedNode} 
@@ -978,9 +951,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
             onDragStart={handleDragStart} 
             onDragEnd={handleDragEnd}
         >
-            <div className={`layout-composer ${isMobile ? 'mobile' : ''}`}>
-                
-                {/* Mobile Header (Dedicated Toolbar) */}
+            <div className="th-manager">
                 {isMobile && (
                     <div className="layout-composer__mobile-header">
                         <button 
@@ -990,9 +961,7 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                             <span>组件库</span>
                             <ChevronDown size={14} style={{transform: leftOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s'}} />
                         </button>
-                        
                         <div className="layout-composer__mobile-title">Layout Canvas</div>
-                        
                         <button 
                             className="layout-composer__mobile-action"
                             onClick={() => setInspectorMode(inspectorMode === 'floating' ? 'hidden' : 'floating')}
@@ -1002,24 +971,22 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     </div>
                 )}
 
-                <div 
-                    className={`layout-composer__left-pane ${leftOpen ? 'open' : 'closed'} ${isMobile ? 'mobile-overlay' : ''}`}
-                >
-                    {/* Desktop Header */}
-                    {!isMobile && (
-                        <div className="layout-composer__pane-header">
-                            <span>组件库</span>
-                            <div className="actions">
-                                <button onClick={() => setShowSnapshotModal(true)} title="快照管理"><Save size={16}/></button>
-                                <button onClick={() => setLeftOpen(!leftOpen)} title={leftOpen ? "收起" : "展开"}>
-                                    {leftOpen ? <PanelLeftClose size={16}/> : <PanelLeftOpen size={16}/>}
-                                </button>
+                <div className="th-manager__layout">
+                    {/* Left Sidebar (Palette) */}
+                    <div className={`th-manager__sidebar ${!leftOpen && !isMobile ? 'th-manager__sidebar--collapsed' : ''} ${isMobile ? 'mobile-overlay' : ''} ${isMobile && !leftOpen ? 'closed' : ''}`}>
+                        <div className="th-manager__sidebar-header">
+                            <div className="th-manager__sidebar-title">组件库</div>
+                            <div style={{display: 'flex', gap: '4px'}}>
+                                <button onClick={() => setShowSnapshotModal(true)} className="th-manager__icon-btn" title="快照管理"><Save size={16}/></button>
+                                {!isMobile && (
+                                    <button onClick={() => setLeftOpen(!leftOpen)} className="th-manager__icon-btn desktop-only" title={leftOpen ? "收起" : "展开"}>
+                                        <PanelLeftClose size={16}/>
+                                    </button>
+                                )}
                             </div>
                         </div>
-                    )}
-                    
-                    {/* Palette content - using class for visibility instead of inline style */}
-                    <div className={`layout-composer__palette ${!leftOpen && !isMobile ? 'hidden' : ''}`}>
+                        
+                        <div className="th-manager__sidebar-content">
                             <div className="palette-search">
                                 <Search size={14} />
                                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索组件..." />
@@ -1046,96 +1013,97 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                                     </div>
                                 ))}
                             </div>
-                    </div>
-                </div>
-
-                <div className="layout-composer__canvas-area" onClick={() => setSelectedNodeId(null)}>
-                    {/* Header Toolbar for Canvas (Desktop Only) */}
-                    {!isMobile && (
-                        <div className="layout-composer__canvas-toolbar">
-                            {!leftOpen && (
-                                <button onClick={() => setLeftOpen(true)} className="btn btn--ghost" title="展开组件库">
-                                    <PanelLeftOpen size={16} /> 展开组件库
-                                </button>
-                            )}
-                            <span className="layout-composer__canvas-title">
-                                {/* Help Button - Start Add */}
-                                <ContextHelpButton 
-                                    title="布局编排帮助" 
-                                    content={
-                                        <>
-                                            <p>所见即所得地设计状态栏的布局结构。</p>
-                                            <ul>
-                                                <li><strong>基础概念</strong>: 布局由“行”(Row)、“列”(Col) 和“组件”(Item) 组成。</li>
-                                                <li><strong>创建行</strong>: 从左侧组件库拖拽一个组件到中央的虚线框区域，会自动创建包含该组件的新行。</li>
-                                                <li><strong>分列</strong>: 将组件拖拽到现有列的边缘（左右两侧），会显示蓝色指示条，释放后将该列一分为二。</li>
-                                                <li><strong>调整宽度</strong>: 拖动列与列之间的分隔线来调整宽度比例。</li>
-                                                <li><strong>属性调整</strong>: 点击画布中的任意元素，右侧面板会显示其属性（背景色、边距、对齐方式等）。</li>
-                                                <li><strong>删除</strong>: 选中元素后点击右上角的垃圾桶图标，或按 Delete 键。</li>
-                                            </ul>
-                                        </>
-                                    } 
-                                />
-                                {/* Help Button - End Add */}
-                                Layout Canvas
-                            </span>
-                            
-                            {/* Right Sidebar Recall Button */}
-                            {inspectorMode === 'hidden' && (
-                                <button 
-                                    onClick={() => setInspectorMode('docked')} 
-                                    className="btn btn--ghost" 
-                                    title="打开属性面板"
-                                    style={{marginLeft: 'auto'}}
-                                >
-                                    属性面板 <PanelRightOpen size={16} />
-                                </button>
-                            )}
                         </div>
-                    )}
-
-                    <div className="layout-composer__canvas">
-                        <LayoutCreatorZone />
-                        <SortableContext items={layout.map(row => row.id)} strategy={verticalListSortingStrategy}>
-                            {layout.map(row => (
-                                <LayoutRowDraggable 
-                                    key={row.id} 
-                                    node={row} 
-                                    onSelect={(e) => { e.stopPropagation(); setSelectedNodeId(row.id); }}
-                                    isSelected={selectedNodeId === row.id}
-                                    onDelete={() => deleteNode(row.id)}
-                                >
-                                    {row.children?.map((col, colIndex) => (
-                                        <React.Fragment key={col.id}>
-                                            <LayoutColumnDroppable 
-                                                node={col}
-                                                items={col.children || []}
-                                                allDefinitions={allDefinitionsMap}
-                                                allCategories={data.categories}
-                                                data={data}
-                                                selectedId={selectedNodeId}
-                                                onSelectNode={setSelectedNodeId}
-                                                isGlobalDragging={!!activeDragData}
-                                                onSetSplitIntent={setDragSplitIntent}
-                                                splitIntent={dragSplitIntent}
-                                                onDelete={() => deleteNode(col.id)}
-                                                onDeleteItem={(itemId) => deleteNode(itemId)}
-                                            />
-                                            {colIndex < (row.children?.length || 0) - 1 && (
-                                                <ColumnResizer onResize={(delta) => handleColumnResize(row.id, colIndex, delta)} />
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                </LayoutRowDraggable>
-                            ))}
-                        </SortableContext>
                     </div>
-                </div>
 
-                {/* Right Pane (Always rendered, animated via CSS class) */}
-                <div className={`layout-composer__right-pane ${inspectorMode === 'docked' ? 'open' : 'closed'}`}>
-                    <div className="layout-composer__inspector-wrapper">
-                        {inspectorMode === 'docked' && inspectorPanel}
+                    {/* Main Content Area */}
+                    <div className="th-manager__main" onClick={() => setSelectedNodeId(null)}>
+                        {!isMobile && (
+                            <div className="th-manager__main-header" style={{ minHeight: '60px', padding: '0 var(--spacing-lg)' }}>
+                                <div className="th-manager__main-title-group" style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+                                    {!leftOpen && (
+                                        <button onClick={() => setLeftOpen(true)} className="th-manager__icon-btn desktop-only" style={{marginRight: '8px'}}>
+                                            <PanelLeftOpen size={16} />
+                                        </button>
+                                    )}
+                                    <h2 className="th-manager__main-title" style={{fontSize: '1rem'}}>
+                                        Layout Canvas
+                                    </h2>
+                                    <ContextHelpButton 
+                                        title="布局编排帮助" 
+                                        content={
+                                            <>
+                                                <p>所见即所得地设计状态栏的布局结构。</p>
+                                                <ul>
+                                                    <li><strong>基础概念</strong>: 布局由“行”(Row)、“列”(Col) 和“组件”(Item) 组成。</li>
+                                                    <li><strong>创建行</strong>: 从左侧组件库拖拽一个组件到中央的虚线框区域，会自动创建包含该组件的新行。</li>
+                                                    <li><strong>分列</strong>: 将组件拖拽到现有列的边缘（左右两侧），会显示蓝色指示条，释放后将该列一分为二。</li>
+                                                    <li><strong>属性调整</strong>: 点击画布中的任意元素，右侧面板会显示其属性。</li>
+                                                </ul>
+                                            </>
+                                        } 
+                                    />
+                                    {inspectorMode === 'hidden' && (
+                                        <button 
+                                            onClick={() => setInspectorMode('docked')} 
+                                            className="btn btn--ghost" 
+                                            title="打开属性面板"
+                                            style={{marginLeft: 'auto'}}
+                                        >
+                                            属性面板 <PanelRightOpen size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="th-manager__main-content" style={{ padding: 0, flexDirection: 'column', overflow: 'hidden' }}>
+                            <div className="layout-composer__canvas-area">
+                                <div className="layout-composer__canvas">
+                                    <LayoutCreatorZone />
+                                    <SortableContext items={layout.map(row => row.id)} strategy={verticalListSortingStrategy}>
+                                        {layout.map(row => (
+                                            <LayoutRowDraggable 
+                                                key={row.id} 
+                                                node={row} 
+                                                onSelect={(e) => { e.stopPropagation(); setSelectedNodeId(row.id); }}
+                                                isSelected={selectedNodeId === row.id}
+                                                onDelete={() => deleteNode(row.id)}
+                                            >
+                                                {row.children?.map((col, colIndex) => (
+                                                    <React.Fragment key={col.id}>
+                                                        <LayoutColumnDroppable 
+                                                            node={col}
+                                                            items={col.children || []}
+                                                            allDefinitions={allDefinitionsMap}
+                                                            allCategories={data.categories}
+                                                            data={data}
+                                                            selectedId={selectedNodeId}
+                                                            onSelectNode={setSelectedNodeId}
+                                                            isGlobalDragging={!!activeDragData}
+                                                            onSetSplitIntent={setDragSplitIntent}
+                                                            splitIntent={dragSplitIntent}
+                                                            onDelete={() => deleteNode(col.id)}
+                                                            onDeleteItem={(itemId) => deleteNode(itemId)}
+                                                        />
+                                                        {colIndex < (row.children?.length || 0) - 1 && (
+                                                            <ColumnResizer onResize={(delta) => handleColumnResize(row.id, colIndex, delta)} />
+                                                        )}
+                                                    </React.Fragment>
+                                                ))}
+                                            </LayoutRowDraggable>
+                                        ))}
+                                    </SortableContext>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Pane (Inspector) - Now a sibling of Main Content */}
+                    <div className={`layout-composer__right-sidebar ${inspectorMode === 'docked' ? 'open' : 'closed'}`}>
+                        <div className="layout-composer__inspector-wrapper">
+                            {inspectorMode === 'docked' && inspectorPanel}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1146,9 +1114,8 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({ data, onUpdate, isMobil
                     onClose={() => setInspectorMode('hidden')}
                     initialPosition={{ x: window.innerWidth - 320, y: 100 }}
                     className="layout-inspector-panel"
-                    // Removed isMobile={isMobile} to enforce floating window on mobile
                     extraControls={
-                        !isMobile && ( // Only show dock button on desktop
+                        !isMobile && (
                             <button 
                                 onClick={() => setInspectorMode('docked')} 
                                 className="draggable-panel__btn" 
